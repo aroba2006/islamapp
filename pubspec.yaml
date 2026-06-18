@@ -22,6 +22,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.13.1
   flutter_lints: ^3.0.0
 
 flutter:
@@ -30,3 +31,10 @@ flutter:
     - assets/adhan/afasiadhan.mpeg
     - assets/adhan/qatamiadhan.mpeg
     - assets/adhan/moqassas.mpeg
+
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/app_icon.png"
+  remove_alpha_ios: true
