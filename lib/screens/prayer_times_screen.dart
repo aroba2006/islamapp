@@ -1,9 +1,16 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../models/country_data.dart';
 import '../models/prayer_times.dart';
 import '../services/prayer_times_service.dart';
+import '../services/adhan_service.dart';
+import '../services/notification_service.dart';
 import '../widgets/islamic_pattern_background.dart';
+import '../l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../data/geo_translations.dart';
+
 
 class PrayerTimesScreen extends StatefulWidget {
   final CountryData country;
@@ -26,16 +33,27 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   Timer? _clockTimer;
   Duration? _timeUntilNext;
   String? _nextPrayerName;
+  String _selectedReciter = 'mishary';
+  bool _adhanPlaying = false;
 
   @override
   void initState() {
     super.initState();
+    _loadPreferences();
     _load();
   }
+
+ Future<void> _loadPreferences() async {
+  final prefs = await SharedPreferences.getInstance();
+  setState(() {
+    _selectedReciter = prefs.getString('adhanReciter') ?? 'mishary';
+  });
+}
 
   @override
   void dispose() {
     _clockTimer?.cancel();
+    AdhanService.stopAdhan();
     super.dispose();
   }
 
@@ -54,6 +72,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         _loading = false;
       });
       _startCountdown();
+      _scheduleNotifications();
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -110,6 +129,28 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     }
   }
 
+  Future<void> _scheduleNotifications() async {
+    if (_times == null) return;
+    final now = DateTime.now();
+    final entries = _times!.asOrderedList();
+
+    DateTime? parseToday(String hhmm) {
+      final parts = hhmm.split(':');
+      if (parts.length != 2) return null;
+      final h = int.tryParse(parts[0]);
+      final m = int.tryParse(parts[1]);
+      if (h == null || m == null) return null;
+      return DateTime(now.year, now.month, now.day, h, m);
+    }
+
+    for (final entry in entries) {
+      final dt = parseToday(entry.value);
+      if (dt != null && dt.isAfter(now)) {
+        await NotificationService.schedulePrayerNotification(entry.key, dt);
+      }
+    }
+  }
+
   String _formatDuration(Duration d) {
     final h = d.inHours.toString().padLeft(2, '0');
     final m = (d.inMinutes % 60).toString().padLeft(2, '0');
@@ -134,22 +175,39 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     }
   }
 
+  Future<void> _playAdhan() async {
+    setState(() => _adhanPlaying = true);
+    await AdhanService.playAdhan(_selectedReciter);
+    await for (final state in AdhanService.onPlayerStateChanged) {
+      if (state == PlayerState.completed || state == PlayerState.stopped) {
+        break;
+      }
+    }
+    if (mounted) setState(() => _adhanPlaying = false);
+  }
+
+  Future<void> _stopAdhan() async {
+    await AdhanService.stopAdhan();
+    if (mounted) setState(() => _adhanPlaying = false);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: IslamicPatternBackground(
         child: SafeArea(
           child: Column(
             children: [
-              _buildHeader(),
+              _buildHeader(context, l10n),
               Expanded(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 350),
                   child: _loading
-                      ? _buildLoading()
+                      ? _buildLoading(context, l10n)
                       : _error != null
-                          ? _buildError()
-                          : _buildContent(),
+                          ? _buildError(context, l10n)
+                          : _buildContent(context, l10n),
                 ),
               ),
             ],
@@ -159,7 +217,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 20, 12),
       child: Row(
@@ -177,17 +235,17 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                     Text(widget.country.flagEmoji, style: const TextStyle(fontSize: 18)),
                     const SizedBox(width: 6),
                     Text(
-                      widget.region,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                   GeoTranslations.translate(context, widget.region),
+                   style: const TextStyle(
+                     color: Colors.white,
+                     fontSize: 20,
+                     fontWeight: FontWeight.w700,
+                   ),
+                 ),
                   ],
                 ),
                 Text(
-                  widget.country.name,
+                  GeoTranslations.translate(context, widget.country.name),
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 13),
                 ),
               ],
@@ -202,21 +260,24 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     );
   }
 
-  Widget _buildLoading() {
-    return const Center(
-      key: ValueKey('loading'),
+  Widget _buildLoading(BuildContext context, AppLocalizations l10n) {
+    return Center(
+      key: const ValueKey('loading'),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(color: Color(0xFFD4AF37)),
-          SizedBox(height: 16),
-          Text("Fetching prayer times...", style: TextStyle(color: Colors.white70)),
+          const CircularProgressIndicator(color: Color(0xFFD4AF37)),
+          const SizedBox(height: 16),
+          Text(
+            l10n.fetchingPrayerTimes,
+            style: const TextStyle(color: Colors.white70),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildError() {
+  Widget _buildError(BuildContext context, AppLocalizations l10n) {
     return Center(
       key: const ValueKey('error'),
       child: Padding(
@@ -227,7 +288,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             const Icon(Icons.cloud_off, color: Colors.white70, size: 56),
             const SizedBox(height: 16),
             Text(
-              _error ?? "Something went wrong.",
+              _error ?? l10n.errorMessage,
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.white70, fontSize: 15),
             ),
@@ -235,7 +296,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             ElevatedButton.icon(
               onPressed: _load,
               icon: const Icon(Icons.refresh),
-              label: const Text("Try again"),
+              label: Text(l10n.tryAgain),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFD4AF37),
                 foregroundColor: const Color(0xFF0B3D2E),
@@ -249,7 +310,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context, AppLocalizations l10n) {
     final times = _times!;
     return Container(
       key: const ValueKey('content'),
@@ -260,7 +321,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
         children: [
-          if (_timeUntilNext != null) _buildCountdownCard(),
+          if (_timeUntilNext != null) _buildCountdownCard(context, l10n),
+          const SizedBox(height: 20),
+          _buildAdhanControlPanel(context, l10n),
           const SizedBox(height: 20),
           Text(
             times.dateReadable,
@@ -286,7 +349,16 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 );
               },
               child: _PrayerRow(
-                name: entry.key,
+                name: () {
+                  switch (entry.key.toLowerCase()) {
+                    case 'fajr': return l10n.fajr;
+                    case 'dhuhr': return l10n.dhuhr;
+                    case 'asr': return l10n.asr;
+                    case 'maghrib': return l10n.maghrib;
+                    case 'isha': return l10n.isha;
+                    default: return entry.key;
+                  }
+                }(),
                 time: entry.value,
                 icon: _iconFor(entry.key),
                 isNext: isNext,
@@ -294,13 +366,24 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             );
           }),
           const SizedBox(height: 12),
-          _buildSunriseNote(times.sunrise),
+          _buildSunriseNote(times.sunrise, l10n),
         ],
       ),
     );
   }
 
-  Widget _buildCountdownCard() {
+  Widget _buildCountdownCard(BuildContext context, AppLocalizations l10n) {
+    String getLocalizedPrayerName(String name) {
+      switch (name.toLowerCase()) {
+        case 'fajr': return l10n.fajr;
+        case 'dhuhr': return l10n.dhuhr;
+        case 'asr': return l10n.asr;
+        case 'maghrib': return l10n.maghrib;
+        case 'isha': return l10n.isha;
+        default: return name;
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 20),
       decoration: BoxDecoration(
@@ -312,7 +395,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1B5E3F).withValues(alpha: 0.3),
+            color: const Color(0xFF1B5E3F)..withValues(alpha:0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -321,7 +404,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       child: Column(
         children: [
           Text(
-            "Time until ${_nextPrayerName ?? '--'}",
+            "${l10n.timeUntil} ${_nextPrayerName != null ? getLocalizedPrayerName(_nextPrayerName!) : '--'}",
             style: const TextStyle(color: Colors.white70, fontSize: 14),
           ),
           const SizedBox(height: 8),
@@ -339,20 +422,72 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     );
   }
 
-  Widget _buildSunriseNote(String sunrise) {
+  Widget _buildAdhanControlPanel(BuildContext context, AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFFD4AF37)..withValues(alpha:0.15),
+            const Color(0xFFD4AF37)..withValues(alpha:0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFD4AF37)..withValues(alpha:0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.music_note, color: Color(0xFF1B5E3F), size: 20),
+              const SizedBox(width: 10),
+              Text(
+                l10n.adhan,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1B5E3F),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _adhanPlaying ? _stopAdhan : _playAdhan,
+              icon: Icon(_adhanPlaying ? Icons.stop : Icons.play_arrow),
+              label: Text(_adhanPlaying ? 'Stop' : l10n.playAdhan),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1B5E3F),
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey.shade400,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSunriseNote(String sunrise, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF8E7),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+        border: Border.all(color: const Color(0xFFD4AF37)..withValues(alpha:0.3)),
       ),
       child: Row(
         children: [
           const Icon(Icons.wb_twilight, color: Color(0xFFD4AF37)),
           const SizedBox(width: 12),
           Text(
-            "Sunrise: $sunrise",
+            "${l10n.sunrise}: $sunrise",
             style: const TextStyle(
               fontWeight: FontWeight.w600,
               color: Color(0xFF6B5A1E),
@@ -390,13 +525,22 @@ class _PrayerRow extends StatelessWidget {
           color: isNext ? const Color(0xFFD4AF37) : const Color(0xFFE3E9E6),
           width: isNext ? 1.5 : 1,
         ),
+        boxShadow: isNext
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF1B5E3F).withValues(alpha:0.15),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : [],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isNext ? Colors.white.withValues(alpha: 0.15) : Colors.white,
+              color: isNext ? Colors.white.withValues(alpha:0.15) : Colors.white,
               shape: BoxShape.circle,
             ),
             child: Icon(

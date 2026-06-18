@@ -2,7 +2,7 @@ import '../models/country_data.dart';
 
 /// Master list of countries. Countries with a populated [regions] list show
 /// a region-selection screen; others fall back to using the capital city.
-final List<CountryData> countries = [
+const List<CountryData> countries = [
   CountryData(
     name: "Egypt",
     flagEmoji: "🇪🇬",

@@ -111,7 +111,7 @@ class IslamicDivider extends StatelessWidget {
         children: [
           _line(),
           const SizedBox(width: 8),
-          Icon(Icons.star, size: 14, color: color.withValues(alpha: 0.8)),
+          Icon(Icons.star, size: 14, color: color.withValues(alpha:0.8)),
           const SizedBox(width: 8),
           _line(),
         ],
@@ -123,7 +123,7 @@ class IslamicDivider extends StatelessWidget {
     return Container(
       width: 50,
       height: 1,
-      color: color.withValues(alpha: 0.4),
+      color: color.withValues(alpha:0.4),
     );
   }
 }

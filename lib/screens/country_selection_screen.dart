@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import '../data/countries_data.dart';
 import '../models/country_data.dart';
 import '../widgets/islamic_pattern_background.dart';
+import '../l10n/app_localizations.dart';
 import 'region_selection_screen.dart';
+import 'settings_screen.dart';
+import '../data/geo_translations.dart';
 
 class CountrySelectionScreen extends StatefulWidget {
   const CountrySelectionScreen({super.key});
@@ -68,6 +71,7 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: IslamicPatternBackground(
         child: SafeArea(
@@ -81,7 +85,7 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
                     end: Offset.zero,
                   ).animate(CurvedAnimation(
                       parent: _headerController, curve: Curves.easeOutCubic)),
-                  child: _buildHeader(),
+                  child: _buildHeader(context, l10n),
                 ),
               ),
               Expanded(
@@ -103,9 +107,9 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
                       ),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                        child: _buildSearchField(),
+                        child: _buildSearchField(context, l10n),
                       ),
-                      Expanded(child: _buildCountryList()),
+                      Expanded(child: _buildCountryList(context, l10n)),
                     ],
                   ),
                 ),
@@ -117,7 +121,7 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
       child: Column(
@@ -135,10 +139,10 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
                 child: const Icon(Icons.mosque, color: Color(0xFFD4AF37), size: 28),
               ),
               const SizedBox(width: 14),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  "Salah Times",
-                  style: TextStyle(
+                  l10n.appTitle,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 26,
                     fontWeight: FontWeight.w700,
@@ -146,11 +150,34 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
                   ),
                 ),
               ),
+              IconButton(
+                icon: const Icon(Icons.settings, color: Color(0xFFD4AF37), size: 26),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    PageRouteBuilder(
+                      transitionDuration: const Duration(milliseconds: 450),
+                      pageBuilder: (context, animation, secondaryAnimation) =>
+                          const SettingsScreen(),
+                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                        final curved =
+                            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+                        return SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 1),
+                            end: Offset.zero,
+                          ).animate(curved),
+                          child: FadeTransition(opacity: curved, child: child),
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
             ],
           ),
           const SizedBox(height: 16),
           Text(
-            "Select your country to begin",
+            l10n.selectCountry,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.85),
               fontSize: 15,
@@ -161,11 +188,11 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
     );
   }
 
-  Widget _buildSearchField() {
+  Widget _buildSearchField(BuildContext context, AppLocalizations l10n) {
     return TextField(
       controller: _searchController,
       decoration: InputDecoration(
-        hintText: "Search countries...",
+        hintText: l10n.searchCountries,
         prefixIcon: const Icon(Icons.search, color: Color(0xFF1B5E3F)),
         filled: true,
         fillColor: const Color(0xFFF3F6F4),
@@ -178,11 +205,11 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
     );
   }
 
-  Widget _buildCountryList() {
+  Widget _buildCountryList(BuildContext context, AppLocalizations l10n) {
     if (_filtered.isEmpty) {
       return Center(
         child: Text(
-          "No countries match your search.",
+          l10n.noCountriesFound,
           style: TextStyle(color: Colors.grey.shade500),
         ),
       );
@@ -244,21 +271,28 @@ class _CountryTileState extends State<_CountryTile> {
             color: const Color(0xFFF8FAF9),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFE3E9E6)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Row(
             children: [
               Text(widget.country.flagEmoji, style: const TextStyle(fontSize: 26)),
               const SizedBox(width: 14),
               Expanded(
-                child: Text(
-                  widget.country.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A2E25),
-                  ),
-                ),
-              ),
+             child: Text(
+               GeoTranslations.translate(context, widget.country.name),
+               style: const TextStyle(
+                 fontSize: 16,
+                 fontWeight: FontWeight.w600,
+                 color: Color(0xFF1A2E25),
+               ),
+             ),
+           ),
               const Icon(Icons.chevron_right, color: Color(0xFF1B5E3F)),
             ],
           ),

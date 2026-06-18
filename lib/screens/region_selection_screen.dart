@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../data/countries_data.dart';
 import '../models/country_data.dart';
 import '../widgets/islamic_pattern_background.dart';
+import '../l10n/app_localizations.dart';
 import 'prayer_times_screen.dart';
+import '../data/geo_translations.dart';
 
 class RegionSelectionScreen extends StatefulWidget {
   final CountryData country;
@@ -120,6 +122,7 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
   }
 
   Widget _buildHeader(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
       child: Row(
@@ -129,27 +132,14 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
             icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 6),
-          Text(widget.country.flagEmoji, style: const TextStyle(fontSize: 28)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.country.name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  "Choose your state / governorate",
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13),
-                ),
-              ],
-            ),
-          ),
+          Text(
+               GeoTranslations.translate(context, widget.country.name),
+               style: const TextStyle(
+                 color: Colors.white,
+                 fontSize: 22,
+                 fontWeight: FontWeight.w700,
+               ),
+             ),
         ],
       ),
     );
@@ -235,8 +225,10 @@ class _RegionButtonState extends State<_RegionButton> {
           ),
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 10),
+          
+          // --> This is where your code goes! <--
           child: Text(
-            widget.label,
+            GeoTranslations.translate(context, widget.label),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -251,3 +243,4 @@ class _RegionButtonState extends State<_RegionButton> {
     );
   }
 }
+
