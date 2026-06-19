@@ -45,6 +45,9 @@ abstract class AppLocalizations {
   String get close;
   String get prayerNotification;
   String get mohamedQassas;
+  String get quran;
+  String get quranSection;
+  String get selectSurah;
   
   // The 5 prayer getters
   String get fajr;

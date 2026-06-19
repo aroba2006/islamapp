@@ -4,8 +4,8 @@ import '../models/country_data.dart';
 import '../widgets/islamic_pattern_background.dart';
 import '../l10n/app_localizations.dart';
 import 'region_selection_screen.dart';
-import 'settings_screen.dart';
 import '../data/geo_translations.dart';
+import 'quran_screen.dart';
 
 class CountrySelectionScreen extends StatefulWidget {
   const CountrySelectionScreen({super.key});
@@ -151,28 +151,15 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.settings, color: Color(0xFFD4AF37), size: 26),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    PageRouteBuilder(
-                      transitionDuration: const Duration(milliseconds: 450),
-                      pageBuilder: (context, animation, secondaryAnimation) =>
-                          const SettingsScreen(),
-                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                        final curved =
-                            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
-                        return SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0, 1),
-                            end: Offset.zero,
-                          ).animate(curved),
-                          child: FadeTransition(opacity: curved, child: child),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
+  icon: const Icon(
+    Icons.arrow_back_ios_new_rounded, 
+    color: Color(0xFFD4AF37), // Your gold theme color
+    size: 24,
+  ),
+  onPressed: () {
+    Navigator.pop(context); // Returns you to the Home Screen
+  },
+),
             ],
           ),
           const SizedBox(height: 16),

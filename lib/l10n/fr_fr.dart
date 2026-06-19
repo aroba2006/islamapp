@@ -67,6 +67,13 @@ class FrFR extends AppLocalizations {
   String get close => 'Fermer';
   @override
   String get prayerNotification => 'C\'est l\'heure de prier';
+
+  @override
+String get quran => 'Saint Coran';
+@override
+String get quranSection => 'Section Coran';
+@override
+String get selectSurah => 'Sélectionnez la Sourate';
   
   @override
   String get fajr => 'Fajr';

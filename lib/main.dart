@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'l10n/app_localizations.dart';
-import 'screens/country_selection_screen.dart';
+import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
 
 void main() async {
@@ -14,7 +14,8 @@ void main() async {
 class IslamicApp extends StatefulWidget {
   const IslamicApp({super.key});
 
-  static of(BuildContext context) => context.findAncestorStateOfType<_IslamicAppState>();
+  static _IslamicAppState? of(BuildContext context) =>
+      context.findAncestorStateOfType<_IslamicAppState>();
 
   @override
   State<IslamicApp> createState() => _IslamicAppState();
@@ -51,7 +52,7 @@ class _IslamicAppState extends State<IslamicApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Salah Times',
+      title: 'Islamy App',
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -74,7 +75,7 @@ class _IslamicAppState extends State<IslamicApp> {
         scaffoldBackgroundColor: const Color(0xFF0B3D2E),
         fontFamily: 'Roboto',
       ),
-      home: const CountrySelectionScreen(),
+      home: const HomeScreen(),
     );
   }
 }

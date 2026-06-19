@@ -66,9 +66,9 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
   Widget build(BuildContext context) {
     if (widget.country.regions.isEmpty) {
       // Brief loading state while we redirect to prayer times with capital city.
-      return Scaffold(
+      return const Scaffold(
         body: IslamicPatternBackground(
-          child: const Center(
+          child: Center(
             child: CircularProgressIndicator(color: Color(0xFFD4AF37)),
           ),
         ),

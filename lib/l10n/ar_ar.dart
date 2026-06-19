@@ -67,6 +67,12 @@ class ArAR extends AppLocalizations {
   String get close => 'إغلاق';
   @override
   String get prayerNotification => 'حان وقت الصلاة';
+  @override
+  String get quran => 'القرآن الكريم';
+  @override
+  String get quranSection => 'قسم القرآن';
+  @override
+  String get selectSurah => 'اختر السورة';
   
   @override
   String get fajr => 'الفجر';

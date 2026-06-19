@@ -67,6 +67,13 @@ class EnUS extends AppLocalizations {
   String get close => 'Close';
   @override
   String get prayerNotification => 'It\'s time for prayer';
+
+  @override
+  String get quran => 'Holy Quran';
+  @override
+  String get quranSection => 'Quran Section';
+  @override
+  String get selectSurah => 'Select Surah';
   
   @override
   String get fajr => 'Fajr';

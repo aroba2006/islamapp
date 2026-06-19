@@ -93,7 +93,7 @@ void didChangeDependencies() {
               ),
             ),
           ),
-          Icon(Icons.settings, color: const Color(0xFFD4AF37), size: 28),
+          const Icon(Icons.settings, color: Color(0xFFD4AF37), size: 28),
         ],
       ),
     );
@@ -274,7 +274,7 @@ void didChangeDependencies() {
       ),
       child: Row(
         children: [
-          Icon(Icons.notifications_active, color: const Color(0xFF1B5E3F), size: 24),
+          const Icon(Icons.notifications_active, color: Color(0xFF1B5E3F), size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -291,7 +291,7 @@ void didChangeDependencies() {
             onChanged: (value) {
               setState(() => _notificationsEnabled = value);
             },
-            activeColor: const Color(0xFF1B5E3F),
+            activeThumbColor: const Color(0xFF1B5E3F),
             inactiveThumbColor: Colors.grey.shade400,
           ),
         ],

@@ -195,6 +195,19 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent, // Keeps your Islamic pattern visible
+        elevation: 0, // Removes the shadow
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded, 
+            color: Color(0xFFD4AF37), // Your gold theme color
+          ), 
+          onPressed: () {
+            Navigator.pop(context); // Returns to the Home Screen
+          },
+        ),
+      ),
       body: IslamicPatternBackground(
         child: SafeArea(
           child: Column(
