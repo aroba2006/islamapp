@@ -1,12 +1,13 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'dart:io';
 
 class AdhanService {
   static final _audioPlayer = AudioPlayer();
 
   static const Map<String, String> adhanAssetPaths = {
-    'mishary': 'assets/adhan/mishary_adhan.mp3',    // Fix path
-    'nasser':  'assets/adhan/nasser_adhan.mp3',     // Fix path
-    'qassas':  'assets/adhan/qassas_adhan.mp3'      // Fix path
+    'mishary': 'assets/adhan/mishary_adhan.mp3',
+    'nasser':  'assets/adhan/nasser_adhan.mp3',
+    'qassas':  'assets/adhan/qassas_adhan.mp3'
   };
 
   static final Map<String, String> reciterNames = {
@@ -20,11 +21,29 @@ class AdhanService {
       await _audioPlayer.stop();
 
       final path = adhanAssetPaths[reciterId] ?? adhanAssetPaths['mishary']!;
+      
+      // iOS specific: set audio session
+      if (Platform.isIOS) {
+        await _audioPlayer.setAudioContext(
+          AudioContext(
+            iOS: AudioContextIOS(
+              category: AVAudioSessionCategory.playback,
+              options: const {
+                AVAudioSessionOptions.defaultToSpeaker,
+                AVAudioSessionOptions.duckOthers,
+              },
+            ),
+          ),
+        );
+      }
 
       await _audioPlayer.setReleaseMode(ReleaseMode.stop);
+      await _audioPlayer.setVolume(1.0);
+      
       await _audioPlayer.play(AssetSource(path));
+      
     } catch (e) {
-      print('Adhan play error: $e');
+      print('❌ Error: $e');
     }
   }
 
