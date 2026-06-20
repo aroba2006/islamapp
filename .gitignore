@@ -43,3 +43,23 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+build/
+coverage/
+.gradle
+.idea/
+.vscode/
+*.iml
+*.lock
+
+# But DO include assets
+!assets/
+!assets/adhan/
+!assets/adhan/*.mp3

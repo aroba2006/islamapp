@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../l10n/app_strings.dart';
 
 // ── Adhan callers ─────────────────────────────────────────────────────────────
 
@@ -26,26 +25,24 @@ const List<AdhanCaller> kAdhanCallers = [
 // ── AppSettings ChangeNotifier ────────────────────────────────────────────────
 
 class AppSettings extends ChangeNotifier {
-  AppLanguage _language   = AppLanguage.arabic;
-  String      _callerId   = 'mishary';
+  String _languageCode = 'ar';
+  String _callerId     = 'mishary';
 
-  AppLanguage  get language      => _language;
+  String       get languageCode  => _languageCode;
   String       get callerId      => _callerId;
-  AppStrings   get str           => AppStrings(_language);
   AdhanCaller  get selectedCaller =>
       kAdhanCallers.firstWhere((c) => c.id == _callerId, orElse: () => kAdhanCallers.first);
 
   Future<void> load() async {
     final p = await SharedPreferences.getInstance();
-    final code = p.getString('lang') ?? 'ar';
-    _language = AppLanguage.values.firstWhere((l) => l.code == code, orElse: () => AppLanguage.arabic);
+    _languageCode = p.getString('lang') ?? 'ar';
     _callerId = p.getString('adhan_caller') ?? 'mishary';
     notifyListeners();
   }
 
-  Future<void> setLanguage(AppLanguage lang) async {
-    _language = lang;
-    (await SharedPreferences.getInstance()).setString('lang', lang.code);
+  Future<void> setLanguage(String languageCode) async {
+    _languageCode = languageCode;
+    (await SharedPreferences.getInstance()).setString('lang', languageCode);
     notifyListeners();
   }
 

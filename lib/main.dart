@@ -37,13 +37,13 @@ class _IslamicAppState extends State<IslamicApp> {
     });
   }
 
-  void setLocale(String newLocale) async {
+  Future<void> setLocale(String newLocale) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('locale', newLocale);
     setState(() => _locale = newLocale);
   }
 
-  void setAdhanReciter(String reciter) async {
+  Future<void> setAdhanReciter(String reciter) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('adhanReciter', reciter);
   }

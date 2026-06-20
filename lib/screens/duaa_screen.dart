@@ -96,10 +96,10 @@ class _DuaaScreenState extends State<DuaaScreen> with SingleTickerProviderStateM
             icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
-          Expanded(
+          const Expanded(
             child: Text(
               'الأدعية',
-              style: const TextStyle(
+              style: TextStyle(
                 color: Colors.white,
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
@@ -297,15 +297,15 @@ class _DuaaCardState extends State<_DuaaCard> with SingleTickerProviderStateMixi
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        const Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.lightbulb,
                               color: Color(0xFFD4AF37),
                               size: 18,
                             ),
-                            const SizedBox(width: 8),
-                            const Expanded(
+                            SizedBox(width: 8),
+                            Expanded(
                               child: Text(
                                 'الفائدة',
                                 style: TextStyle(

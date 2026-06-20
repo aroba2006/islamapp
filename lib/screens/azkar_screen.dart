@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../widgets/islamic_pattern_background.dart';
-import '../l10n/app_localizations.dart';
 
 // ── Data models ───────────────────────────────────────────────────────────────
 

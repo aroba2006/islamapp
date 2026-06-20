@@ -243,4 +243,3 @@ class _RegionButtonState extends State<_RegionButton> {
     );
   }
 }
-

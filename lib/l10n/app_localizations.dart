@@ -48,6 +48,9 @@ abstract class AppLocalizations {
   String get quran;
   String get quranSection;
   String get selectSurah;
+  String get stop;
+  String get errorLoadingPrayerTimes;
+  String get retry;
   
   // The 5 prayer getters
   String get fajr;

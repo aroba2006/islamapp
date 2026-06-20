@@ -4,15 +4,15 @@ class AdhanService {
   static final _audioPlayer = AudioPlayer();
 
   static const Map<String, String> adhanAssetPaths = {
-    'mishary': 'adhan/afasiadhan.mpeg',
-    'nasser':  'adhan/qatamiadhan.mpeg',
-    'qassas' : 'adhan/moqassas.mpeg'
+    'mishary': 'assets/adhan/mishary_adhan.mp3',    // Fix path
+    'nasser':  'assets/adhan/nasser_adhan.mp3',     // Fix path
+    'qassas':  'assets/adhan/qassas_adhan.mp3'      // Fix path
   };
 
   static final Map<String, String> reciterNames = {
     'mishary': 'Mishary Al-Afasi',
     'nasser':  'Nasser Al-Qattami',
-    'qassas' : 'Mohamed Marawan Qassas'
+    'qassas':  'Mohamed Marawan Qassas'
   };
 
   static Future<void> playAdhan(String reciterId) async {
@@ -24,29 +24,26 @@ class AdhanService {
       await _audioPlayer.setReleaseMode(ReleaseMode.stop);
       await _audioPlayer.play(AssetSource(path));
     } catch (e) {
-      // Silent catch for production
+      print('Adhan play error: $e');
     }
   }
 
   static Future<void> stopAdhan() async {
     try {
       await _audioPlayer.stop();
-    } catch (e) { //ignore error
-    }
+    } catch (e) {}
   }
 
   static Future<void> pauseAdhan() async {
     try {
       await _audioPlayer.pause();
-    } catch (e) { //ignore error
-    }
+    } catch (e) {}
   }
 
   static Future<void> resumeAdhan() async {
     try {
       await _audioPlayer.resume();
-    } catch (e) { //ignore error
-    }
+    } catch (e) {}
   }
 
   static Stream<Duration> get onDurationChanged => _audioPlayer.onDurationChanged;
@@ -58,7 +55,6 @@ class AdhanService {
     try {
       await _audioPlayer.stop();
       await _audioPlayer.dispose();
-    } catch (e) { //ignore error
-    }
+    } catch (e) {}
   }
 }

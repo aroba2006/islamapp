@@ -5,7 +5,6 @@ import '../widgets/islamic_pattern_background.dart';
 import '../l10n/app_localizations.dart';
 import 'region_selection_screen.dart';
 import '../data/geo_translations.dart';
-import 'quran_screen.dart';
 
 class CountrySelectionScreen extends StatefulWidget {
   const CountrySelectionScreen({super.key});

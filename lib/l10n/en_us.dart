@@ -76,6 +76,13 @@ class EnUS extends AppLocalizations {
   String get selectSurah => 'Select Surah';
   
   @override
+  String get stop => 'Stop';
+  @override
+  String get errorLoadingPrayerTimes => 'Error loading prayer times. Please try again.';
+  @override
+  String get retry => 'Retry';
+  
+  @override
   String get fajr => 'Fajr';
   @override
   String get dhuhr => 'Dhuhr';

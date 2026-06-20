@@ -75,6 +75,13 @@ class ArAR extends AppLocalizations {
   String get selectSurah => 'اختر السورة';
   
   @override
+  String get stop => 'إيقاف';
+  @override
+  String get errorLoadingPrayerTimes => 'خطأ في تحميل أوقات الصلاة. يرجى المحاولة مرة أخرى.';
+  @override
+  String get retry => 'إعادة محاولة';
+  
+  @override
   String get fajr => 'الفجر';
   @override
   String get dhuhr => 'الظهر';

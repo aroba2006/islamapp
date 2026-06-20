@@ -36,12 +36,12 @@ class QuranData {
 
     // ── PART 1 (JUZ ALIF LAM MEEM) ──
     if (partNumber == 1) {
-      return QuranJuz(
+      return const QuranJuz(
         id: 1,
         titleAr: 'الجزء 1 (الم)',
         titleEn: 'Part 1 (Alif Lam Meem)',
         surahs: [
-          const QuranSurah(
+          QuranSurah(
             id: 1, nameAr: 'الفاتحة', nameEn: 'Al-Fatihah',
             versesAr: [
   'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
@@ -62,7 +62,7 @@ class QuranData {
   'The path of those upon whom You have bestowed favor, not of those who have earned Your anger or of those who are astray.'
 ],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 2, nameAr: 'البقرة', nameEn: 'Al-Baqarah',
             versesAr: [
   'الم',
@@ -146,9 +146,11 @@ class QuranData {
   'فَوَيْلٌ لِّلَّذِينَ يَكْتُبُونَ الْكِتَابَ بِأَيْدِيهِمْ ثُمَّ يَقُولُونَ هَٰذَا مِنْ عِندِ اللَّهِ لِيَشْتَرُوا بِهِ ثَمَنًا قَلِيلًا ۖ فَوَيْلٌ لَّهُم مِّمَّا كَتَبَتْ أَيْدِيهِمْ وَوَيْلٌ لَّهُم مِّمَّا يَكْسِبُونَ',
   'وَقَالُوا لَن تَمَسَّنَا النَّارُ إِلَّا أَيَّامًا مَّعْدُودَةً ۚ قُلْ أَتَّخَذْتُمْ عِندَ اللَّهِ عَهْدًا فَلَن يُخْلِفَ اللَّهُ عَهْدَهُ ۖ أَمْ تَقُولُونَ عَلَى اللَّهِ مَا لَا تَعْلَمُونَ',
   'بَلَىٰ مَن كَسَبَ سَيِّئَةً وَأَحَاطَتْ بِهِ خَطِيئَتُهُ فَأُولَٰئِكَ أَصْحَابُ النَّارِ ۖ هُمْ فِيهَا خَالِدُونَ',
+  'وَالَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ أُولَٰئِكَ أَصْحَابُ الْجَنَّةِ ۖ هُمْ فِيهَا خَالِدُونَ',
   'وَإِذْ أَخَذْنَا مِيثَاقَ بَنِي إِسْرَائِيلَ لَا تَعْبُدُونَ إِلَّا اللَّهَ وَبِالْوَالِدَيْنِ إِحْسَانًا وَذِي الْقُرْبَىٰ وَالْيَتَامَىٰ وَالْمَسَاكِينِ وَقُولُوا لِلنَّاسِ حُسْنًا وَأَقِيمُوا الصَّلَاةَ وَآتُوا الزَّكَاةَ ثُمَّ تَوَلَّيْتُمْ إِلَّا قَلِيلًا مِّنكُمْ وَأَنتُم مُّعْرِضُونَ',
   'وَإِذْ أَخَذْنَا مِيثَاقَكُمْ لَا تَسْفِكُونَ دِمَاءَكُمْ وَلَا تُخْرِجُونَ أَنفُسَكُم مِّن دِيَارِكُمْ ثُمَّ أَقْرَرْتُمْ وَأَنتُمْ تَشْهَدُونَ',
   'ثُمَّ أَنتُمْ هَٰؤُلَاءِ تَقْتُلُونَ أَنفُسَكُمْ وَتُخْرِجُونَ فَرِيقًا مِّنكُم مِّن دِيَارِهِمْ تَظَاهَرُونَ عَلَيْهِم بِالْإِثْمِ وَالْعُدْوَانِ وَإِن يَأْتُوكُمْ أُسَارَىٰ تُفَادُوهُمْ وَهُوَ مُحَرَّمٌ عَلَيْكُمْ إِخْرَاجُهُمْ ۚ أَفَتُؤْمِنُونَ بِبَعْضِ الْكِتَابِ وَتَكْفُرُونَ بِبَعْضٍ ۚ فَمَا جَزَاءُ مَن يَفْعَلُ ذَٰلِكَ مِنكُمْ إِلَّا خِزْيٌ فِي الْحَيَاةِ الدُّنْيَا ۖ وَيَوْمَ الْقِيَامَةِ يُرَدُّونَ إِلَىٰ أَشَدِّ الْعَذَابِ',
+  'أُولَٰئِكَ الَّذِينَ اشْتَرَوُا الْحَيَاةَ الدُّنْيَا بِالْآخِرَةِ ۖ فَلَا يُخَفَّفُ عَنْهُمُ الْعَذَابُ وَلَا هُمْ يُنصَرُونَ',
   'وَلَقَدْ آتَيْنَا مُوسَى الْكِتَابَ وَقَفَّيْنَا مِن بَعْدِهِ بِالرُّسُلِ ۖ وَآتَيْنَا عِيسَى ابْنَ مَرْيَمَ الْبَيِّنَاتِ وَأَيَّدْنَاهُ بِرُوحِ الْقُدُسِ ۗ أَفَكُلَّمَا جَاءَكُمْ رَسُولٌ بِمَا لَا تَهْوَىٰ أَنفُسُكُمُ اسْتَكْبَرْتُمْ فَفَرِيقًا كَذَّبْتُمْ وَفَرِيقًا تَقْتُلُونَ',
   'وَقَالُوا قُلُوبُنَا غُلْفٌ ۚ بَل لَّعَنَهُمُ اللَّهُ بِكُفْرِهِمْ فَقَلِيلًا مَّا يُؤْمِنُونَ',
   'وَلَمَّا جَاءَهُمْ كِتَابٌ مِّنْ عِندِ اللَّهِ مُصَدِّقٌ لِّمَا مَعَهُمْ وَكَانُوا مِن قَبْلُ يَسْتَفْتِحُونَ عَلَى الَّذِينَ كَفَرُوا فَلَمَّا جَاءَهُم مَّا عَرَفُوا كَفَرُوا بِهِ ۚ فَلَعْنَةُ اللَّهِ عَلَى الْكَافِرِينَ',
@@ -164,7 +166,7 @@ class QuranData {
   'وَلَقَدْ أَنزَلْنَا إِلَيْكَ آيَاتٍ بَيِّنَاتٍ ۖ وَمَا يَكْفُرُ بِهَا إِلَّا الْفَاسِقُونَ',
   'أَوَكُلَّمَا عَاهَدُوا عَهْدًا نَّبَذَهُ فَرِيقٌ مِّنْهُم ۚ بَلْ أَكْثَرُهُمْ لَا يُؤْمِنُونَ',
   'وَلَمَّا جَاءَهُمْ رَسُولٌ مِّنْ عِندِ اللَّهِ مُصَدِّقٌ لِّمَا مَعَهُمْ نَبَذَ فَرِيقٌ مِّنَ الَّذِينَ أُوتُوا الْكِتَابَ كِتَابَ اللَّهِ وَرَاءَ ظُهُورِهِمْ كَأَنَّهُمْ لَا يَعْلَمُونَ',
-  'وَاتَّبَعُوا مَا تَتْلُوا الشَّيَاطِينُ عَلَىٰ مُلْكِ سُلَيْمَانَ ۖ وَمَا كَفَرَ سُلَيْمَانُ وَلَٰكِنَّ الشَّيَاطِينَ كَفَرُوا',
+  'وَاتَّبَعُوا مَا تَتْلُوا الشَّيَاطِينُ عَلَىٰ مُلْكِ سُلَيْمَانَ ۖ وَمَا كَفَرَ سُلَيْمَانُ وَلَٰكِنَّ الشَّيَاطِينَ كَفَرُوا يُعَلِّمُونَ النَّاسَ السِّحْرَ وَمَا أُنزِلَ عَلَى الْمَلَكَيْنِ بِبَابِلَ هَارُوتَ وَمَارُوتَ ۚ وَمَا يُعَلِّمَانِ مِنْ أَحَدٍ حَتَّىٰ يَقُولَا إِنَّمَا نَحْنُ فِتْنَةٌ فَلَا تَكْفُرْ ۖ فَيَتَعَلَّمُونَ مِنْهُمَا مَا يُفَرِّقُونَ بِهِ بَيْنَ الْمَرْءِ وَزَوْجِهِ ۚ وَمَا هُم بِضَارِّينَ بِهِ مِنْ أَحَدٍ إِلَّا بِإِذْنِ اللَّهِ ۚ وَيَتَعَلَّمُونَ مَا يَضُرُّهُمْ وَلَا يَنفَعُهُمْ ۚ وَلَقَدْ عَلِمُوا لَمَنِ اشْتَرَاهُ مَا لَهُ فِي الْآخِرَةِ مِنْ خَلَاقٍ ۚ وَلَبِئْسَ مَا شَرَوْا بِهِ أَنفُسَهُمْ ۚ لَوْ كَانُوا يَعْلَمُونَ',
   'وَلَوْ أَنَّهُمْ آمَنُوا وَاتَّقَوْا لَمَثُوبَةٌ مِّنْ عِندِ اللَّهِ خَيْرٌ ۖ لَّوْ كَانُوا يَعْلَمُونَ',
   'يَا أَيُّهَا الَّذِينَ آمَنُوا لَا تَقُولُوا رَاعِنَا وَقُولُوا انظُرْنَا وَاسْمَعُوا ۗ وَلِلْكَافِرِينَ عَذَابٌ أَلِيمٌ',
   'مَّا يَوَدُّ الَّذِينَ كَفَرُوا مِنْ أَهْلِ الْكِتَابِ وَلَا الْمُشْرِكِينَ أَن يُنَزَّلَ عَلَيْكُم مِّنْ خَيْرٍ مِّن رَّبِّكُمْ ۗ وَاللَّهُ يَخْتَصُّ بِرَحْمَتِهِ مَن يَشَاءُ ۚ وَاللَّهُ ذُو الْفَضْلِ الْعَظِيمِ',
@@ -181,41 +183,34 @@ class QuranData {
   'وَقَالُوا اتَّخَذَ اللَّهُ وَلَدًا ۗ سُبْحَانَهُ ۖ بَل لَّهُ مَا فِي السَّمَاوَاتِ وَالْأَرْضِ ۖ كُلٌّ لَّهُ قَانِتُونَ',
   'بَدِيعُ السَّمَاوَاتِ وَالْأَرْضِ ۖ وَإِذَا قَضَىٰ أَمْرًا فَإِنَّمَا يَقُولُ لَهُ كُن فَيَكُونُ',
   'وَقَالَ الَّذِينَ لَا يَعْلَمُونَ لَوْلَا يُكَلِّمُنَا اللَّهُ أَوْ تَأْتِينَا آيَةٌ ۗ كَذَٰلِكَ قَالَ الَّذِينَ مِن قَبْلِهِم مِّثْلَ قَوْلِهِمْ ۘ تَشَابَهَتْ قُلُوبُهُمْ ۗ قَدْ بَيَّنَّا الْآيَاتِ لِقَوْمٍ يُوقِنُونَ',
-  'إِنَّا أَرْسَلْنَاكَ بِالْحَقِّ بَشِيرًا وَنَذِيرًا ۖ وَلَا تُسْأَلُ عَنْ أَصْحَابِ الْجَحِيمِ'
+  'إِنَّا أَرْسَلْنَاكَ بِالْحَقِّ بَشِيرًا وَنَذِيرًا ۖ وَلَا تُسْأَلُ عَنْ أَصْحَابِ الْجَحِيمِ',
+  'وَلَن تَرْضَىٰ عَنكَ الْيَهُودُ وَلَا النَّصَارَىٰ حَتَّىٰ تَتَّبِعَ مِلَّتَهُمْ ۗ قُلْ إِنَّ هُدَى اللَّهِ هُوَ الْهُدَىٰ ۗ وَلَئِنِ اتَّبَعْتَ أَهْوَاءَهُم بَعْدَ الَّذِي جَاءَكَ مِنَ الْعِلْمِ ۙ مَا لَكَ مِنَ اللَّهِ مِن وَلِيٍّ وَلَا نَصِيرٍ',
   'الَّذِينَ آتَيْنَاهُمُ الْكِتَابَ يَتْلُونَهُ حَقَّ تِلَاوَتِهِ أُولَٰئِكَ يُؤْمِنُونَ بِهِ ۗ وَمَن يَكْفُرْ بِهِ فَأُولَٰئِكَ هُمُ الْخَاسِرُونَ',
-
   'يَا بَنِي إِسْرَائِيلَ اذْكُرُوا نِعْمَتِيَ الَّتِي أَنْعَمْتُ عَلَيْكُمْ وَأَنِّي فَضَّلْتُكُمْ عَلَى الْعَالَمِينَ',
-
   'وَاتَّقُوا يَوْمًا لَّا تَجْزِي نَفْسٌ عَن نَّفْسٍ شَيْئًا وَلَا يُقْبَلُ مِنْهَا عَدْلٌ وَلَا تَنفَعُهَا شَفَاعَةٌ وَلَا هُمْ يُنصَرُونَ',
-
   'وَإِذِ ابْتَلَىٰ إِبْرَاهِيمَ رَبُّهُ بِكَلِمَاتٍ فَأَتَمَّهُنَّ ۖ قَالَ إِنِّي جَاعِلُكَ لِلنَّاسِ إِمَامًا ۖ قَالَ وَمِن ذُرِّيَّتِي ۖ قَالَ لَا يَنَالُ عَهْدِي الظَّالِمِينَ',
-
   'وَإِذْ جَعَلْنَا الْبَيْتَ مَثَابَةً لِّلنَّاسِ وَأَمْنًا وَاتَّخِذُوا مِن مَّقَامِ إِبْرَاهِيمَ مُصَلًّى ۖ وَعَهِدْنَا إِلَىٰ إِبْرَاهِيمَ وَإِسْمَاعِيلَ أَن طَهِّرَا بَيْتِيَ لِلطَّائِفِينَ وَالْعَاكِفِينَ وَالرُّكَّعِ السُّجُودِ',
-
   'وَإِذْ قَالَ إِبْرَاهِيمُ رَبِّ اجْعَلْ هَٰذَا بَلَدًا آمِنًا وَارْزُقْ أَهْلَهُ مِنَ الثَّمَرَاتِ مَنْ آمَنَ مِنْهُم بِاللَّهِ وَالْيَوْمِ الْآخِرِ ۖ قَالَ وَمَن كَفَرَ فَأُمَتِّعُهُ قَلِيلًا ثُمَّ أَضْطَرُّهُ إِلَىٰ عَذَابِ النَّارِ ۖ وَبِئْسَ الْمَصِيرُ',
-
   'وَإِذْ يَرْفَعُ إِبْرَاهِيمُ الْقَوَاعِدَ مِنَ الْبَيْتِ وَإِسْمَاعِيلُ رَبَّنَا تَقَبَّلْ مِنَّا ۖ إِنَّكَ أَنتَ السَّمِيعُ الْعَلِيمُ',
-
   'رَبَّنَا وَاجْعَلْنَا مُسْلِمَيْنِ لَكَ وَمِن ذُرِّيَّتِنَا أُمَّةً مُّسْلِمَةً لَّكَ وَأَرِنَا مَنَاسِكَنَا وَتُبْ عَلَيْنَا ۖ إِنَّكَ أَنتَ التَّوَّابُ الرَّحِيمُ',
-
   'رَبَّنَا وَابْعَثْ فِيهِمْ رَسُولًا مِّنْهُمْ يَتْلُو عَلَيْهِمْ آيَاتِكَ وَيُعَلِّمُهُمُ الْكِتَابَ وَالْحِكْمَةَ وَيُزَكِّيهِمْ ۚ إِنَّكَ أَنتَ الْعَزِيزُ الْحَكِيمُ',
-
   'وَمَن يَرْغَبُ عَن مِّلَّةِ إِبْرَاهِيمَ إِلَّا مَن سَفِهَ نَفْسَهُ ۚ وَلَقَدِ اصْطَفَيْنَاهُ فِي الدُّنْيَا ۖ وَإِنَّهُ فِي الْآخِرَةِ لَمِنَ الصَّالِحِينَ',
-
   'إِذْ قَالَ لَهُ رَبُّهُ أَسْلِمْ ۖ قَالَ أَسْلَمْتُ لِرَبِّ الْعَالَمِينَ',
-
   'وَوَصَّىٰ بِهَا إِبْرَاهِيمُ بَنِيهِ وَيَعْقُوبُ يَا بَنِيَّ إِنَّ اللَّهَ اصْطَفَىٰ لَكُمُ الدِّينَ فَلَا تَمُوتُنَّ إِلَّا وَأَنتُم مُّسْلِمُونَ',
-
   'أَمْ كُنتُمْ شُهَدَاءَ إِذْ حَضَرَ يَعْقُوبَ الْمَوْتُ إِذْ قَالَ لِبَنِيهِ مَا تَعْبُدُونَ مِن بَعْدِي ۖ قَالُوا نَعْبُدُ إِلَٰهَكَ وَإِلَٰهَ آبَائِكَ إِبْرَاهِيمَ وَإِسْمَاعِيلَ وَإِسْحَاقَ إِلَٰهًا وَاحِدًا وَنَحْنُ لَهُ مُسْلِمُونَ',
-
+  'تِلْكَ أُمَّةٌ قَدْ خَلَتْ ۖ لَهَا مَا كَسَبَتْ وَلَكُم مَّا كَسَبْتُمْ ۖ وَلَا تُسْأَلُونَ عَمَّا كَانُوا يَعْمَلُونَ',
+  'وَقَالُوا كُونُوا هُودًا أَوْ نَصَارَىٰ تَهْتَدُوا ۗ قُلْ بَلْ مِلَّةَ إِبْرَاهِيمَ حَنِيفًا ۖ وَمَا كَانَ مِنَ الْمُشْرِكِينَ',
+  'قُولُوا آمَنَّا بِاللَّهِ وَمَا أُنزِلَ إِلَيْنَا وَمَا أُنزِلَ إِلَىٰ إِبْرَاهِيمَ وَإِسْمَاعِيلَ وَإِسْحَاقَ وَيَعْقُوبَ وَالْأَسْبَاطِ وَمَا أُوتِيَ مُوسَىٰ وَعِيسَىٰ وَمَا أُوتِيَ النَّبِيُّونَ مِن رَّبِّهِمْ لَا نُفَرِّقُ بَيْنَ أَحَدٍ مِّنْهُمْ وَنَحْنُ لَهُ مُسْلِمُونَ',
+  'فَإِنْ آمَنُوا بِمِثْلِ مَا آمَنتُم بِهِ فَقَدِ اهْتَدَوا ۖ وَإِن تَوَلَّوا فَإِنَّمَا هُمْ فِي شِقَاقٍ ۖ فَسَيَكْفِيكَهُمُ اللَّهُ ۚ وَهُوَ السَّمِيعُ الْعَلِيمُ',
+  'صِبْغَةَ اللَّهِ ۖ وَمَنْ أَحْسَنُ مِنَ اللَّهِ صِبْغَةً ۖ وَنَحْنُ لَهُ عَابِدُونَ',
+  'قُلْ أَتُحَاجُّونَنَا فِي اللَّهِ وَهُوَ رَبُّنَا وَرَبُّكُمْ وَلَنَا أَعْمَالُنَا وَلَكُمْ أَعْمَالُكُمْ وَنَحْنُ لَهُ مُخْلِصُونَ',
+  'أَمْ تَقُولُونَ إِنَّ إِبْرَاهِيمَ وَإِسْمَاعِيلَ وَإِسْحَاقَ وَيَعْقُوبَ وَالْأَسْبَاطَ كَانُوا هُودًا أَوْ نَصَارَىٰ ۗ قُلْ أَأَنتُمْ أَعْلَمُ أَمِ اللَّهُ ۗ وَمَنْ أَظْلَمُ مِمَّن كَتَمَ شَهَادَةً عِندَهُ مِنَ اللَّهِ ۗ وَمَا اللَّهُ بِغَافِلٍ عَمَّا تَعْمَلُونَ',
   'تِلْكَ أُمَّةٌ قَدْ خَلَتْ ۖ لَهَا مَا كَسَبَتْ وَلَكُم مَّا كَسَبْتُمْ ۖ وَلَا تُسْأَلُونَ عَمَّا كَانُوا يَعْمَلُونَ',
 ],
 
             versesEn: [
   'Alif, Lam, Meem.',
-  'This is the Book about which there is no doubt, a guidance for those conscious of Allah.',
-  'Who believe in the unseen, establish prayer, and spend out of what We have provided for them.',
-  'And who believe in what has been revealed to you and what was revealed before you, and of the Hereafter they are certain.',
+  'This is the Book about which there is no doubt, a guidance for those conscious of certain.',
   'Those are upon guidance from their Lord, and it is those who are successful.',
   'Indeed, those who disbelieve - it is all the same whether you warn them or do not warn them - they will not believe.',
   'Allah has set a seal upon their hearts and upon their hearing, and over their vision is a veil. And for them is a great punishment.',
@@ -272,7 +267,8 @@ class QuranData {
   'And [remember] when We said, "Enter this city and eat from it wherever you wish in abundance, and enter the gate bowing humbly and say, ‘Relieve us of our burdens.’ We will forgive your sins and increase the doers of good."',
   'But those who wronged changed the words to something other than what had been said to them, so We sent down upon those who wronged a punishment from the sky because they were defiantly disobedient.',
   'And [remember] when Moses prayed for water for his people, and We said, "Strike the stone with your staff." Then there burst from it twelve springs, and every people knew its watering place. Eat and drink from the provision of Allah and do not commit abuse on the earth, spreading corruption.',
-  'And [remember] when you said, "O Moses, we can never endure one kind of food. So call upon your Lord to bring forth for us from what the earth grows: its herbs, cucumbers, garlic, lentils and onions." He said, "Would you exchange what is better for what is less? Go down into any settlement and indeed, you will have what you have asked." And humiliation and poverty were stamped upon them, and they returned with anger from Allah. That was because they disbelieved in the signs of Allah and killed the prophets without right. That was because they disobeyed and were transgressing.'
+  'And [remember] when you said, "O Moses, we can never endure one kind of food. So call upon your Lord to bring forth for us from what the earth grows: its herbs, cucumbers, garlic, lentils and onions." He said, "Would you exchange what is better for what is less? Go down into any settlement and indeed, you will have what you have asked."',
+  'And humiliation and poverty were stamped upon them, and they returned with anger from Allah. That was because they disbelieved in the signs of Allah and killed the prophets without right. That was because they disobeyed and were transgressing.',
   'Indeed, those who believed, and those who were Jews, Christians, or Sabians - whoever believed in Allah and the Last Day and did righteousness - will have their reward with their Lord, and no fear will there be concerning them, nor will they grieve.',
   'And [remember] when We took your covenant and raised over you the mount, [saying], "Take what We have given you with determination and remember what is in it that perhaps you may become righteous."',
   'Then you turned away after that. And if not for the favor of Allah upon you and His mercy, you would have been among the losers.',
@@ -344,19 +340,12 @@ class QuranData {
   'And Abraham instructed his sons with this, and so did Jacob, saying, "O my sons, indeed Allah has chosen for you this religion, so do not die except while you are Muslims."',
   'Or were you witnesses when death approached Jacob, when he said to his sons, "What will you worship after me?" They said, "We will worship your God and the God of your fathers, Abraham, Ishmael, and Isaac - one God. And we are Muslims submitting to Him."',
   'That was a nation which has passed away. For them is what they earned, and for you is what you have earned. And you will not be asked about what they used to do.',
-  'Those to whom We have given the Scripture and who recite it as it should be recited - they truly believe in it. And whoever disbelieves in it, those are the losers.',
-  'O Children of Israel, remember My favor which I have bestowed upon you and that I preferred you over the worlds.',
-  'And fear a Day when no soul will suffice for another soul at all, and no compensation will be accepted from it, and no intercession will benefit it, nor will they be helped.',
-  'And [remember] when Abraham was tested by his Lord with commands and he fulfilled them. Allah said, "Indeed, I will make you a leader for the people." Abraham said, "And my descendants?" Allah said, "My covenant does not include the wrongdoers."',
-  'And [remember] when We made the House a place of return for the people and a place of security. And take from the standing place of Abraham a place of prayer. And We commanded Abraham and Ishmael, "Purify My House for those who perform tawaf, those who remain for worship, and those who bow and prostrate."',
-  'And [remember] when Abraham said, "My Lord, make this a secure city and provide its people with fruits - whoever among them believes in Allah and the Last Day." Allah said, "And whoever disbelieves, I will grant him enjoyment for a little; then I will force him to the punishment of the Fire, and wretched is the destination."',
-  'And [remember] when Abraham was raising the foundations of the House with Ishmael, [saying], "Our Lord, accept this from us. Indeed, You are the Hearing, the Knowing."',
-  'Our Lord, make us Muslims submitting to You, and from our descendants a nation submitting to You. Show us our rites and accept our repentance. Indeed, You are the Accepting of repentance, the Merciful.',
-  'Our Lord, send among them a messenger from themselves who will recite to them Your verses and teach them the Book and wisdom and purify them. Indeed, You are the Exalted in Might, the Wise.',
-  'And who would turn away from the religion of Abraham except one who makes himself foolish? We had certainly chosen him in this world, and indeed in the Hereafter he will be among the righteous.',
-  'When his Lord said to him, "Submit," he said, "I have submitted to the Lord of the worlds."',
-  'And Abraham instructed his sons with this, and Jacob as well: "O my sons, indeed Allah has chosen for you this religion, so do not die except while you are Muslims."',
-  'Or were you witnesses when death approached Jacob, when he said to his sons, "What will you worship after me?" They said, "We will worship your God and the God of your fathers - Abraham, Ishmael, and Isaac - one God. And we are Muslims submitting to Him."',
+  'And they say, "Be Jews or Christians [so] you will be guided." Say, "Rather, [we follow] the religion of Abraham, inclining toward truth, and he was not of the polytheists."',
+  'Say, "We have believed in Allah and what has been revealed to us and what has been revealed to Abraham and Ishmael and Isaac and Jacob and the Descendants and what was given to Moses and Jesus and what was given to the prophets from their Lord. We make no distinction between any of them, and we are Muslims [submitting] to Him."',
+  'So if they believe in the same as you believe in, then they have been guided; but if they turn away, they are only in dissension, and Allah will be sufficient for you against them. And He is the Hearing, the Knowing.',
+  '[And say, "Ours is] the religion of Allah. And who is better than Allah in religion? And we are worshippers of Him."',
+  'Say, "Do you argue with us about Allah while He is our Lord and your Lord? For us are our deeds, and for you are your deeds. And we are sincere to Him."',
+  'Or do you say that Abraham and Ishmael and Isaac and Jacob and the Descendants were Jews or Christians? Say, "Are you more knowing or is Allah?" And who is more unjust than one who conceals a testimony he has from Allah? And Allah is not unaware of what you do.',
   'That was a nation which has passed away. For them is what they earned, and for you is what you have earned. And you will not be asked about what they used to do.',
 
 ],
@@ -367,52 +356,52 @@ class QuranData {
 
    // ── PART 28 (JUZ QAD SAMI'A) ──
     if (partNumber == 28) {
-      return QuranJuz(
+      return const QuranJuz(
         id: 28,
         titleAr: 'الجزء 28 (قد سمع)',
         titleEn: 'Part 28 (Qad Sami\'a)',
         surahs: [
-          const QuranSurah(
+          QuranSurah(
             id: 58, nameAr: 'المجادلة', nameEn: 'Al-Mujadila',
             versesAr: ['قَدْ سَمِعَ اللَّهُ قَوْلَ الَّتِي تُجَادِلُكَ فِي زَوْجِهَا وَتَشْتَكِي إِلَى اللَّهِ وَاللَّهُ يَسْمَعُ تَحَاوُرَكُمَا ۚ إِنَّ اللَّهَ سَمِيعٌ بَصِيرٌ', /* PASTE REST HERE */],
             versesEn: ['Certainly has Allah heard the statement of the one who argues with you, [O Muhammad], concerning her husband and directs her complaint to Allah. And Allah hears your dialogue; indeed, Allah is Hearing and Seeing.', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 59, nameAr: 'الحشر', nameEn: 'Al-Hashr',
             versesAr: ['سَبَّحَ لِلَّهِ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۖ وَهُوَ الْعَزِيزُ الْحَكِيمُ', /* PASTE REST HERE */],
             versesEn: ['Whatever is in the heavens and whatever is on the earth exalts Allah, and He is the Exalted in Might, the Wise.', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 60, nameAr: 'الممتحنة', nameEn: 'Al-Mumtahanah',
             versesAr: ['يَا أَيُّهَا الَّذِينَ آمَنُوا لَا تَتَّخِذُوا عَدُوِّي وَعَدُوَّكُمْ أَوْلِيَاءَ تُلْقُونَ إِلَيْهِم بِالْمَوَدَّةِ...', /* PASTE REST HERE */],
             versesEn: ['O you who have believed, do not take My enemies and your enemies as allies...', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 61, nameAr: 'الصف', nameEn: 'As-Saff',
             versesAr: ['سَبَّحَ لِلَّهِ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۖ وَهُوَ الْعَزِيزُ الْحَكِيمُ', /* PASTE REST HERE */],
             versesEn: ['Whatever is in the heavens and whatever is on the earth exalts Allah, and He is the Exalted in Might, the Wise.', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 62, nameAr: 'الجمعة', nameEn: 'Al-Jumu\'ah',
             versesAr: ['يُسَبِّحُ لِلَّهِ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ الْمَلِكِ الْقُدُّوسِ الْعَزِيزِ الْحَكِيمِ', /* PASTE REST HERE */],
             versesEn: ['Whatever is in the heavens and whatever is on the earth is exalting Allah, the Sovereign, the Pure, the Exalted in Might, the Wise.', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 63, nameAr: 'المنافقون', nameEn: 'Al-Munafiqun',
             versesAr: ['إِذَا جَاءَكَ الْمُنَافِقُونَ قَالُوا نَشْهَدُ إِنَّكَ لَرَسُولُ اللَّهِ ۗ وَاللَّهُ يَعْلَمُ إِنَّكَ لَرَسُولُهُ وَاللَّهُ يَشْهَدُ إِنَّ الْمُنَافِقِينَ لَكَاذِبُونَ', /* PASTE REST HERE */],
             versesEn: ['When the hypocrites come to you, [O Muhammad], they say, "We testify that you are the Messenger of Allah." And Allah knows that you are His Messenger, and Allah testifies that the hypocrites are liars.', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 64, nameAr: 'التغابن', nameEn: 'At-Taghabun',
             versesAr: ['يُسَبِّحُ لِلَّهِ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ ۖ لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ ۖ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ', /* PASTE REST HERE */],
             versesEn: ['Whatever is in the heavens and whatever is on the earth is exalting Allah. To Him belongs dominion, and to Him belongs [all] praise, and He is over all things competent.', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 65, nameAr: 'الطلاق', nameEn: 'At-Talaq',
             versesAr: ['يَا أَيُّهَا النَّبِيُّ إِذَا طَلَّقْتُمُ النِّسَاءَ فَطَلِّقُوهُنَّ لِعِدَّتِهِنَّ وَأَحْصُوا الْعِدَّةَ...', /* PASTE REST HERE */],
             versesEn: ['O Prophet, when you [Muslims] divorce women, divorce them for [the commencement of] their waiting period and keep count of the waiting period...', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 66, nameAr: 'التحريم', nameEn: 'At-Tahrim',
             versesAr: ['يَا أَيُّهَا النَّبِيُّ لِمَ تُحَرِّمُ مَا أَحَلَّ اللَّهُ لَكَ ۖ تَبْتَغِي مَرْضَاتَ أَزْوَاجِكَ ۚ وَاللَّهُ غَفُورٌ رَّحِيمٌ', /* PASTE REST HERE */],
             versesEn: ['O Prophet, why do you prohibit [yourself from] what Allah has made lawful for you, seeking the approval of your wives? And Allah is Forgiving and Merciful.', /* PASTE REST HERE */],
@@ -423,12 +412,12 @@ class QuranData {
     
    // ── PART 29 (JUZ TABARAK) ──
     if (partNumber == 29) {
-      return QuranJuz(
+      return const QuranJuz(
         id: 29,
         titleAr: 'الجزء 29 (تبارك)',
         titleEn: 'Part 29 (Tabarak)',
         surahs: [
-          const QuranSurah(
+          QuranSurah(
             id: 67, nameAr: 'الملك', nameEn: 'Al-Mulk',
             versesAr: [
             'تَبَارَكَ الَّذِي بِيَدِهِ الْمُلْكُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ',
@@ -495,52 +484,52 @@ class QuranData {
             'Say, "Have you considered: if your water were to become sunken [into the earth], then who could bring you water in a flowing stream?"' /* PASTE REST HERE */
             ],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 68, nameAr: 'القلم', nameEn: 'Al-Qalam',
             versesAr: ['ن ۚ وَالْقَلَمِ وَمَا يَسْطُرُونَ', /* PASTE REST HERE */],
             versesEn: ['Nun. By the pen and what they inscribe,', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 69, nameAr: 'الحاقة', nameEn: 'Al-Haaqqah',
             versesAr: ['الْحَاقَّةُ', /* PASTE REST HERE */],
             versesEn: ['The Inevitable Reality -', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 70, nameAr: 'المعارج', nameEn: 'Al-Ma\'arij',
             versesAr: ['سَأَلَ سَائِلٌ بِعَذَابٍ وَاقِعٍ', /* PASTE REST HERE */],
             versesEn: ['A supplicant asked for a punishment bound to happen', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 71, nameAr: 'نوح', nameEn: 'Nuh',
             versesAr: ['إِنَّا أَرْسَلْنَا نُوحًا إِلَىٰ قَوْمِهِ أَنْ أَنذِرْ قَوْمَكَ مِن قَبْلِ أَن يَأْتِيَهُمْ عَذَابٌ أَلِيمٌ', /* PASTE REST HERE */],
             versesEn: ['Indeed, We sent Noah to his people, [saying], "Warn your people before there comes to them a painful punishment."', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 72, nameAr: 'الجن', nameEn: 'Al-Jinn',
             versesAr: ['قُلْ أُوحِيَ إِلَيَّ أَنَّهُ اسْتَمَعَ نَفَرٌ مِّنَ الْجِنِّ فَقَالُوا إِنَّا سَمِعْنَا قُرْآنًا عَجَبًا', /* PASTE REST HERE */],
             versesEn: ['Say, [O Muhammad], "It has been revealed to me that a group of the jinn listened and said, \'Indeed, we have heard an amazing Qur\'an.', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 73, nameAr: 'المزمل', nameEn: 'Al-Muzzammil',
             versesAr: ['يَا أَيُّهَا الْمُزَّمِّلُ', /* PASTE REST HERE */],
             versesEn: ['O you who wraps himself [in clothing],', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 74, nameAr: 'المدثر', nameEn: 'Al-Muddaththir',
             versesAr: ['يَا أَيُّهَا الْمُدَّثِّرُ', /* PASTE REST HERE */],
             versesEn: ['O you who covers himself [with a garment],', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 75, nameAr: 'القيامة', nameEn: 'Al-Qiyamah',
             versesAr: ['لَا أُقْسِمُ بِيَوْمِ الْقِيَامَةِ', /* PASTE REST HERE */],
             versesEn: ['I swear by the Day of Resurrection', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 76, nameAr: 'الإنسان', nameEn: 'Al-Insan',
             versesAr: ['هَلْ أَتَىٰ عَلَى الْإِنسَانِ حِينٌ مِّنَ الدَّهْرِ لَمْ يَكُن شَيْئًا مَّذْكُورًا', /* PASTE REST HERE */],
             versesEn: ['Has there [not] come upon man a period of time when he was not a thing [even] mentioned?', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 77, nameAr: 'المرسلات', nameEn: 'Al-Mursalat',
             versesAr: ['وَالْمُرْسَلَاتِ عُرْفًا', /* PASTE REST HERE */],
             versesEn: ['By those [winds] sent forth in gusts', /* PASTE REST HERE */],
@@ -551,192 +540,192 @@ class QuranData {
 
     // ── PART 30 (JUZ AMMA) ──
     if (partNumber == 30) {
-      return QuranJuz(
+      return const QuranJuz(
         id: 30,
         titleAr: 'الجزء 30 (عمّ)',
         titleEn: 'Part 30 (Amma)',
         surahs: [
-          const QuranSurah(
+          QuranSurah(
             id: 78, nameAr: 'النبأ', nameEn: 'An-Naba',
             versesAr: ['عَمَّ يَتَسَاءَلُونَ', /* PASTE REST HERE */],
             versesEn: ['About what are they asking one another?', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 79, nameAr: 'النازعات', nameEn: 'An-Nazi\'at',
             versesAr: ['وَالنَّازِعَاتِ غَرْقًا', /* PASTE REST HERE */],
             versesEn: ['By those [angels] who extract with violence', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 80, nameAr: 'عبس', nameEn: 'Abasa',
             versesAr: ['عَبَسَ وَتَوَلَّىٰ', /* PASTE REST HERE */],
             versesEn: ['The Prophet frowned and turned away', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 81, nameAr: 'التكوير', nameEn: 'At-Takwir',
             versesAr: ['إِذَا الشَّمْسُ كُوِّرَتْ', /* PASTE REST HERE */],
             versesEn: ['When the sun is wrapped up [in darkness]', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 82, nameAr: 'الانفطار', nameEn: 'Al-Infitar',
             versesAr: ['إِذَا السَّمَاءُ انفَطَرَتْ', /* PASTE REST HERE */],
             versesEn: ['When the sky breaks apart', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 83, nameAr: 'المطففين', nameEn: 'Al-Mutaffifin',
             versesAr: ['وَيْلٌ لِّلْمُطَفِّفِينَ', /* PASTE REST HERE */],
             versesEn: ['Woe to those who give less [than due],', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 84, nameAr: 'الانشقاق', nameEn: 'Al-Inshiqaq',
             versesAr: ['إِذَا السَّمَاءُ انشَقَّتْ', /* PASTE REST HERE */],
             versesEn: ['When the sky has split [open]', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 85, nameAr: 'البروج', nameEn: 'Al-Buruj',
             versesAr: ['وَالسَّمَاءِ ذَاتِ الْبُرُوجِ', /* PASTE REST HERE */],
             versesEn: ['By the sky containing great stars', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 86, nameAr: 'الطارق', nameEn: 'At-Tariq',
             versesAr: ['وَالسَّمَاءِ وَالطَّارِقِ', /* PASTE REST HERE */],
             versesEn: ['By the sky and the night comer -', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 87, nameAr: 'الأعلى', nameEn: 'Al-A\'la',
             versesAr: ['سَبِّحِ اسْمَ رَبِّكَ الْأَعْلَى', /* PASTE REST HERE */],
             versesEn: ['Exalt the name of your Lord, the Most High,', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 88, nameAr: 'الغاشية', nameEn: 'Al-Ghashiyah',
             versesAr: ['هَلْ أَتَاكَ حَدِيثُ الْغَاشِيَةِ', /* PASTE REST HERE */],
             versesEn: ['Has there reached you the report of the Overwhelming [event]?', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 89, nameAr: 'الفجر', nameEn: 'Al-Fajr',
             versesAr: ['وَالْفَجْرِ', /* PASTE REST HERE */],
             versesEn: ['By the dawn', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 90, nameAr: 'البلد', nameEn: 'Al-Balad',
             versesAr: ['لَا أُقْسِمُ بِهَٰذَا الْبَلَدِ', /* PASTE REST HERE */],
             versesEn: ['I swear by this city, Makkah -', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 91, nameAr: 'الشمس', nameEn: 'Ash-Shams',
             versesAr: ['وَالشَّمْسِ وَضُحَاهَا', /* PASTE REST HERE */],
             versesEn: ['By the sun and its brightness', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 92, nameAr: 'الليل', nameEn: 'Al-Lail',
             versesAr: ['وَاللَّيْلِ إِذَا يَغْشَىٰ', /* PASTE REST HERE */],
             versesEn: ['By the night when it covers', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 93, nameAr: 'الضحى', nameEn: 'Ad-Duhaa',
             versesAr: ['وَالضُّحَىٰ', /* PASTE REST HERE */],
             versesEn: ['By the morning brightness', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 94, nameAr: 'الشرح', nameEn: 'Ash-Sharh',
             versesAr: ['أَلَمْ نَشْرَحْ لَكَ صَدْرَكَ', /* PASTE REST HERE */],
             versesEn: ['Did We not expand for you, [O Muhammad], your breast?', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 95, nameAr: 'التين', nameEn: 'At-Tin',
             versesAr: ['وَالتِّينِ وَالزَّيْتُونِ', /* PASTE REST HERE */],
             versesEn: ['By the fig and the olive', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 96, nameAr: 'العلق', nameEn: 'Al-\'Alaq',
             versesAr: ['اقْرَأْ بِاسْمِ رَبِّكَ الَّذِي خَلَقَ', /* PASTE REST HERE */],
             versesEn: ['Recite in the name of your Lord who created -', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 97, nameAr: 'القدر', nameEn: 'Al-Qadr',
             versesAr: ['إِنَّا أَنزَلْنَاهُ فِي لَيْلَةِ الْقَدْرِ', /* PASTE REST HERE */],
             versesEn: ['Indeed, We sent the Qur\'an down during the Night of Decree.', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 98, nameAr: 'البينة', nameEn: 'Al-Bayyinah',
             versesAr: ['لَمْ يَكُنِ الَّذِينَ كَفَرُوا مِنْ أَهْلِ الْكِتَابِ وَالْمُشْرِكِينَ مُنفَكِّینَ...', /* PASTE REST HERE */],
             versesEn: ['Those who disbelieved among the People of the Scripture...', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 99, nameAr: 'الزلزلة', nameEn: 'Az-Zalzalah',
             versesAr: ['إِذَا زُلْزِلَتِ الْأَرْضُ زِلْزَالَهَا', /* PASTE REST HERE */],
             versesEn: ['When the earth is shaken with its [final] earthquake', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 100, nameAr: 'العاديات', nameEn: 'Al-\'Adiyat',
             versesAr: ['وَالْعَادِيَاتِ ضَبْحًا', /* PASTE REST HERE */],
             versesEn: ['By the racers, panting,', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 101, nameAr: 'القارعة', nameEn: 'Al-Qari\'ah',
             versesAr: ['الْقَارِعَةُ', /* PASTE REST HERE */],
             versesEn: ['The Striking Calamity -', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 102, nameAr: 'التكاثر', nameEn: 'At-Takathur',
             versesAr: ['أَلْهَاكُمُ التَّكَاثُرُ', /* PASTE REST HERE */],
             versesEn: ['Competition in [worldly] increase diverts you', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 103, nameAr: 'العصر', nameEn: 'Al-\'Asr',
             versesAr: ['وَالْعَصْرِ', /* PASTE REST HERE */],
             versesEn: ['By time,', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 104, nameAr: 'الهمزة', nameEn: 'Al-Humazah',
             versesAr: ['وَيْلٌ لِّكُلِّ هُمَزَةٍ لُّمَزَةٍ', /* PASTE REST HERE */],
             versesEn: ['Woe to every scorner and mocker', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 105, nameAr: 'الفيل', nameEn: 'Al-Fil',
             versesAr: ['أَلَمْ تَرَ كَيْفَ فَعَلَ رَبُّكَ بِأَصْحَابِ الْفِيلِ', /* PASTE REST HERE */],
             versesEn: ['Have you not considered, [O Muhammad], how your Lord dealt with the companions of the elephant?', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 106, nameAr: 'قريش', nameEn: 'Quraysh',
             versesAr: ['لِإِيلَافِ قُرَيْشٍ', /* PASTE REST HERE */],
             versesEn: ['For the accustomed security of the Quraysh -', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 107, nameAr: 'الماعون', nameEn: 'Al-Ma\'un',
             versesAr: ['أَرَأَيْتَ الَّذِي يُكَذِّبُ بِالدِّينِ', /* PASTE REST HERE */],
             versesEn: ['Have you seen the one who denies the Recompense?', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 108, nameAr: 'الكوثر', nameEn: 'Al-Kawthar',
             versesAr: ['إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ', /* PASTE REST HERE */],
             versesEn: ['Indeed, We have granted you, [O Muhammad], al-Kawthar.', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 109, nameAr: 'الكافرون', nameEn: 'Al-Kafirun',
             versesAr: ['قُلْ يَا أَيُّهَا الْكَافِرُونَ', /* PASTE REST HERE */],
             versesEn: ['Say, "O disbelievers,', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 110, nameAr: 'النصر', nameEn: 'An-Nasr',
             versesAr: ['إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ', /* PASTE REST HERE */],
             versesEn: ['When the victory of Allah has come and the conquest,', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 111, nameAr: 'المسد', nameEn: 'Al-Masad',
             versesAr: ['تَبَّتْ يَدَا أَبِي لَهَبٍ وَتَبَّ', /* PASTE REST HERE */],
             versesEn: ['May the hands of Abu Lahab be ruined, and ruined is he.', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 112, nameAr: 'الإخلاص', nameEn: 'Al-Ikhlas',
             versesAr: ['قُلْ هُوَ اللَّهُ أَحَدٌ', /* PASTE REST HERE */],
             versesEn: ['Say, "He is Allah, [who is] One.', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 113, nameAr: 'الفلق', nameEn: 'Al-Falaq',
             versesAr: ['قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ', /* PASTE REST HERE */],
             versesEn: ['Say, "I seek refuge in the Lord of daybreak', /* PASTE REST HERE */],
           ),
-          const QuranSurah(
+          QuranSurah(
             id: 114, nameAr: 'الناس', nameEn: 'An-Nas',
             versesAr: ['قُلْ أَعُوذُ بِرَبِّ النَّاسِ', /* PASTE REST HERE */],
             versesEn: ['Say, "I seek refuge in the Lord of mankind,', /* PASTE REST HERE */],
