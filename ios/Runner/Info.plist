@@ -27,6 +27,12 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
+	<key>UIBackgroundModes</key>
+	<array>
+ 	<string>audio</string>
+	</array>
+	<key>AVAudioDefaultToSpeakerWhenRouted</key>
+	<true/>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>
