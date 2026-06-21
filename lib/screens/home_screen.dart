@@ -5,8 +5,7 @@ import 'country_selection_screen.dart';
 import 'azkar_screen.dart';
 import 'settings_screen.dart';
 import 'quran_screen.dart';
-import 'duaa_screen.dart'; // <-- Added Duaa screen import
-
+import 'duaa_screen.dart';
 
 /// Root landing screen — shows the app title at top-centre, then four
 /// section cards: Prayer Times, Azkar, Quran, and Duaa.
@@ -76,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    // This is the variable that grabs the correct language!
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
@@ -87,12 +87,10 @@ class _HomeScreenState extends State<HomeScreen>
               children: [
                 // ── Top bar: settings icon on right, title centred ──────────
                 Padding(
-                  padding:
-                      const EdgeInsets.fromLTRB(20, 16, 16, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 16, 0),
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      // Centred title block
                       Column(
                         children: [
                           const Text(
@@ -116,7 +114,6 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                         ],
                       ),
-                      // Settings icon pinned to far right
                       Align(
                         alignment: Alignment.centerRight,
                         child: IconButton(
@@ -137,8 +134,7 @@ class _HomeScreenState extends State<HomeScreen>
                     children: [
                       Expanded(
                         child: Divider(
-                          color:
-                              const Color(0xFFD4AF37).withValues(alpha: 0.35),
+                          color: const Color(0xFFD4AF37).withValues(alpha: 0.35),
                           thickness: 1,
                         ),
                       ),
@@ -151,8 +147,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                       Expanded(
                         child: Divider(
-                          color:
-                              const Color(0xFFD4AF37).withValues(alpha: 0.35),
+                          color: const Color(0xFFD4AF37).withValues(alpha: 0.35),
                           thickness: 1,
                         ),
                       ),
@@ -167,15 +162,11 @@ class _HomeScreenState extends State<HomeScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Prayer Times
+                        // Prayer Times (Now fully dynamic!)
                         _SectionCard(
                           icon: Icons.access_time_rounded,
-                          titleAr: l10n.prayerTimes,
-                          titleEn: 'Prayer Times',
-                          description: l10n.fetchingPrayerTimes
-                                  .contains('جار')
-                              ? 'أوقات الصلاة الدقيقة لبلدك ومنطقتك.'
-                              : 'Accurate prayer times for your country and region.',
+                          title: l10n.prayerTimes, 
+                          description: l10n.prayerTimesDesc, 
                           buttonLabel: l10n.prayerTimes,
                           onTap: () =>
                               _navigate(const CountrySelectionScreen()),
@@ -183,40 +174,34 @@ class _HomeScreenState extends State<HomeScreen>
 
                         const SizedBox(height: 20),
 
-                        // Azkar
+                        // Azkar (Now fully dynamic!)
                         _SectionCard(
                           icon: Icons.auto_stories_rounded,
-                          titleAr: 'الأذكار',
-                          titleEn: 'Azkar',
-                          description:
-                              'أذكار الصباح والمساء والصلاة والنوم وغيرها.',
-                          buttonLabel: 'الأذكار',
+                          title: l10n.azkarTitle,
+                          description: l10n.azkarDesc,
+                          buttonLabel: l10n.azkarTitle,
                           onTap: () => _navigate(const AzkarScreen()),
                         ),
 
                         const SizedBox(height: 20),
 
-                        // Quran
+                        // Quran (Now fully dynamic!)
                         _SectionCard(
                           icon: Icons.menu_book_rounded,
-                          titleAr: 'القرآن الكريم',
-                          titleEn: 'Holy Quran',
-                          description: 
-                              'اقرأ القرآن الكريم مع خاصية التنقل بين السور.',
-                          buttonLabel: 'القرآن الكريم',
+                          title: l10n.quranTitle,
+                          description: l10n.quranDesc,
+                          buttonLabel: l10n.quranTitle,
                           onTap: () => _navigate(const QuranScreen()),
                         ),
 
                         const SizedBox(height: 20),
 
-                        // Duaa (NEW CARD)
+                        // Duaa (Now fully dynamic!)
                         _SectionCard(
                           icon: Icons.favorite_rounded,
-                          titleAr: 'الأدعية',
-                          titleEn: 'Duaa',
-                          description: 
-                              'أدعية مختارة للشفاء والتوفيق والرزق والحماية.',
-                          buttonLabel: 'الأدعية',
+                          title: l10n.duaaTitle,
+                          description: l10n.duaaDesc,
+                          buttonLabel: l10n.duaaTitle,
                           onTap: () => _navigate(const DuaaScreen()),
                         ),
                       ],
@@ -236,16 +221,14 @@ class _HomeScreenState extends State<HomeScreen>
 
 class _SectionCard extends StatefulWidget {
   final IconData icon;
-  final String titleAr;
-  final String titleEn;
+  final String title; // Changed to a single dynamic title
   final String description;
   final String buttonLabel;
   final VoidCallback onTap;
 
   const _SectionCard({
     required this.icon,
-    required this.titleAr,
-    required this.titleEn,
+    required this.title,
     required this.description,
     required this.buttonLabel,
     required this.onTap,
@@ -298,33 +281,22 @@ class _SectionCardState extends State<_SectionCard> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color:
-                          const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                      color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(widget.icon,
                         color: const Color(0xFFD4AF37), size: 24),
                   ),
                   const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.titleAr,
-                        style: const TextStyle(
-                          color: Color(0xFFD4AF37),
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  Expanded(
+                    child: Text(
+                      widget.title, // Render the dynamic title
+                      style: const TextStyle(
+                        color: Color(0xFFD4AF37),
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
-                      Text(
-                        widget.titleEn,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.55),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),

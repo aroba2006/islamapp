@@ -20,6 +20,12 @@ class ArAR extends AppLocalizations {
   @override
   String get prayerTimes => 'أوقات الصلاة';
   @override
+  String get azkarTitle => 'الأذكار';
+  @override
+  String get quranTitle => 'القرآن الكريم';
+  @override
+  String get titleAr => 'الأدعية';
+  @override
   String get settings => 'الإعدادات';
   @override
   String get language => 'اللغة';
@@ -91,4 +97,16 @@ class ArAR extends AppLocalizations {
   String get maghrib => 'المغرب';
   @override
   String get isha => 'العشاء';
+
+  // === THE MISSING OVERRIDES ===
+  @override
+  String get prayerTimesDesc => 'أوقات الصلاة الدقيقة لبلدك ومنطقتك.';
+  @override
+  String get azkarDesc => 'أذكار الصباح والمساء والصلاة والنوم وغيرها.';
+  @override
+  String get quranDesc => 'اقرأ القرآن الكريم مع خاصية التنقل بين السور.';
+  @override
+  String get duaaTitle => 'الأدعية';
+  @override
+  String get duaaDesc => 'أدعية مختارة للشفاء والتوفيق والرزق والحماية.';
 }

@@ -58,6 +58,16 @@ abstract class AppLocalizations {
   String get asr;
   String get maghrib;
   String get isha;
+
+  // === NEW ADDITIONS TO FIX OVERRIDE WARNINGS ===
+  String get azkarTitle;
+  String get quranTitle;
+  String get titleAr;
+  String get prayerTimesDesc;
+  String get azkarDesc;
+  String get quranDesc;
+  String get duaaTitle;
+  String get duaaDesc;
 }
 
 class _AppLocalizationsDelegate

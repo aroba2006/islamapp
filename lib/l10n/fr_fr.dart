@@ -4,33 +4,39 @@ class FrFR extends AppLocalizations {
   @override
   String get appTitle => 'Horaires de Prière';
   @override
-  String get selectCountry => 'Sélectionnez Votre Pays';
+  String get selectCountry => 'Sélectionnez votre pays';
   @override
-  String get selectRegion => 'Sélectionnez Votre Région';
+  String get selectRegion => 'Sélectionnez votre région';
   @override
-  String get searchCountries => 'Rechercher les pays...';
+  String get searchCountries => 'Rechercher des pays...';
   @override
   String get noCountriesFound => 'Aucun pays ne correspond à votre recherche.';
   @override
-  String get chooseYourState => 'Choisissez votre état / gouvernorat';
+  String get chooseYourState => 'Choisissez votre état / province';
   @override
-  String get timeUntil => 'Temps jusqu\'à';
+  String get timeUntil => 'Temps restant avant'; // More natural than "Temps jusqu'à"
   @override
   String get fetchingPrayerTimes => 'Récupération des horaires de prière...';
   @override
   String get prayerTimes => 'Horaires de Prière';
   @override
+  String get azkarTitle => 'Adhkar'; // Fixed from "Supplications - Duaa"
+  @override
+  String get quranTitle => 'Le Saint Coran';
+  @override
+  String get titleAr => 'Invocations - Douâa'; 
+  @override
   String get settings => 'Paramètres';
   @override
   String get language => 'Langue';
   @override
-  String get adhan => 'Appel à la Prière';
+  String get adhan => 'Adhan'; // Standard term instead of "Appel à la prière"
   @override
-  String get selectAdhanReciter => 'Sélectionner le Récitant';
+  String get selectAdhanReciter => 'Sélectionner le Muezzin'; // "Muezzin" is more accurate here
   @override
-  String get adhanNotifications => 'Notifications d\'Appel à la Prière';
+  String get adhanNotifications => 'Notifications de l\'Adhan';
   @override
-  String get playAdhan => 'Lire l\'Appel à la Prière';
+  String get playAdhan => 'Écouter l\'Adhan';
   @override
   String get tryAgain => 'Réessayer';
   @override
@@ -40,7 +46,7 @@ class FrFR extends AppLocalizations {
   @override
   String get next => 'Suivant';
   @override
-  String get sunrise => 'Lever du Soleil';
+  String get sunrise => 'Chourouk'; // "Chourouk" matches Fajr, Dhohr, etc.
   @override
   String get errorMessage => 'Une erreur s\'est produite.';
   @override
@@ -66,14 +72,14 @@ class FrFR extends AppLocalizations {
   @override
   String get close => 'Fermer';
   @override
-  String get prayerNotification => 'C\'est l\'heure de prier';
+  String get prayerNotification => 'C\'est l\'heure de la prière'; // Much more natural phrasing
 
   @override
-  String get quran => 'Saint Coran';
+  String get quran => 'Le Saint Coran';
   @override
   String get quranSection => 'Section Coran';
   @override
-  String get selectSurah => 'Sélectionnez la Sourate';
+  String get selectSurah => 'Sélectionnez une sourate';
   
   @override
   String get stop => 'Arrêter';
@@ -92,4 +98,15 @@ class FrFR extends AppLocalizations {
   String get maghrib => 'Maghrib';
   @override
   String get isha => 'Icha';
+
+  @override
+  String get prayerTimesDesc => 'Horaires de prière précis pour votre pays et région.'; // "Horaires" is masculine, so "précis"
+  @override
+  String get azkarDesc => 'Invocations du matin, du soir, de la prière et du sommeil.';
+  @override
+  String get quranDesc => 'Lisez le Saint Coran avec une navigation facile entre les sourates.';
+  @override
+  String get duaaTitle => 'Douâa';
+  @override
+  String get duaaDesc => 'Invocations choisies pour la guérison, la réussite et la protection.'; // "Réussite" is more accurate for Islamic context than "succès"
 }

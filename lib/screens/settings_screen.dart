@@ -16,6 +16,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _selectedReciter;
   late String _selectedLanguage;
   bool _notificationsEnabled = true;
+  bool _adhanPlaying = false;
 
   @override
   void initState() {
@@ -33,11 +34,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-@override
-void didChangeDependencies() {
-  super.didChangeDependencies();
-  _selectedLanguage = Localizations.localeOf(context).languageCode;
-}
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _selectedLanguage = Localizations.localeOf(context).languageCode;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +132,7 @@ void didChangeDependencies() {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1B5E3F).withValues(alpha:0.1) : Colors.white,
+          color: isSelected ? const Color(0xFF1B5E3F).withValues(alpha: 0.1) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? const Color(0xFF1B5E3F) : Colors.grey.shade300,
@@ -196,20 +197,38 @@ void didChangeDependencies() {
         _buildReciterOption(l10n.nasserQattami, 'nasser'),
         const SizedBox(height: 14),
         _buildReciterOption(l10n.mohamedQassas, 'qassas'),
-        ElevatedButton.icon(
-          onPressed: () {
-          // Stop previous playback and start new one
-         AdhanService.stopAdhan();
-        _previewAdhan(_selectedReciter);
-        },
-          icon: const Icon(Icons.play_arrow),
-          label: Text(l10n.playAdhan),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1B5E3F),
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
+        const SizedBox(height: 16),
+        // Play and Stop buttons side by side
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: _adhanPlaying ? null : () => _playAdhan(l10n),
+                icon: const Icon(Icons.play_arrow),
+                label: Text(l10n.playAdhan),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _adhanPlaying ? Colors.grey.shade400 : const Color(0xFF1B5E3F),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: _adhanPlaying ? () => _stopAdhan() : null,
+                icon: const Icon(Icons.stop),
+                label: Text(l10n.stop),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _adhanPlaying ? const Color(0xFF1B5E3F) : Colors.grey.shade400,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -225,7 +244,7 @@ void didChangeDependencies() {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1B5E3F).withValues(alpha:0.1) : Colors.white,
+          color: isSelected ? const Color(0xFF1B5E3F).withValues(alpha: 0.1) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? const Color(0xFF1B5E3F) : Colors.grey.shade300,
@@ -268,9 +287,9 @@ void didChangeDependencies() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1B5E3F).withValues(alpha:0.08),
+        color: const Color(0xFF1B5E3F).withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF1B5E3F).withValues(alpha:0.3)),
+        border: Border.all(color: const Color(0xFF1B5E3F).withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -299,13 +318,28 @@ void didChangeDependencies() {
     );
   }
 
-  Future<void> _previewAdhan(String reciterId) async {
-  try {
-    await AdhanService.stopAdhan(); // Stop any current playback
-    await Future.delayed(const Duration(milliseconds: 100));
-    await AdhanService.playAdhan(reciterId);
-  } catch (e) {
-    // Handle error silently
+  Future<void> _playAdhan(AppLocalizations l10n) async {
+    try {
+      await AdhanService.stopAdhan();
+      await Future.delayed(const Duration(milliseconds: 200));
+      setState(() => _adhanPlaying = true);
+      await AdhanService.playAdhan(_selectedReciter);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${l10n.errorMessage}: $e')),
+        );
+        setState(() => _adhanPlaying = false);
+      }
+    }
   }
-}
+
+  Future<void> _stopAdhan() async {
+    try {
+      await AdhanService.stopAdhan();
+      setState(() => _adhanPlaying = false);
+    } catch (e) {
+      // Ignore stop errors
+    }
+  }
 }

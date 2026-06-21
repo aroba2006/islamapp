@@ -5,9 +5,9 @@ class AdhanService {
   static final _audioPlayer = AudioPlayer();
 
   static const Map<String, String> adhanAssetPaths = {
-    'mishary': 'assets/adhan/mishary_adhan.mp3',
-    'nasser':  'assets/adhan/nasser_adhan.mp3',
-    'qassas':  'assets/adhan/qassas_adhan.mp3'
+    'mishary': 'adhan/afasiadhan.mp3',
+    'nasser':  'adhan/qatamiadhan.mp3',
+    'qassas':  'adhan/moqassas.mp3'
   };
 
   static final Map<String, String> reciterNames = {
@@ -16,13 +16,18 @@ class AdhanService {
     'qassas':  'Mohamed Marawan Qassas'
   };
 
-  static Future<void> playAdhan(String reciterId) async {
+  /// Initialize audio player - call this once at app startup
+  static Future<void> initialize() async {
     try {
-      await _audioPlayer.stop();
+      await _setupAudioContext();
+    } catch (e) {
+      // Silently fail - audio may still work
+    }
+  }
 
-      final path = adhanAssetPaths[reciterId] ?? adhanAssetPaths['mishary']!;
-      
-      // iOS specific: set audio session
+  /// Setup audio context for both iOS and Android
+  static Future<void> _setupAudioContext() async {
+    try {
       if (Platform.isIOS) {
         await _audioPlayer.setAudioContext(
           AudioContext(
@@ -30,41 +35,75 @@ class AdhanService {
               category: AVAudioSessionCategory.playback,
               options: const {
                 AVAudioSessionOptions.defaultToSpeaker,
-                AVAudioSessionOptions.duckOthers,
               },
             ),
           ),
         );
+      } else if (Platform.isAndroid) {
+        await _audioPlayer.setAudioContext(
+          AudioContext(
+            android: AudioContextAndroid(
+              audioFocus: AndroidAudioFocus.gain,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Ignore errors during context setup
+    }
+  }
+
+  static Future<void> playAdhan(String reciterId) async {
+    try {
+      // Stop any currently playing audio
+      await _audioPlayer.stop();
+
+      // Verify reciter ID is valid
+      final path = adhanAssetPaths[reciterId];
+      if (path == null) {
+        throw Exception('Invalid reciter ID: $reciterId');
       }
 
+      // Ensure audio context is set
+      await _setupAudioContext();
+
+      // Set audio parameters
       await _audioPlayer.setReleaseMode(ReleaseMode.stop);
       await _audioPlayer.setVolume(1.0);
-      
+
+      // Play the asset
       await _audioPlayer.play(AssetSource(path));
       
     } catch (e) {
-      print('❌ Error: $e');
+      rethrow;
     }
   }
 
   static Future<void> stopAdhan() async {
     try {
       await _audioPlayer.stop();
-    } catch (e) {}
+    } catch (e) {
+      // Ignore
+    }
   }
 
   static Future<void> pauseAdhan() async {
     try {
       await _audioPlayer.pause();
-    } catch (e) {}
+    } catch (e) {
+      // Ignore
+    }
   }
 
   static Future<void> resumeAdhan() async {
     try {
       await _audioPlayer.resume();
-    } catch (e) {}
+    } catch (e) {
+      // Ignore
+    }
   }
 
+  /// Get current playback state
   static Stream<Duration> get onDurationChanged => _audioPlayer.onDurationChanged;
   static Stream<Duration> get onPositionChanged => _audioPlayer.onPositionChanged;
   static Stream<PlayerState> get onPlayerStateChanged =>
@@ -74,6 +113,8 @@ class AdhanService {
     try {
       await _audioPlayer.stop();
       await _audioPlayer.dispose();
-    } catch (e) {}
+    } catch (e) {
+      // Ignore
+    }
   }
 }

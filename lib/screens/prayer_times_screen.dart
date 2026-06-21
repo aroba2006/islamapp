@@ -43,12 +43,16 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     _load();
   }
 
- Future<void> _loadPreferences() async {
-  final prefs = await SharedPreferences.getInstance();
-  setState(() {
-    _selectedReciter = prefs.getString('adhanReciter') ?? 'mishary';
-  });
-}
+  Future<void> _loadPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    if (!mounted) return;
+
+    setState(() {
+      _selectedReciter =
+          prefs.getString('adhanReciter') ?? 'mishary';
+    });
+  }
 
   @override
   void dispose() {
@@ -176,14 +180,25 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   }
 
   Future<void> _playAdhan() async {
-    setState(() => _adhanPlaying = true);
-    await AdhanService.playAdhan(_selectedReciter);
-    await for (final state in AdhanService.onPlayerStateChanged) {
-      if (state == PlayerState.completed || state == PlayerState.stopped) {
-        break;
+    try {
+      setState(() => _adhanPlaying = true);
+
+      await AdhanService.playAdhan(_selectedReciter);
+
+      AdhanService.onPlayerStateChanged.listen((state) {
+        if (!mounted) return;
+
+        if (state == PlayerState.completed ||
+            state == PlayerState.stopped) {
+          setState(() => _adhanPlaying = false);
+        }
+      });
+
+    } catch (e) {
+      if (mounted) {
+        setState(() => _adhanPlaying = false);
       }
     }
-    if (mounted) setState(() => _adhanPlaying = false);
   }
 
   Future<void> _stopAdhan() async {
@@ -245,35 +260,23 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 20, 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(widget.country.flagEmoji, style: const TextStyle(fontSize: 18)),
-                  const SizedBox(width: 6),
-                  Text(
-                   GeoTranslations.translate(context, widget.region),
-                   style: const TextStyle(
-                     color: Colors.white,
-                     fontSize: 20,
-                     fontWeight: FontWeight.w700,
-                   ),
-                 ),
-                ],
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              "${GeoTranslations.translate(context, widget.country.name)} - ${widget.region}",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
               ),
-              Text(
-                GeoTranslations.translate(context, widget.country.name),
-                style: const TextStyle(
-                  color: Colors.white54,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
@@ -281,95 +284,130 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   }
 
   Widget _buildLoading(BuildContext context, AppLocalizations l10n) {
-    return const Center(
-      child: CircularProgressIndicator(
-        color: Color(0xFFD4AF37),
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(color: Color(0xFF1B5E3F)),
+            const SizedBox(height: 16),
+            Text(
+              l10n.fetchingPrayerTimes,
+              style: const TextStyle(color: Color(0xFF1B5E3F), fontSize: 16),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildError(BuildContext context, AppLocalizations l10n) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            color: Colors.red.shade400,
-            size: 48,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            l10n.errorLoadingPrayerTimes,
-            style: const TextStyle(color: Colors.white70),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: _load,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1B5E3F),
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 50),
+            const SizedBox(height: 16),
+            Text(
+              l10n.errorLoadingPrayerTimes,
+              style: const TextStyle(color: Colors.red, fontSize: 16),
+              textAlign: TextAlign.center,
             ),
-            child: Text(
-              l10n.retry,
-              style: const TextStyle(color: Colors.white),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _load,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1B5E3F),
+                foregroundColor: Colors.white,
+              ),
+              child: Text(l10n.retry),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildContent(BuildContext context, AppLocalizations l10n) {
-    final times = _times!;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    final times = _times;
+    if (times == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
       child: Column(
         children: [
-          _buildCountdownCard(context, l10n),
           const SizedBox(height: 16),
-          _buildAdhanControlPanel(context, l10n),
-          const SizedBox(height: 16),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          const SizedBox(height: 12),
           Expanded(
-            child: ListView(
-              children: [
-                ...times.asOrderedList().asMap().entries.map((e) {
-                  final index = e.key;
-                  final entry = e.value;
-                  final isNext = entry.key == _nextPrayerName;
-                  return TweenAnimationBuilder<double>(
-                    duration: Duration(milliseconds: 300 + (index * 80)),
-                    tween: Tween(begin: 0, end: 1),
-                    curve: Curves.easeOutCubic,
-                    builder: (context, value, child) {
-                      return Opacity(
-                        opacity: value,
-                        child: Transform.translate(
-                          offset: Offset(0, (1 - value) * 20),
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: _PrayerRow(
-                      name: () {
-                        switch (entry.key.toLowerCase()) {
-                          case 'fajr': return l10n.fajr;
-                          case 'dhuhr': return l10n.dhuhr;
-                          case 'asr': return l10n.asr;
-                          case 'maghrib': return l10n.maghrib;
-                          case 'isha': return l10n.isha;
-                          default: return entry.key;
-                        }
-                      }(),
-                      time: entry.value,
-                      icon: _iconFor(entry.key),
-                      isNext: isNext,
-                    ),
-                  );
-                }),
-                const SizedBox(height: 12),
-                _buildSunriseNote(times.sunrise, l10n),
-              ],
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+              child: Column(
+                children: [
+                  _buildCountdownCard(context, l10n),
+                  const SizedBox(height: 20),
+                  _buildAdhanControlPanel(context, l10n),
+                  const SizedBox(height: 20),
+                  ...times.asOrderedList().asMap().entries.map((e) {
+                    final index = e.key;
+                    final entry = e.value;
+                    final isNext = entry.key == _nextPrayerName;
+                    return TweenAnimationBuilder<double>(
+                      duration: Duration(milliseconds: 300 + (index * 80)),
+                      tween: Tween(begin: 0, end: 1),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, child) {
+                        return Opacity(
+                          opacity: value,
+                          child: Transform.translate(
+                            offset: Offset(0, (1 - value) * 20),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: _PrayerRow(
+                        name: () {
+                          switch (entry.key.toLowerCase()) {
+                            case 'fajr': return l10n.fajr;
+                            case 'dhuhr': return l10n.dhuhr;
+                            case 'asr': return l10n.asr;
+                            case 'maghrib': return l10n.maghrib;
+                            case 'isha': return l10n.isha;
+                            default: return entry.key;
+                          }
+                        }(),
+                        time: entry.value,
+                        icon: _iconFor(entry.key),
+                        isNext: isNext,
+                        l10n: l10n,
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 12),
+                  _buildSunriseNote(times.sunrise, l10n),
+                ],
+              ),
             ),
           ),
         ],
@@ -400,7 +438,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1B5E3F).withValues(alpha:0.3),
+            color: const Color(0xFF1B5E3F).withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -433,14 +471,14 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFFD4AF37).withValues(alpha:0.15),
-            const Color(0xFFD4AF37).withValues(alpha:0.05),
+            const Color(0xFFD4AF37).withValues(alpha: 0.15),
+            const Color(0xFFD4AF37).withValues(alpha: 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha:0.3)),
+        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -485,7 +523,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFFFF8E7),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha:0.3)),
+        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -509,12 +547,14 @@ class _PrayerRow extends StatelessWidget {
   final String time;
   final IconData icon;
   final bool isNext;
+  final AppLocalizations l10n;
 
   const _PrayerRow({
     required this.name,
     required this.time,
     required this.icon,
     required this.isNext,
+    required this.l10n,
   });
 
   @override
@@ -533,7 +573,7 @@ class _PrayerRow extends StatelessWidget {
         boxShadow: isNext
             ? [
                 BoxShadow(
-                  color: const Color(0xFF1B5E3F).withValues(alpha:0.15),
+                  color: const Color(0xFF1B5E3F).withValues(alpha: 0.15),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -545,7 +585,7 @@ class _PrayerRow extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isNext ? Colors.white.withValues(alpha:0.15) : Colors.white,
+              color: isNext ? Colors.white.withValues(alpha: 0.15) : Colors.white,
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -573,9 +613,9 @@ class _PrayerRow extends StatelessWidget {
                 color: const Color(0xFFD4AF37),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
-                "NEXT",
-                style: TextStyle(
+              child: Text(
+                l10n.next.toUpperCase(),
+                style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF0B3D2E),

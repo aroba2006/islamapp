@@ -20,6 +20,12 @@ class EnUS extends AppLocalizations {
   @override
   String get prayerTimes => 'Prayer Times';
   @override
+  String get azkarTitle => 'Azkar';
+  @override
+  String get quranTitle => 'The Holy Quran';
+  @override
+  String get titleAr => 'Supplications - Duaa';
+  @override
   String get settings => 'Settings';
   @override
   String get language => 'Language';
@@ -92,4 +98,16 @@ class EnUS extends AppLocalizations {
   String get maghrib => 'Maghrib';
   @override
   String get isha => 'Isha';
+
+
+  @override
+  String get prayerTimesDesc => 'Accurate prayer times for your country and region.';
+  @override
+  String get azkarDesc => 'Morning, evening, prayer, and sleep supplications.';
+  @override
+  String get quranDesc => 'Read the Holy Quran with easy navigation between Surahs.';
+  @override
+  String get duaaTitle => 'Duaa'; 
+  @override
+  String get duaaDesc => 'Selected supplications for healing, success, and protection.';
 }

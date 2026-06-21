@@ -4,6 +4,7 @@ class QuranSurah {
   final String nameEn;
   final List<String> versesAr;
   final List<String> versesEn;
+ // final List<String> versesFr;
 
   const QuranSurah({
     required this.id,
@@ -11,6 +12,7 @@ class QuranSurah {
     required this.nameEn,
     required this.versesAr,
     required this.versesEn,
+    //required this.versesFr,
   });
 
   String get displayNameAr => 'سورة $nameAr';
@@ -61,6 +63,7 @@ class QuranData {
   'Guide us to the straight path.',
   'The path of those upon whom You have bestowed favor, not of those who have earned Your anger or of those who are astray.'
 ],
+
           ),
           QuranSurah(
             id: 2, nameAr: 'البقرة', nameEn: 'Al-Baqarah',

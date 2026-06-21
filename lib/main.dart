@@ -4,10 +4,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'l10n/app_localizations.dart';
 import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
+import 'services/adhan_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize services
   await NotificationService.initialize();
+  await AdhanService.initialize();  // ← ADD THIS LINE
+  
   runApp(const IslamicApp());
 }
 
