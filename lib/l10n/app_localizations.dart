@@ -45,6 +45,8 @@ abstract class AppLocalizations {
   String get close;
   String get prayerNotification;
   String get mohamedQassas;
+  String get moRefaat;
+  String get nasTobar;
   String get quran;
   String get quranSection;
   String get selectSurah;
@@ -68,6 +70,55 @@ abstract class AppLocalizations {
   String get quranDesc;
   String get duaaTitle;
   String get duaaDesc;
+
+  // === ADD THESE 4 NEW GETTERS FOR YOUR NEW SCREENS ===
+  String get goodDeedsTitle;
+  String get goodDeedsDesc;
+  String get islamicGoalsTitle;
+  String get islamicGoalsDesc;
+
+  // === SCREENS TRANSLATIONS ===
+  String get cancelBtn;
+  String get recordDeedTitle;
+  String get deedTitleLabel;
+  String get deedTitleHint;
+  String get categoryLabel;
+  String get notesLabel;
+  String get notesHint;
+  String get recordBtn;
+  String get streakLabel;
+  String get todayLabel;
+  String get totalLabel;
+  String get allFilter;
+  String get noDeedsTitle;
+  String get noDeedsDesc;
+  String get catPrayer;
+  String get catCharity;
+  String get catLearning;
+  String get catFamily;
+  String get catOther;
+  
+  String get addGoalTitle;
+  String get goalTypeLabel;
+  String get goalTypeQuran;
+  String get goalTypeSurah;
+  String get goalTypePrayer;
+  String get goalTitleLabel;
+  String get goalTitleHint;
+  String get surahNumberLabel;
+  String get numberOfDaysLabel;
+  String get createGoalBtn;
+  String get noGoalsTitle;
+  String get noGoalsDesc;
+  String get activeGoals;
+  String get completedGoals;
+  String get updateProgressBtn;
+  String get deleteBtn;
+  String get deleteGoalTitle;
+  String get deleteGoalDesc;
+  String get updateDialogTitle;
+  String get progressLabel;
+  String get updateBtn;
 }
 
 class _AppLocalizationsDelegate

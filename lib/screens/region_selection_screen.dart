@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:google_fonts/google_fonts.dart';
 import '../data/countries_data.dart';
 import '../models/country_data.dart';
 import '../widgets/islamic_pattern_background.dart';
-import '../l10n/app_localizations.dart';
 import 'prayer_times_screen.dart';
 import '../data/geo_translations.dart';
 
@@ -75,6 +76,8 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
       );
     }
 
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
     return Scaffold(
       body: IslamicPatternBackground(
         child: SafeArea(
@@ -88,29 +91,14 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
                     end: Offset.zero,
                   ).animate(CurvedAnimation(
                       parent: _headerController, curve: Curves.easeOutCubic)),
-                  child: _buildHeader(context),
+                  child: _buildHeader(context, isArabic),
                 ),
               ),
               Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-                  ),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 16),
-                      Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Expanded(child: _buildRegionGrid(context)),
-                    ],
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1000),
+                    child: _buildRegionGrid(context),
                   ),
                 ),
               ),
@@ -121,25 +109,24 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
+  Widget _buildHeader(BuildContext context, bool isArabic) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24),
           ),
-          const SizedBox(width: 6),
-          Text(
-               GeoTranslations.translate(context, widget.country.name),
-               style: const TextStyle(
-                 color: Colors.white,
-                 fontSize: 22,
-                 fontWeight: FontWeight.w700,
-               ),
-             ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              GeoTranslations.translate(context, widget.country.name),
+              style: isArabic 
+                  ? GoogleFonts.amiri(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold)
+                  : GoogleFonts.arefRuqaa(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold),
+            ),
+          ),
         ],
       ),
     );
@@ -148,12 +135,12 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
   Widget _buildRegionGrid(BuildContext context) {
     final regions = widget.country.regions;
     return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 2.4,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 280, // Automatically wraps based on screen width
+        childAspectRatio: 2.2, // Keeps them as wide rectangles
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
       ),
       itemCount: regions.length,
       itemBuilder: (context, index) {
@@ -168,7 +155,7 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
               child: Transform.scale(scale: 0.9 + (0.1 * value), child: child),
             );
           },
-          child: _RegionButton(
+          child: _RegionGlassCard(
             label: region,
             onTap: () {
               Navigator.of(context).push(
@@ -185,57 +172,67 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
   }
 }
 
-class _RegionButton extends StatefulWidget {
+// ── FROSTED GLASS REGION CARD ──────────────────────────────────
+class _RegionGlassCard extends StatefulWidget {
   final String label;
   final VoidCallback onTap;
-  const _RegionButton({required this.label, required this.onTap});
+  const _RegionGlassCard({required this.label, required this.onTap});
 
   @override
-  State<_RegionButton> createState() => _RegionButtonState();
+  State<_RegionGlassCard> createState() => _RegionGlassCardState();
 }
 
-class _RegionButtonState extends State<_RegionButton> {
+class _RegionGlassCardState extends State<_RegionGlassCard> {
+  bool _isHovered = false;
   double _scale = 1.0;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _scale = 0.95),
-      onTapUp: (_) => setState(() => _scale = 1.0),
-      onTapCancel: () => setState(() => _scale = 1.0),
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _scale,
-        duration: const Duration(milliseconds: 110),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF1B5E3F), Color(0xFF0B3D2E)],
-            ),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _scale = 0.96),
+        onTapUp: (_) => setState(() => _scale = 1.0),
+        onTapCancel: () => setState(() => _scale = 1.0),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _isHovered ? 1.04 : _scale,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF1B5E3F).withValues(alpha: 0.25),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  color: _isHovered 
+                      ? const Color(0xFF144D32).withValues(alpha: 0.85)
+                      : const Color(0xFF0B3D2E).withValues(alpha: 0.65),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _isHovered 
+                        ? const Color(0xFFD4AF37).withValues(alpha: 0.8)
+                        : const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                    width: _isHovered ? 2 : 1,
+                  ),
+                ),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Text(
+                  GeoTranslations.translate(context, widget.label),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.elMessiri(
+                    color: _isHovered ? Colors.white : const Color(0xFFD4AF37),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ],
-          ),
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          
-          // --> This is where your code goes! <--
-          child: Text(
-            GeoTranslations.translate(context, widget.label),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ),

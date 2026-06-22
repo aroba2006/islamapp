@@ -64,6 +64,10 @@ class ArAR extends AppLocalizations {
   @override
   String get mohamedQassas => 'محمد مروان قصاص';
   @override
+  String get moRefaat => 'الشيخ محمد رفعت';
+  @override
+  String get nasTobar => 'الشيخ نصر الدين طوبار';
+  @override
   String get abdelbassetAbdelsamad => 'الشيخ عبد الباسط عبد الصمد';
   @override
   String get saoudShubayt => 'الشيخ سعود الشبيت';
@@ -109,4 +113,57 @@ class ArAR extends AppLocalizations {
   String get duaaTitle => 'الأدعية';
   @override
   String get duaaDesc => 'أدعية مختارة للشفاء والتوفيق والرزق والحماية.';
+
+
+  @override
+  String get goodDeedsTitle => 'الأعمال الصالحة';
+  @override
+  String get goodDeedsDesc => 'سجل وتتبع أعمالك الصالحة اليومية لبناء عادات إيجابية.';
+  @override
+  String get islamicGoalsTitle => 'الأهداف الإسلامية';
+  @override
+  String get islamicGoalsDesc => 'حدد أهدافًا شخصية لقراءة القرآن والحفظ والحفاظ على الصلاة.';
+
+  // === SCREENS TRANSLATIONS ===
+  @override String get cancelBtn => 'إلغاء';
+  @override String get recordDeedTitle => 'سجل عملاً صالحاً';
+  @override String get deedTitleLabel => 'عنوان العمل';
+  @override String get deedTitleHint => 'مثال: صليت الفجر في وقته';
+  @override String get categoryLabel => 'الفئة';
+  @override String get notesLabel => 'ملاحظات (اختياري)';
+  @override String get notesHint => 'أضف أي تفاصيل أخرى...';
+  @override String get recordBtn => 'تسجيل العمل';
+  @override String get streakLabel => 'التتابع';
+  @override String get todayLabel => 'اليوم';
+  @override String get totalLabel => 'المجموع';
+  @override String get allFilter => 'الكل';
+  @override String get noDeedsTitle => 'لا توجد أعمال مسجلة';
+  @override String get noDeedsDesc => 'ابدأ بتسجيل أعمالك الصالحة اليوم';
+  @override String get catPrayer => 'الصلاة';
+  @override String get catCharity => 'الصدقة';
+  @override String get catLearning => 'التعلم';
+  @override String get catFamily => 'العائلة';
+  @override String get catOther => 'أخرى';
+  
+  @override String get addGoalTitle => 'إضافة هدف إسلامي';
+  @override String get goalTypeLabel => 'نوع الهدف';
+  @override String get goalTypeQuran => 'ختم القرآن في عدد من الأيام';
+  @override String get goalTypeSurah => 'حفظ سورة';
+  @override String get goalTypePrayer => 'المحافظة على الصلاة';
+  @override String get goalTitleLabel => 'عنوان الهدف';
+  @override String get goalTitleHint => 'مثال: ختم القرآن قبل رمضان';
+  @override String get surahNumberLabel => 'رقم السورة';
+  @override String get numberOfDaysLabel => 'عدد الأيام';
+  @override String get createGoalBtn => 'إنشاء الهدف';
+  @override String get noGoalsTitle => 'لا توجد أهداف بعد';
+  @override String get noGoalsDesc => 'أنشئ هدفك الإسلامي الأول';
+  @override String get activeGoals => 'الأهداف الحالية';
+  @override String get completedGoals => 'الأهداف المكتملة';
+  @override String get updateProgressBtn => 'تحديث التقدم';
+  @override String get deleteBtn => 'حذف';
+  @override String get deleteGoalTitle => 'حذف الهدف؟';
+  @override String get deleteGoalDesc => 'لا يمكن التراجع عن هذا الإجراء.';
+  @override String get updateDialogTitle => 'تحديث التقدم';
+  @override String get progressLabel => 'التقدم';
+  @override String get updateBtn => 'تحديث';
 }

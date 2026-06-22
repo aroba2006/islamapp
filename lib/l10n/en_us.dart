@@ -62,6 +62,10 @@ class EnUS extends AppLocalizations {
   @override
   String get mohamedQassas => 'Mohamed Marawan Qassas';
   @override
+  String get moRefaat => 'Mohamed Refaat';
+  @override
+  String get nasTobar => 'Nasraldin Tobar';
+  @override
   String get aliMala => 'Ali Al-Mala';
   @override
   String get abdelbassetAbdelsamad => 'Abdulbasit Abdulsamad';
@@ -110,4 +114,58 @@ class EnUS extends AppLocalizations {
   String get duaaTitle => 'Duaa'; 
   @override
   String get duaaDesc => 'Selected supplications for healing, success, and protection.';
+
+
+  @override
+  String get goodDeedsTitle => 'Good Deeds';
+  @override
+  String get goodDeedsDesc => 'Record and track your daily good deeds to build positive habits.';
+  @override
+  String get islamicGoalsTitle => 'Islamic Goals';
+  @override
+  String get islamicGoalsDesc => 'Set personal targets for reading Quran, memorization, and prayer streaks.';
+
+
+  // === SCREENS TRANSLATIONS ===
+  @override String get cancelBtn => 'Cancel';
+  @override String get recordDeedTitle => 'Record a Good Deed';
+  @override String get deedTitleLabel => 'Deed Title';
+  @override String get deedTitleHint => 'e.g., Prayed Fajr on time';
+  @override String get categoryLabel => 'Category';
+  @override String get notesLabel => 'Notes (optional)';
+  @override String get notesHint => 'Add any additional details...';
+  @override String get recordBtn => 'Record Deed';
+  @override String get streakLabel => 'Streak';
+  @override String get todayLabel => 'Today';
+  @override String get totalLabel => 'Total';
+  @override String get allFilter => 'All';
+  @override String get noDeedsTitle => 'No Deeds Recorded';
+  @override String get noDeedsDesc => 'Start recording your good deeds today';
+  @override String get catPrayer => 'Prayer';
+  @override String get catCharity => 'Charity';
+  @override String get catLearning => 'Learning';
+  @override String get catFamily => 'Family';
+  @override String get catOther => 'Other';
+  
+  @override String get addGoalTitle => 'Add Islamic Goal';
+  @override String get goalTypeLabel => 'Goal Type';
+  @override String get goalTypeQuran => 'Finish Quran in X days';
+  @override String get goalTypeSurah => 'Memorize a Surah';
+  @override String get goalTypePrayer => 'Prayer Streak';
+  @override String get goalTitleLabel => 'Goal Title';
+  @override String get goalTitleHint => 'e.g., Complete Quran by Ramadan';
+  @override String get surahNumberLabel => 'Surah Number';
+  @override String get numberOfDaysLabel => 'Number of Days';
+  @override String get createGoalBtn => 'Create Goal';
+  @override String get noGoalsTitle => 'No Goals Yet';
+  @override String get noGoalsDesc => 'Create your first Islamic goal';
+  @override String get activeGoals => 'Active Goals';
+  @override String get completedGoals => 'Completed Goals';
+  @override String get updateProgressBtn => 'Update Progress';
+  @override String get deleteBtn => 'Delete';
+  @override String get deleteGoalTitle => 'Delete Goal?';
+  @override String get deleteGoalDesc => 'This cannot be undone.';
+  @override String get updateDialogTitle => 'Update Progress';
+  @override String get progressLabel => 'Progress';
+  @override String get updateBtn => 'Update';
 }

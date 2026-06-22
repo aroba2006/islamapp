@@ -62,6 +62,10 @@ class FrFR extends AppLocalizations {
   @override
   String get mohamedQassas => 'Mohamed Marawan Qassas';
   @override
+  String get moRefaat => 'Mohamed Refaat';
+  @override
+  String get nasTobar => 'Nasraldin Tobar';
+  @override
   String get aliMala => 'Ali Al-Mala';
   @override
   String get abdelbassetAbdelsamad => 'Abdulbasit Abdulsamad';
@@ -109,4 +113,59 @@ class FrFR extends AppLocalizations {
   String get duaaTitle => 'Douâa';
   @override
   String get duaaDesc => 'Invocations choisies pour la guérison, la réussite et la protection.'; // "Réussite" is more accurate for Islamic context than "succès"
+
+
+
+  @override
+  String get goodDeedsTitle => 'Bonnes Actions';
+  @override
+  String get goodDeedsDesc => 'Enregistrez et suivez vos bonnes actions quotidiennes pour développer des habitudes positives.';
+  @override
+  String get islamicGoalsTitle => 'Objectifs Islamiques';
+  @override
+  String get islamicGoalsDesc => 'Fixez-vous des objectifs personnels pour la lecture du Coran, la mémorisation et l\'assiduité aux prières.';
+
+
+  // === SCREENS TRANSLATIONS ===
+  @override String get cancelBtn => 'Annuler';
+  @override String get recordDeedTitle => 'Enregistrer une action';
+  @override String get deedTitleLabel => 'Titre de l\'action';
+  @override String get deedTitleHint => 'ex: J\'ai prié le Fajr à l\'heure';
+  @override String get categoryLabel => 'Catégorie';
+  @override String get notesLabel => 'Notes (optionnel)';
+  @override String get notesHint => 'Ajoutez des détails supplémentaires...';
+  @override String get recordBtn => 'Enregistrer';
+  @override String get streakLabel => 'Série';
+  @override String get todayLabel => 'Aujourd\'hui';
+  @override String get totalLabel => 'Total';
+  @override String get allFilter => 'Tout';
+  @override String get noDeedsTitle => 'Aucune action enregistrée';
+  @override String get noDeedsDesc => 'Commencez à enregistrer vos bonnes actions';
+  @override String get catPrayer => 'Prière';
+  @override String get catCharity => 'Charité';
+  @override String get catLearning => 'Apprentissage';
+  @override String get catFamily => 'Famille';
+  @override String get catOther => 'Autre';
+  
+  @override String get addGoalTitle => 'Ajouter un objectif';
+  @override String get goalTypeLabel => 'Type d\'objectif';
+  @override String get goalTypeQuran => 'Finir le Coran en X jours';
+  @override String get goalTypeSurah => 'Mémoriser une sourate';
+  @override String get goalTypePrayer => 'Assiduité aux prières';
+  @override String get goalTitleLabel => 'Titre de l\'objectif';
+  @override String get goalTitleHint => 'ex: Finir le Coran avant le Ramadan';
+  @override String get surahNumberLabel => 'Numéro de la sourate';
+  @override String get numberOfDaysLabel => 'Nombre de jours';
+  @override String get createGoalBtn => 'Créer l\'objectif';
+  @override String get noGoalsTitle => 'Aucun objectif';
+  @override String get noGoalsDesc => 'Créez votre premier objectif islamique';
+  @override String get activeGoals => 'Objectifs actifs';
+  @override String get completedGoals => 'Objectifs terminés';
+  @override String get updateProgressBtn => 'Mettre à jour';
+  @override String get deleteBtn => 'Supprimer';
+  @override String get deleteGoalTitle => 'Supprimer l\'objectif ?';
+  @override String get deleteGoalDesc => 'Cette action est irréversible.';
+  @override String get updateDialogTitle => 'Mettre à jour le progrès';
+  @override String get progressLabel => 'Progrès';
+  @override String get updateBtn => 'Mettre à jour';
 }

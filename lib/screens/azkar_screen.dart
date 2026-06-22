@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:google_fonts/google_fonts.dart';
 import '../widgets/islamic_pattern_background.dart';
 import '../l10n/app_localizations.dart'; 
 
@@ -23,7 +25,7 @@ class _ZikrItem {
   final String arabic;
   final String transliteration;
   final String translation;
-  final String translationFr; // Added French Field
+  final String translationFr; 
   final int count;
   const _ZikrItem({
     required this.arabic,
@@ -34,6 +36,7 @@ class _ZikrItem {
   });
 }
 
+// ── DATA ────────────────────────────────────────────────────────
 const List<_AzkarCategory> _categories = [
   _AzkarCategory(
     titleAr: 'أذكار الصباح',
@@ -326,6 +329,9 @@ const List<_AzkarCategory> _categories = [
   ),
 ];
 
+
+// ── SCREENS ─────────────────────────────────────────────────────
+
 class AzkarScreen extends StatefulWidget {
   const AzkarScreen({super.key});
 
@@ -354,8 +360,9 @@ class _AzkarScreenState extends State<AzkarScreen>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final lang = Localizations.localeOf(context).languageCode;
+    final isArabic = lang == 'ar';
 
     return Scaffold(
       body: IslamicPatternBackground(
@@ -363,22 +370,20 @@ class _AzkarScreenState extends State<AzkarScreen>
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(8, 8, 20, 16),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24),
                       onPressed: () => Navigator.pop(context),
                     ),
                     Expanded(
                       child: Text(
                         l10n.azkarTitle, 
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Color(0xFFD4AF37),
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: isArabic 
+                            ? GoogleFonts.amiri(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold)
+                            : GoogleFonts.arefRuqaa(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold),
                       ),
                     ),
                     const SizedBox(width: 48),
@@ -386,48 +391,48 @@ class _AzkarScreenState extends State<AzkarScreen>
                 ),
               ),
               Expanded(
-                child: FadeTransition(
-                  opacity: _fadeCtrl,
-                  child: GridView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                    itemCount: _categories.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 14,
-                      mainAxisSpacing: 14,
-                      childAspectRatio: 1.05,
-                    ),
-                    itemBuilder: (context, index) {
-                      final cat = _categories[index];
-                      return TweenAnimationBuilder<double>(
-                        duration: Duration(milliseconds: 250 + (index * 40).clamp(0, 400)),
-                        tween: Tween(begin: 0, end: 1),
-                        curve: Curves.easeOutCubic,
-                        builder: (context, value, child) => Opacity(
-                          opacity: value,
-                          child: Transform.scale(scale: 0.88 + 0.12 * value, child: child),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: FadeTransition(
+                      opacity: _fadeCtrl,
+                      child: GridView.builder(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                        itemCount: _categories.length,
+                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 300,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 20,
+                          childAspectRatio: 1.0,
                         ),
-                        child: _CategoryCard(
-                          category: cat,
-                          lang: lang,
-                          onTap: () => Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                              transitionDuration: const Duration(milliseconds: 420),
-                              pageBuilder: (_, animation, __) =>
-                                  _AzkarDetailScreen(category: cat, lang: lang),
-                              transitionsBuilder: (_, animation, __, child) {
-                                final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
-                                return SlideTransition(
-                                  position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(curved),
-                                  child: FadeTransition(opacity: curved, child: child),
-                                );
-                              },
+                        itemBuilder: (context, index) {
+                          final cat = _categories[index];
+                          return TweenAnimationBuilder<double>(
+                            duration: Duration(milliseconds: 250 + (index * 80).clamp(0, 400)),
+                            tween: Tween(begin: 0, end: 1),
+                            curve: Curves.easeOutCubic,
+                            builder: (context, value, child) => Opacity(
+                              opacity: value,
+                              child: Transform.translate(offset: Offset(0, 20 * (1 - value)), child: child),
                             ),
-                          ),
-                        ),
-                      );
-                    },
+                            child: _CategoryGlassCard(
+                              category: cat,
+                              lang: lang,
+                              onTap: () => Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                  transitionDuration: const Duration(milliseconds: 400),
+                                  pageBuilder: (_, animation, __) => _AzkarDetailScreen(category: cat, lang: lang),
+                                  transitionsBuilder: (_, animation, __, child) {
+                                    return FadeTransition(opacity: animation, child: child);
+                                  },
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -439,90 +444,86 @@ class _AzkarScreenState extends State<AzkarScreen>
   }
 }
 
-class _CategoryCard extends StatefulWidget {
+class _CategoryGlassCard extends StatefulWidget {
   final _AzkarCategory category;
   final String lang;
   final VoidCallback onTap;
-  const _CategoryCard({required this.category, required this.lang, required this.onTap});
+  
+  const _CategoryGlassCard({required this.category, required this.lang, required this.onTap});
 
   @override
-  State<_CategoryCard> createState() => _CategoryCardState();
+  State<_CategoryGlassCard> createState() => _CategoryGlassCardState();
 }
 
-class _CategoryCardState extends State<_CategoryCard> {
-  double _scale = 1.0;
+class _CategoryGlassCardState extends State<_CategoryGlassCard> {
+  bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
     final cat = widget.category;
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _scale = 0.94),
-      onTapUp: (_) => setState(() => _scale = 1.0),
-      onTapCancel: () => setState(() => _scale = 1.0),
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _scale,
-        duration: const Duration(milliseconds: 120),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [cat.color, Color.lerp(cat.color, Colors.black, 0.3)!],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: cat.color.withValues(alpha: 0.35),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(cat.emoji, style: const TextStyle(fontSize: 34)),
-              const SizedBox(height: 8),
-              Text(
-                widget.lang == 'ar' ? cat.titleAr : (widget.lang == 'fr' ? cat.titleFr : cat.titleEn),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 2),
-              if (widget.lang == 'ar')
-                Text(
-                  cat.titleEn,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.65),
-                    fontSize: 11,
-                  ),
-                ),
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _isHovered ? 1.04 : 1.0,
+          duration: const Duration(milliseconds: 200),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '${cat.items.length} ${widget.lang == 'ar' ? 'أذكار' : (widget.lang == 'fr' ? 'Adhkar' : 'Azkar')}',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontSize: 10,
+                  color: _isHovered 
+                      ? const Color(0xFF144D32).withValues(alpha: 0.8)
+                      : const Color(0xFF0B3D2E).withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: _isHovered 
+                        ? const Color(0xFFD4AF37).withValues(alpha: 0.8)
+                        : const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                    width: _isHovered ? 2 : 1,
                   ),
                 ),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(cat.emoji, style: const TextStyle(fontSize: 48)),
+                    const SizedBox(height: 16),
+                    Text(
+                      widget.lang == 'ar' ? cat.titleAr : (widget.lang == 'fr' ? cat.titleFr : cat.titleEn),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      style: GoogleFonts.elMessiri(
+                        color: _isHovered ? Colors.white : const Color(0xFFD4AF37),
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${cat.items.length} ${widget.lang == 'ar' ? 'أذكار' : (widget.lang == 'fr' ? 'Adhkar' : 'Azkar')}',
+                        style: const TextStyle(
+                          color: Color(0xFFD4AF37),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -565,47 +566,55 @@ class _AzkarDetailScreenState extends State<_AzkarDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final cat = widget.category;
+    final isArabic = widget.lang == 'ar';
+
     return Scaffold(
       body: IslamicPatternBackground(
         child: SafeArea(
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+                padding: const EdgeInsets.fromLTRB(16, 16, 20, 0),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 22),
                       onPressed: () => Navigator.pop(context),
                     ),
                     Expanded(
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(cat.emoji, style: const TextStyle(fontSize: 22)),
+                          Text(cat.emoji, style: const TextStyle(fontSize: 24)),
                           Text(
-                            widget.lang == 'ar' ? cat.titleAr : (widget.lang == 'fr' ? cat.titleFr : cat.titleEn),
-                            style: const TextStyle(
-                              color: Color(0xFFD4AF37),
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            isArabic ? cat.titleAr : (widget.lang == 'fr' ? cat.titleFr : cat.titleEn),
+                            style: isArabic
+                                ? GoogleFonts.amiri(color: const Color(0xFFD4AF37), fontSize: 26, fontWeight: FontWeight.bold)
+                                : GoogleFonts.arefRuqaa(color: const Color(0xFFD4AF37), fontSize: 26, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(
-                        _showTransliteration ? Icons.translate : Icons.translate_outlined,
-                        color: _showTransliteration ? const Color(0xFFD4AF37) : Colors.white54,
-                        size: 22,
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
                       ),
-                      onPressed: () => setState(() => _showTransliteration = !_showTransliteration),
+                      child: IconButton(
+                        icon: Icon(
+                          _showTransliteration ? Icons.translate : Icons.translate_outlined,
+                          color: _showTransliteration ? const Color(0xFFD4AF37) : Colors.white54,
+                          size: 22,
+                        ),
+                        onPressed: () => setState(() => _showTransliteration = !_showTransliteration),
+                      ),
                     ),
                   ],
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -614,66 +623,74 @@ class _AzkarDetailScreenState extends State<_AzkarDetailScreen> {
                       children: [
                         Text(
                           '${_counts.where((c) => c > 0).length} / ${cat.items.length}',
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
+                          style: GoogleFonts.elMessiri(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
                         ),
                         if (_allDone)
                           Text(
-                            widget.lang == 'ar' ? '✓ اكتمل' : (widget.lang == 'fr' ? '✓ Terminé' : '✓ Done'),
-                            style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 12, fontWeight: FontWeight.bold),
+                            isArabic ? '✓ اكتمل' : (widget.lang == 'fr' ? '✓ Terminé' : '✓ Done'),
+                            style: GoogleFonts.elMessiri(color: const Color(0xFFD4AF37), fontSize: 14, fontWeight: FontWeight.bold),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(8),
                       child: LinearProgressIndicator(
                         value: cat.items.isEmpty ? 0 : _counts.asMap().entries.where((e) => e.value >= cat.items[e.key].count).length / cat.items.length,
-                        backgroundColor: Colors.white.withValues(alpha: 0.15),
+                        backgroundColor: Colors.black.withValues(alpha: 0.4),
                         valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
-                        minHeight: 5,
+                        minHeight: 6,
                       ),
                     ),
                   ],
                 ),
               ),
+              
+              // THIS IS THE CONSTRAINED LISTVIEW YOU ASKED ABOUT
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  itemCount: cat.items.length,
-                  itemBuilder: (context, index) {
-                    final zikr = cat.items[index];
-                    final progress = _counts[index];
-                    final isDone = progress >= zikr.count;
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 800),
+                    child: ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+                      itemCount: cat.items.length,
+                      itemBuilder: (context, index) {
+                        final zikr = cat.items[index];
+                        final progress = _counts[index];
+                        final isDone = progress >= zikr.count;
 
-                    return TweenAnimationBuilder<double>(
-                      duration: Duration(milliseconds: 200 + (index * 60).clamp(0, 500)),
-                      tween: Tween(begin: 0, end: 1),
-                      curve: Curves.easeOutCubic,
-                      builder: (context, value, child) => Opacity(
-                        opacity: value,
-                        child: Transform.translate(offset: Offset(0, (1 - value) * 16), child: child),
-                      ),
-                      child: _ZikrCard(
-                        zikr: zikr,
-                        progress: progress,
-                        isDone: isDone,
-                        showTransliteration: _showTransliteration,
-                        lang: widget.lang,
-                        onTap: () => _increment(index),
-                        onReset: () => _reset(index),
-                      ),
-                    );
-                  },
+                        return TweenAnimationBuilder<double>(
+                          duration: Duration(milliseconds: 200 + (index * 60).clamp(0, 500)),
+                          tween: Tween(begin: 0, end: 1),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) => Opacity(
+                            opacity: value,
+                            child: Transform.translate(offset: Offset(0, (1 - value) * 16), child: child),
+                          ),
+                          child: _ZikrGlassCard(
+                            zikr: zikr,
+                            progress: progress,
+                            isDone: isDone,
+                            showTransliteration: _showTransliteration,
+                            lang: widget.lang,
+                            onTap: () => _increment(index),
+                            onReset: () => _reset(index),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
+
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                 child: TextButton.icon(
                   onPressed: _resetAll,
-                  icon: const Icon(Icons.refresh_rounded, color: Colors.white54, size: 18),
+                  icon: const Icon(Icons.refresh_rounded, color: Colors.white54, size: 20),
                   label: Text(
-                    widget.lang == 'ar' ? 'إعادة ضبط الكل' : (widget.lang == 'fr' ? 'Tout réinitialiser' : 'Reset All'),
-                    style: const TextStyle(color: Colors.white54, fontSize: 13),
+                    isArabic ? 'إعادة ضبط الكل' : (widget.lang == 'fr' ? 'Tout réinitialiser' : 'Reset All'),
+                    style: GoogleFonts.elMessiri(color: Colors.white54, fontSize: 16),
                   ),
                 ),
               ),
@@ -685,7 +702,8 @@ class _AzkarDetailScreenState extends State<_AzkarDetailScreen> {
   }
 }
 
-class _ZikrCard extends StatelessWidget {
+// ── NEW FROSTED GLASS ZIKR CARD ────────────────────────────────
+class _ZikrGlassCard extends StatelessWidget {
   final _ZikrItem zikr;
   final int progress;
   final bool isDone;
@@ -694,7 +712,7 @@ class _ZikrCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onReset;
 
-  const _ZikrCard({
+  const _ZikrGlassCard({
     required this.zikr,
     required this.progress,
     required this.isDone,
@@ -708,115 +726,123 @@ class _ZikrCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        margin: const EdgeInsets.only(bottom: 14),
-        decoration: BoxDecoration(
-          color: isDone ? const Color(0xFF1B5E3F).withValues(alpha: 0.95) : const Color(0xFF144D32),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDone ? const Color(0xFFD4AF37).withValues(alpha: 0.8) : const Color(0xFFD4AF37).withValues(alpha: 0.18),
-            width: isDone ? 1.5 : 1,
-          ),
-          boxShadow: isDone
-              ? [BoxShadow(color: const Color(0xFF1B5E3F).withValues(alpha: 0.4), blurRadius: 8, offset: const Offset(0, 3))]
-              : [],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                zikr.arabic,
-                textAlign: TextAlign.right,
-                textDirection: TextDirection.rtl,
-                style: TextStyle(
-                  color: isDone ? const Color(0xFFD4AF37) : Colors.white,
-                  fontSize: 17,
-                  height: 1.9,
-                  fontWeight: FontWeight.w500,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: isDone 
+                    ? const Color(0xFF1B5E3F).withValues(alpha: 0.85)
+                    : const Color(0xFF0B3D2E).withValues(alpha: 0.65),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDone 
+                      ? const Color(0xFFD4AF37).withValues(alpha: 0.8)
+                      : const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                  width: isDone ? 2 : 1,
                 ),
+                boxShadow: isDone
+                    ? [BoxShadow(color: const Color(0xFFD4AF37).withValues(alpha: 0.15), blurRadius: 12, spreadRadius: 2)]
+                    : [],
               ),
-              if (showTransliteration) ...[
-                const SizedBox(height: 8),
-                Text(
-                  zikr.transliteration,
-                  style: TextStyle(
-                    color: const Color(0xFFD4AF37).withValues(alpha: 0.75),
-                    fontSize: 12,
-                    fontStyle: FontStyle.italic,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 6),
-              Text(
-                // Renders the correct translation based on language!
-                lang == 'fr' ? zikr.translationFr : zikr.translation,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.55),
-                  fontSize: 12,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  GestureDetector(
-                    onTap: progress > 0 ? onReset : null,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.refresh_rounded,
-                          size: 15,
-                          color: progress > 0 ? Colors.white54 : Colors.white24,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          lang == 'ar' ? 'إعادة' : (lang == 'fr' ? 'Réinit.' : 'Reset'),
-                          style: TextStyle(
-                            color: progress > 0 ? Colors.white54 : Colors.white24,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
+                  Text(
+                    zikr.arabic,
+                    textAlign: TextAlign.right,
+                    textDirection: TextDirection.rtl,
+                    style: GoogleFonts.amiri(
+                      color: isDone ? const Color(0xFFD4AF37) : Colors.white,
+                      fontSize: 24,
+                      height: 2.0,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  GestureDetector(
-                    onTap: onTap,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isDone ? const Color(0xFFD4AF37) : const Color(0xFF0B3D2E),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: isDone ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.4)),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            '$progress / ${zikr.count}',
-                            style: TextStyle(
-                              color: isDone ? const Color(0xFF0B3D2E) : const Color(0xFFD4AF37),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Icon(
-                            isDone ? Icons.check_circle_rounded : Icons.touch_app_rounded,
-                            size: 16,
-                            color: isDone ? const Color(0xFF0B3D2E) : const Color(0xFFD4AF37).withValues(alpha: 0.7),
-                          ),
-                        ],
+                  if (showTransliteration) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      zikr.transliteration,
+                      style: GoogleFonts.elMessiri(
+                        color: const Color(0xFFD4AF37).withValues(alpha: 0.8),
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                        height: 1.5,
                       ),
                     ),
+                  ],
+                  const SizedBox(height: 10),
+                  Text(
+                    lang == 'fr' ? zikr.translationFr : zikr.translation,
+                    style: GoogleFonts.elMessiri(
+                      color: Colors.white.withValues(alpha: 0.65),
+                      fontSize: 15,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: progress > 0 ? onReset : null,
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.refresh_rounded,
+                              size: 18,
+                              color: progress > 0 ? Colors.white54 : Colors.transparent,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              lang == 'ar' ? 'إعادة' : (lang == 'fr' ? 'Réinit.' : 'Reset'),
+                              style: GoogleFonts.elMessiri(
+                                color: progress > 0 ? Colors.white54 : Colors.transparent,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isDone ? const Color(0xFFD4AF37) : Colors.black.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: isDone ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.5)
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              '$progress / ${zikr.count}',
+                              style: TextStyle(
+                                color: isDone ? const Color(0xFF0B3D2E) : const Color(0xFFD4AF37),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              isDone ? Icons.check_circle_rounded : Icons.touch_app_rounded,
+                              size: 18,
+                              color: isDone ? const Color(0xFF0B3D2E) : const Color(0xFFD4AF37).withValues(alpha: 0.8),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:google_fonts/google_fonts.dart';
 import '../data/duaa_data.dart';
 import '../widgets/islamic_pattern_background.dart';
 import '../l10n/app_localizations.dart';
@@ -50,47 +52,77 @@ class _DuaaScreenState extends State<DuaaScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final lang = Localizations.localeOf(context).languageCode;
+    final isArabic = lang == 'ar';
 
     return Scaffold(
       body: IslamicPatternBackground(
         child: SafeArea(
           child: Column(
             children: [
-              _buildHeader(context, l10n),
-              Container(
-                color: Colors.white,
-                child: TabBar(
-                  controller: _tabController,
-                  isScrollable: true,
-                  labelColor: const Color(0xFF1B5E3F),
-                  unselectedLabelColor: Colors.grey.shade600,
-                  indicatorColor: const Color(0xFFD4AF37),
-                  indicatorWeight: 3,
-                  labelStyle: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+              _buildHeader(context, l10n, isArabic),
+              
+              // ── Floating Glass TabBar ──
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1000),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0B3D2E).withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+                          ),
+                          child: TabBar(
+                            controller: _tabController,
+                            isScrollable: true,
+                            labelColor: const Color(0xFFD4AF37),
+                            unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
+                            indicatorColor: const Color(0xFFD4AF37),
+                            indicatorWeight: 3,
+                            dividerColor: Colors.transparent,
+                            labelStyle: GoogleFonts.elMessiri(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            tabs: DuaaData.categories.map((category) {
+                              String tabText = category.categoryEn;
+                              if (isArabic) {
+                                tabText = category.categoryAr;
+                              } else if (lang == 'fr') {
+                                tabText = _getFrenchCategory(category.categoryEn);
+                              }
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4),
+                                child: Tab(text: tabText),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                  tabs: DuaaData.categories.map((category) {
-                    String tabText = category.categoryEn;
-                    if (lang == 'ar') {
-                      tabText = category.categoryAr;
-                    } else if (lang == 'fr') tabText = _getFrenchCategory(category.categoryEn);
-                    
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Tab(text: tabText),
-                    );
-                  }).toList(),
                 ),
               ),
+
+              // ── Tab Views ──
               Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: DuaaData.categories.map((category) {
-                    return _buildCategoryContent(context, category, lang);
-                  }).toList(),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 800),
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: DuaaData.categories.map((category) {
+                        return _buildCategoryContent(context, category, lang);
+                      }).toList(),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -100,46 +132,41 @@ class _DuaaScreenState extends State<DuaaScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildHeader(BuildContext context, AppLocalizations l10n) {
+  Widget _buildHeader(BuildContext context, AppLocalizations l10n, bool isArabic) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 20, 16),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24),
           ),
-          const SizedBox(width: 12),
           Expanded(
             child: Text(
               l10n.duaaTitle,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-              ),
+              textAlign: TextAlign.center,
+              style: isArabic 
+                  ? GoogleFonts.amiri(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold)
+                  : GoogleFonts.arefRuqaa(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold),
             ),
           ),
-          const Icon(Icons.favorite, color: Color(0xFFD4AF37), size: 28),
+          const SizedBox(width: 48),
         ],
       ),
     );
   }
 
   Widget _buildCategoryContent(BuildContext context, DuaaCategory category, String lang) {
-    return Container(
-      color: Colors.white,
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-        itemCount: category.duaas.length,
-        itemBuilder: (context, index) {
-          return _DuaaCard(
-            duaa: category.duaas[index],
-            lang: lang,
-            index: index,
-          );
-        },
-      ),
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+      itemCount: category.duaas.length,
+      itemBuilder: (context, index) {
+        return _DuaaCard(
+          duaa: category.duaas[index],
+          lang: lang,
+          index: index,
+        );
+      },
     );
   }
 }
@@ -161,34 +188,15 @@ class _DuaaCard extends StatefulWidget {
 
 class _DuaaCardState extends State<_DuaaCard> with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
-  late AnimationController _expandController;
-
-  @override
-  void initState() {
-    super.initState();
-    _expandController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-  }
-
-  @override
-  void dispose() {
-    _expandController.dispose();
-    super.dispose();
-  }
 
   void _toggleExpand() {
     setState(() => _isExpanded = !_isExpanded);
-    _isExpanded ? _expandController.forward() : _expandController.reverse();
   }
 
-  // --- 100% COMPLETE EXACT FRENCH TRANSLATOR FOR YOUR DATABASE ---
   String _translateToFrench(String englishText) {
     if (englishText.isEmpty) return englishText;
 
     final Map<String, String> frTranslations = {
-      // 1. ALL TITLES
       'Dua for Distress': 'Douâa pour la Détresse',
       'Dua for Anxiety & Sorrow': 'Douâa pour l\'Anxiété et le Chagrin',
       'Dua for Knowledge': 'Douâa pour le Savoir',
@@ -210,8 +218,6 @@ class _DuaaCardState extends State<_DuaaCard> with SingleTickerProviderStateMixi
       'Waking Up Dua': 'Douâa du Réveil',
       'Dua Against Fear': 'Douâa contre la Peur',
       'Protection Dua': 'Douâa de Protection',
-
-      // 2. ALL DUAA TRANSLATIONS
       'There is no deity except You, exalted are You. Indeed, I have been of the wrongdoers.': 'Il n\'y a de divinité que Toi, exalté sois-Tu. J\'ai été vraiment du nombre des injustes.',
       'O Allah, I seek refuge in You from anxiety and sorrow, weakness and laziness, miserliness and cowardice, the burden of debts, and from being overpowered by men.': 'Ô Allah, je cherche refuge auprès de Toi contre l\'anxiété et le chagrin, la faiblesse et la paresse, l\'avarice et la lâcheté, le poids des dettes et la domination des hommes.',
       'My Lord, expand for me my breast and ease for me my task and loosen the knot from my tongue that they may understand my speech.': 'Seigneur, ouvre-moi ma poitrine, et facilite ma mission, et dénoue un nœud en ma langue, afin qu\'ils comprennent mes paroles.',
@@ -233,8 +239,6 @@ class _DuaaCardState extends State<_DuaaCard> with SingleTickerProviderStateMixi
       'All praise is for Allah, who has given us life after death, and to Him is the return.': 'Toute louange est à Allah, qui nous a redonné la vie après la mort, et c\'est vers Lui qu\'est le retour.',
       'I seek refuge in the perfect words of Allah from the evil of what He has created.': 'Je cherche refuge dans les paroles parfaites d\'Allah contre le mal de ce qu\'Il a créé.',
       'Sufficient for us is Allah, and He is the best disposer of affairs.': 'Allah nous suffit, et Il est le meilleur garant.',
-
-      // 3. ALL BENEFITS
       'For severe distress and sorrow': 'Pour la détresse sévère et le chagrin',
       'Prophet\'s dua to dispel anxiety and sadness': 'Douâa du Prophète pour dissiper l\'anxiété et la tristesse',
       'Dua of Prophet Musa - for understanding and knowledge': 'Douâa du Prophète Moussa - pour la compréhension et le savoir',
@@ -266,17 +270,14 @@ class _DuaaCardState extends State<_DuaaCard> with SingleTickerProviderStateMixi
     final lang = widget.lang;
     final isArabic = lang == 'ar';
     
-    // 1. Determine Title Dynamically
     String cardTitle = widget.duaa.titleEn;
     if (isArabic) {
       cardTitle = widget.duaa.titleAr;
     } else if (lang == 'fr') cardTitle = _translateToFrench(widget.duaa.titleEn); 
 
-    // 2. Determine Translated Duaa Text Dynamically
     String translatedDuaaText = widget.duaa.duaaEn;
     if (lang == 'fr') translatedDuaaText = _translateToFrench(widget.duaa.duaaEn);
 
-    // 3. Determine Benefit Text Dynamically
     String benefitText = widget.duaa.benefitEn ?? '';
     if (isArabic && widget.duaa.benefitAr != null) {
       benefitText = widget.duaa.benefitAr!;
@@ -295,171 +296,161 @@ class _DuaaCardState extends State<_DuaaCard> with SingleTickerProviderStateMixi
           ),
         );
       },
-      child: GestureDetector(
-        onTap: _toggleExpand,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: _isExpanded
-                ? const Color(0xFF1B5E3F).withValues(alpha: 0.05)
-                : Colors.white,
-            border: Border.all(
-              color: _isExpanded
-                  ? const Color(0xFF1B5E3F)
-                  : Colors.grey.shade300,
-              width: _isExpanded ? 2 : 1,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              if (_isExpanded)
-                BoxShadow(
-                  color: const Color(0xFF1B5E3F).withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: _isExpanded
+                    ? const Color(0xFF144D32).withValues(alpha: 0.8)
+                    : const Color(0xFF0B3D2E).withValues(alpha: 0.65),
+                border: Border.all(
+                  color: _isExpanded
+                      ? const Color(0xFFD4AF37).withValues(alpha: 0.8)
+                      : const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                  width: _isExpanded ? 2 : 1,
                 ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title and expand button
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      cardTitle, 
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1B5E3F),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  AnimatedRotation(
-                    turns: _isExpanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 300),
-                    child: const Icon(
-                      Icons.expand_more,
-                      color: Color(0xFF1B5E3F),
-                    ),
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(16),
               ),
-
-              if (_isExpanded) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAF9),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Arabic dua (Always visible at the top)
-                      Text(
-                        widget.duaa.duaaAr,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A2E25),
-                          height: 1.8,
-                          fontFamily: 'Traditional Arabic Numerals',
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Divider(color: Colors.grey.shade300),
-                      const SizedBox(height: 12),
-                      
-                      // English/French translation (Right below the Arabic!)
-                      Text(
-                        translatedDuaaText, 
-                        textAlign: TextAlign.left,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade700,
-                          height: 1.6,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Benefit section
-                if (widget.duaa.benefitAr != null) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD4AF37).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GestureDetector(
+                    onTap: _toggleExpand,
+                    behavior: HitTestBehavior.opaque,
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.lightbulb,
-                              color: Color(0xFFD4AF37),
-                              size: 18,
+                        Expanded(
+                          child: Text(
+                            cardTitle, 
+                            style: GoogleFonts.elMessiri(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: _isExpanded ? Colors.white : const Color(0xFFD4AF37),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                lang == 'ar' ? 'الفائدة' : (lang == 'fr' ? 'Bénéfice' : 'Benefit'),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFFD4AF37),
-                                ),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          benefitText, 
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade700,
-                            height: 1.5,
+                        const SizedBox(width: 8),
+                        AnimatedRotation(
+                          turns: _isExpanded ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 300),
+                          child: Icon(
+                            Icons.expand_more_rounded,
+                            color: _isExpanded ? Colors.white : const Color(0xFFD4AF37),
+                            size: 28,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
 
-                // Copy and Share buttons
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildActionButton(
-                      icon: Icons.copy,
-                      label: lang == 'ar' ? 'نسخ' : (lang == 'fr' ? 'Copier' : 'Copy'),
-                      onPressed: () => _copyDuaa(lang),
+                  if (_isExpanded) ...[
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            widget.duaa.duaaAr,
+                            textAlign: TextAlign.center,
+                            textDirection: TextDirection.rtl,
+                            style: GoogleFonts.amiri(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFFD4AF37),
+                              height: 2.0,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Divider(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+                          const SizedBox(height: 16),
+                          Text(
+                            translatedDuaaText, 
+                            textAlign: TextAlign.left,
+                            style: GoogleFonts.elMessiri(
+                              fontSize: 16,
+                              color: Colors.white.withValues(alpha: 0.8),
+                              height: 1.6,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    _buildActionButton(
-                      icon: Icons.share,
-                      label: lang == 'ar' ? 'مشاركة' : (lang == 'fr' ? 'Partager' : 'Share'),
-                      onPressed: () => _shareDuaa(lang),
+
+                    if (widget.duaa.benefitAr != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD4AF37).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.lightbulb_outline, color: Color(0xFFD4AF37), size: 20),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    lang == 'ar' ? 'الفائدة' : (lang == 'fr' ? 'Bénéfice' : 'Benefit'),
+                                    style: GoogleFonts.elMessiri(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFFD4AF37),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              benefitText, 
+                              style: GoogleFonts.elMessiri(
+                                fontSize: 14,
+                                color: Colors.white.withValues(alpha: 0.8),
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildActionButton(
+                          icon: Icons.copy_rounded,
+                          label: lang == 'ar' ? 'نسخ' : (lang == 'fr' ? 'Copier' : 'Copy'),
+                          onPressed: () => _copyDuaa(lang),
+                        ),
+                        _buildActionButton(
+                          icon: Icons.share_rounded,
+                          label: lang == 'ar' ? 'مشاركة' : (lang == 'fr' ? 'Partager' : 'Share'),
+                          onPressed: () => _shareDuaa(lang),
+                        ),
+                      ],
                     ),
                   ],
-                ),
-              ],
-            ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -469,30 +460,30 @@ class _DuaaCardState extends State<_DuaaCard> with SingleTickerProviderStateMixi
   Widget _buildActionButton({required IconData icon, required String label, required VoidCallback onPressed}) {
     return ElevatedButton.icon(
       onPressed: onPressed,
-      icon: Icon(icon, size: 16),
-      label: Text(label, style: const TextStyle(fontSize: 12)),
+      icon: Icon(icon, size: 18),
+      label: Text(label, style: GoogleFonts.elMessiri(fontSize: 16, fontWeight: FontWeight.bold)),
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF1B5E3F),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        backgroundColor: const Color(0xFFD4AF37),
+        foregroundColor: const Color(0xFF0B3D2E),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
 
   void _copyDuaa(String lang) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(lang == 'ar' ? 'تم نسخ الدعاء' : (lang == 'fr' ? 'Douâa copié' : 'Duaa copied')),
+      content: Text(lang == 'ar' ? 'تم نسخ الدعاء' : (lang == 'fr' ? 'Douâa copié' : 'Duaa copied'), style: GoogleFonts.elMessiri()),
       duration: const Duration(milliseconds: 800),
-      backgroundColor: const Color(0xFF1B5E3F),
+      backgroundColor: const Color(0xFF0B3D2E),
     ));
   }
 
   void _shareDuaa(String lang) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(lang == 'ar' ? 'تمت مشاركة الدعاء' : (lang == 'fr' ? 'Douâa partagé' : 'Duaa shared')),
+      content: Text(lang == 'ar' ? 'تمت مشاركة الدعاء' : (lang == 'fr' ? 'Douâa partagé' : 'Duaa shared'), style: GoogleFonts.elMessiri()),
       duration: const Duration(milliseconds: 800),
-      backgroundColor: const Color(0xFF1B5E3F),
+      backgroundColor: const Color(0xFF0B3D2E),
     ));
   }
 }

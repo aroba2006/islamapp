@@ -7,13 +7,17 @@ class AdhanService {
   static const Map<String, String> adhanAssetPaths = {
     'mishary': 'adhan/afasiadhan.mp3',
     'nasser':  'adhan/qatamiadhan.mp3',
-    'qassas':  'adhan/moqassas.mp3'
+    'qassas':  'adhan/moqassas.mp3',
+    'refaat': 'adhan/refaatadhan.mp3',
+    'tobar': 'adhan/adhantobar.mp3',
   };
 
   static final Map<String, String> reciterNames = {
     'mishary': 'Mishary Al-Afasi',
     'nasser':  'Nasser Al-Qattami',
-    'qassas':  'Mohamed Marawan Qassas'
+    'qassas':  'Mohamed Marawan Qassas',
+    'refaat': 'Mohamed Refaat',
+    'tobar': 'Nasraldin Tobar',
   };
 
   /// Initialize audio player - call this once at app startup
@@ -42,7 +46,7 @@ class AdhanService {
       } else if (Platform.isAndroid) {
         await _audioPlayer.setAudioContext(
           AudioContext(
-            android: AudioContextAndroid(
+            android: const AudioContextAndroid(
               audioFocus: AndroidAudioFocus.gain,
             ),
           ),
