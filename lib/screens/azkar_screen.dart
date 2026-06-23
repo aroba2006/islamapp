@@ -360,7 +360,7 @@ class _AzkarScreenState extends State<AzkarScreen>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final lang = Localizations.localeOf(context).languageCode;
     final isArabic = lang == 'ar';
 
@@ -401,9 +401,9 @@ class _AzkarScreenState extends State<AzkarScreen>
                         itemCount: _categories.length,
                         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                           maxCrossAxisExtent: 300,
-                          crossAxisSpacing: 20,
-                          mainAxisSpacing: 20,
-                          childAspectRatio: 1.0,
+                          crossAxisSpacing: 16, // Slightly reduced spacing to save space
+                          mainAxisSpacing: 16,
+                          mainAxisExtent: 160,  // <--- ADD THIS: Forces a fixed height for all cards
                         ),
                         itemBuilder: (context, index) {
                           final cat = _categories[index];
@@ -457,6 +457,7 @@ class _CategoryGlassCard extends StatefulWidget {
 
 class _CategoryGlassCardState extends State<_CategoryGlassCard> {
   bool _isHovered = false;
+  double _scale = 1.0;
 
   @override
   Widget build(BuildContext context) {
@@ -466,10 +467,13 @@ class _CategoryGlassCardState extends State<_CategoryGlassCard> {
       onExit: (_) => setState(() => _isHovered = false),
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
+        onTapDown: (_) => setState(() => _scale = 0.96),
+        onTapUp: (_) => setState(() => _scale = 1.0),
+        onTapCancel: () => setState(() => _scale = 1.0),
         onTap: widget.onTap,
         child: AnimatedScale(
-          scale: _isHovered ? 1.04 : 1.0,
-          duration: const Duration(milliseconds: 200),
+          scale: _isHovered ? 1.04 : _scale,
+          duration: const Duration(milliseconds: 150),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
             child: BackdropFilter(
@@ -492,35 +496,34 @@ class _CategoryGlassCardState extends State<_CategoryGlassCard> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(cat.emoji, style: const TextStyle(fontSize: 48)),
-                    const SizedBox(height: 16),
-                    Text(
-                      widget.lang == 'ar' ? cat.titleAr : (widget.lang == 'fr' ? cat.titleFr : cat.titleEn),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      style: GoogleFonts.elMessiri(
-                        color: _isHovered ? Colors.white : const Color(0xFFD4AF37),
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${cat.items.length} ${widget.lang == 'ar' ? 'أذكار' : (widget.lang == 'fr' ? 'Adhkar' : 'Azkar')}',
-                        style: const TextStyle(
-                          color: Color(0xFFD4AF37),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+  Text(cat.emoji, style: const TextStyle(fontSize: 32)), // Slightly smaller emoji
+  const SizedBox(height: 8),
+  Flexible( // <--- Wraps the text so it never overflows
+    child: Text(
+      widget.lang == 'ar' ? cat.titleAr : (widget.lang == 'fr' ? cat.titleFr : cat.titleEn),
+      textAlign: TextAlign.center,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: GoogleFonts.elMessiri(
+        color: _isHovered ? Colors.white : const Color(0xFFD4AF37),
+        fontSize: 16, // Slightly smaller font
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  ),
+  const SizedBox(height: 8),
+  Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+    decoration: BoxDecoration(
+      color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Text(
+      '${cat.items.length} ${widget.lang == 'ar' ? 'أذكار' : '...' }',
+      style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 10, fontWeight: FontWeight.bold),
+    ),
+  ),
+],
                 ),
               ),
             ),
@@ -646,7 +649,6 @@ class _AzkarDetailScreenState extends State<_AzkarDetailScreen> {
                 ),
               ),
               
-              // THIS IS THE CONSTRAINED LISTVIEW YOU ASKED ABOUT
               Expanded(
                 child: Center(
                   child: ConstrainedBox(
@@ -703,7 +705,7 @@ class _AzkarDetailScreenState extends State<_AzkarDetailScreen> {
 }
 
 // ── NEW FROSTED GLASS ZIKR CARD ────────────────────────────────
-class _ZikrGlassCard extends StatelessWidget {
+class _ZikrGlassCard extends StatefulWidget {
   final _ZikrItem zikr;
   final int progress;
   final bool isDone;
@@ -723,124 +725,144 @@ class _ZikrGlassCard extends StatelessWidget {
   });
 
   @override
+  State<_ZikrGlassCard> createState() => _ZikrGlassCardState();
+}
+
+class _ZikrGlassCardState extends State<_ZikrGlassCard> {
+  bool _isHovered = false;
+  double _scale = 1.0;
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: isDone 
-                    ? const Color(0xFF1B5E3F).withValues(alpha: 0.85)
-                    : const Color(0xFF0B3D2E).withValues(alpha: 0.65),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isDone 
-                      ? const Color(0xFFD4AF37).withValues(alpha: 0.8)
-                      : const Color(0xFFD4AF37).withValues(alpha: 0.3),
-                  width: isDone ? 2 : 1,
-                ),
-                boxShadow: isDone
-                    ? [BoxShadow(color: const Color(0xFFD4AF37).withValues(alpha: 0.15), blurRadius: 12, spreadRadius: 2)]
-                    : [],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    zikr.arabic,
-                    textAlign: TextAlign.right,
-                    textDirection: TextDirection.rtl,
-                    style: GoogleFonts.amiri(
-                      color: isDone ? const Color(0xFFD4AF37) : Colors.white,
-                      fontSize: 24,
-                      height: 2.0,
-                      fontWeight: FontWeight.bold,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _scale = 0.98),
+        onTapUp: (_) => setState(() => _scale = 1.0),
+        onTapCancel: () => setState(() => _scale = 1.0),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _isHovered ? 1.02 : _scale,
+          duration: const Duration(milliseconds: 150),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: widget.isDone 
+                        ? const Color(0xFF1B5E3F).withValues(alpha: 0.85)
+                        : const Color(0xFF0B3D2E).withValues(alpha: 0.65),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: widget.isDone 
+                          ? const Color(0xFFD4AF37).withValues(alpha: 0.8)
+                          : const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                      width: widget.isDone ? 2 : 1,
                     ),
+                    boxShadow: widget.isDone
+                        ? [BoxShadow(color: const Color(0xFFD4AF37).withValues(alpha: 0.15), blurRadius: 12, spreadRadius: 2)]
+                        : [],
                   ),
-                  if (showTransliteration) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      zikr.transliteration,
-                      style: GoogleFonts.elMessiri(
-                        color: const Color(0xFFD4AF37).withValues(alpha: 0.8),
-                        fontSize: 14,
-                        fontStyle: FontStyle.italic,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 10),
-                  Text(
-                    lang == 'fr' ? zikr.translationFr : zikr.translation,
-                    style: GoogleFonts.elMessiri(
-                      color: Colors.white.withValues(alpha: 0.65),
-                      fontSize: 15,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      GestureDetector(
-                        onTap: progress > 0 ? onReset : null,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.refresh_rounded,
-                              size: 18,
-                              color: progress > 0 ? Colors.white54 : Colors.transparent,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              lang == 'ar' ? 'إعادة' : (lang == 'fr' ? 'Réinit.' : 'Reset'),
-                              style: GoogleFonts.elMessiri(
-                                color: progress > 0 ? Colors.white54 : Colors.transparent,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
+                      Text(
+                        widget.zikr.arabic,
+                        textAlign: TextAlign.right,
+                        textDirection: TextDirection.rtl,
+                        style: GoogleFonts.amiri(
+                          color: widget.isDone ? const Color(0xFFD4AF37) : Colors.white,
+                          fontSize: 24,
+                          height: 2.0,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: isDone ? const Color(0xFFD4AF37) : Colors.black.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(30),
-                          border: Border.all(
-                            color: isDone ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.5)
+                      if (widget.showTransliteration) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          widget.zikr.transliteration,
+                          style: GoogleFonts.elMessiri(
+                            color: const Color(0xFFD4AF37).withValues(alpha: 0.8),
+                            fontSize: 14,
+                            fontStyle: FontStyle.italic,
+                            height: 1.5,
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Text(
-                              '$progress / ${zikr.count}',
-                              style: TextStyle(
-                                color: isDone ? const Color(0xFF0B3D2E) : const Color(0xFFD4AF37),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                      ],
+                      const SizedBox(height: 10),
+                      Text(
+                        widget.lang == 'fr' ? widget.zikr.translationFr : widget.zikr.translation,
+                        style: GoogleFonts.elMessiri(
+                          color: Colors.white.withValues(alpha: 0.65),
+                          fontSize: 15,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          GestureDetector(
+                            onTap: widget.progress > 0 ? widget.onReset : null,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.refresh_rounded,
+                                  size: 18,
+                                  color: widget.progress > 0 ? Colors.white54 : Colors.transparent,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  widget.lang == 'ar' ? 'إعادة' : (widget.lang == 'fr' ? 'Réinit.' : 'Reset'),
+                                  style: GoogleFonts.elMessiri(
+                                    color: widget.progress > 0 ? Colors.white54 : Colors.transparent,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: widget.isDone ? const Color(0xFFD4AF37) : Colors.black.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(
+                                color: widget.isDone ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.5)
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Icon(
-                              isDone ? Icons.check_circle_rounded : Icons.touch_app_rounded,
-                              size: 18,
-                              color: isDone ? const Color(0xFF0B3D2E) : const Color(0xFFD4AF37).withValues(alpha: 0.8),
+                            child: Row(
+                              children: [
+                                Text(
+                                  '${widget.progress} / ${widget.zikr.count}',
+                                  style: TextStyle(
+                                    color: widget.isDone ? const Color(0xFF0B3D2E) : const Color(0xFFD4AF37),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(
+                                  widget.isDone ? Icons.check_circle_rounded : Icons.touch_app_rounded,
+                                  size: 18,
+                                  color: widget.isDone ? const Color(0xFF0B3D2E) : const Color(0xFFD4AF37).withValues(alpha: 0.8),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           ),

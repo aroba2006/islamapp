@@ -189,7 +189,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     return Scaffold(
@@ -238,7 +238,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                   : GoogleFonts.arefRuqaa(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold),
             ),
           ),
-          const SizedBox(width: 48), // Balances the back button
+          const SizedBox(width: 48),
         ],
       ),
     );
@@ -290,7 +290,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
       child: Column(
         children: [
-          // Subtitle / Location
           Text(
             "${GeoTranslations.translate(context, widget.country.name)} - ${GeoTranslations.translate(context, widget.region)}",
             style: GoogleFonts.elMessiri(

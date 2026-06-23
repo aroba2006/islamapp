@@ -136,9 +136,10 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
     final regions = widget.country.regions;
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+      // FIXED: Changed Count to Extent here
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 280, // Automatically wraps based on screen width
-        childAspectRatio: 2.2, // Keeps them as wide rectangles
+        maxCrossAxisExtent: 280, 
+        childAspectRatio: 2.2, 
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
@@ -184,22 +185,24 @@ class _RegionGlassCard extends StatefulWidget {
 
 class _RegionGlassCardState extends State<_RegionGlassCard> {
   bool _isHovered = false;
-  double _scale = 1.0;
+  bool _isPressed = false;
 
   @override
   Widget build(BuildContext context) {
+    final isActive = _isHovered || _isPressed;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTapDown: (_) => setState(() => _scale = 0.96),
-        onTapUp: (_) => setState(() => _scale = 1.0),
-        onTapCancel: () => setState(() => _scale = 1.0),
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        onTapCancel: () => setState(() => _isPressed = false),
         onTap: widget.onTap,
         child: AnimatedScale(
-          scale: _isHovered ? 1.04 : _scale,
-          duration: const Duration(milliseconds: 200),
+          scale: isActive ? 0.96 : 1.0,
+          duration: const Duration(milliseconds: 150),
           curve: Curves.easeOutCubic,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
@@ -208,15 +211,15 @@ class _RegionGlassCardState extends State<_RegionGlassCard> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 decoration: BoxDecoration(
-                  color: _isHovered 
+                  color: isActive 
                       ? const Color(0xFF144D32).withValues(alpha: 0.85)
                       : const Color(0xFF0B3D2E).withValues(alpha: 0.65),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: _isHovered 
+                    color: isActive 
                         ? const Color(0xFFD4AF37).withValues(alpha: 0.8)
                         : const Color(0xFFD4AF37).withValues(alpha: 0.2),
-                    width: _isHovered ? 2 : 1,
+                    width: isActive ? 2 : 1,
                   ),
                 ),
                 alignment: Alignment.center,
@@ -227,7 +230,7 @@ class _RegionGlassCardState extends State<_RegionGlassCard> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.elMessiri(
-                    color: _isHovered ? Colors.white : const Color(0xFFD4AF37),
+                    color: isActive ? Colors.white : const Color(0xFFD4AF37),
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),

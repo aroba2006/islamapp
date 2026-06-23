@@ -48,18 +48,22 @@ class _GoodDeedsScreenState extends State<GoodDeedsScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final loadedDeeds = await DeedsService.getAllDeeds();
-    final streak = await DeedsService.getCurrentStreak();
-    final total = await DeedsService.getTotalDeeds();
-    final today = await DeedsService.getDeedCountToday();
+    try {
+      final loadedDeeds = await DeedsService.getAllDeeds();
+      final streak = await DeedsService.getCurrentStreak();
+      final total = await DeedsService.getTotalDeeds();
+      final today = await DeedsService.getDeedCountToday();
 
-    setState(() {
-      deeds = loadedDeeds;
-      _currentStreak = streak;
-      _totalDeeds = total;
-      _todayDeeds = today;
-      _isLoading = false;
-    });
+      setState(() {
+        deeds = loadedDeeds;
+        _currentStreak = streak;
+        _totalDeeds = total;
+        _todayDeeds = today;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
   }
 
   String _getCategoryName(String cat, AppLocalizations l10n) {
@@ -219,6 +223,11 @@ class _GoodDeedsScreenState extends State<GoodDeedsScreen> {
     final lang = Localizations.localeOf(context).languageCode;
     final isArabic = lang == 'ar';
 
+    // Verify filtered state specifically to avoid blank screens
+    final filteredDeeds = _selectedCategory == null
+        ? deeds
+        : deeds.where((d) => d.category == _selectedCategory).toList();
+
     return Scaffold(
       body: IslamicPatternBackground(
         child: SafeArea(
@@ -231,20 +240,43 @@ class _GoodDeedsScreenState extends State<GoodDeedsScreen> {
                     : Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 800),
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
-                            child: Column(
-                              children: [
-                                _buildStatsCards(l10n),
-                                const SizedBox(height: 24),
-                                _buildCategoryFilter(l10n),
-                                const SizedBox(height: 24),
-                                if (deeds.isEmpty)
-                                  _buildEmptyState(l10n)
-                                else
-                                  _buildDeedsList(l10n),
-                              ],
-                            ),
+                          // STRICT FLEX LAYOUT: Prevents scroll collapse
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 24),
+                                child: _buildStatsCards(l10n),
+                              ),
+                              const SizedBox(height: 24),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 24),
+                                child: _buildCategoryFilter(l10n),
+                              ),
+                              const SizedBox(height: 24),
+                              
+                              // Expanding the list guarantees the empty state vertically centers
+                              Expanded(
+                                child: filteredDeeds.isEmpty
+                                    ? _buildEmptyState(l10n)
+                                    : ListView.builder(
+                                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
+                                        itemCount: filteredDeeds.length,
+                                        itemBuilder: (context, index) {
+                                          final deed = filteredDeeds[index];
+                                          return _DeedGlassCard(
+                                            deed: deed, 
+                                            l10n: l10n, 
+                                            color: categoryColors[deed.category] ?? Colors.grey, 
+                                            icon: categoryIcons[deed.category] ?? Icons.favorite_rounded,
+                                            onDelete: () async {
+                                              await DeedsService.deleteDeed(deed.id);
+                                              _loadData();
+                                            },
+                                          );
+                                        },
+                                      ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -253,10 +285,14 @@ class _GoodDeedsScreenState extends State<GoodDeedsScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddDeedDialog(context, l10n, isArabic),
-        backgroundColor: const Color(0xFFD4AF37),
-        child: const Icon(Icons.add_rounded, color: Color(0xFF0B3D2E), size: 32),
+      // PROTECTED FAB: Forces the button above Android's navigation bar
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: SafeArea(
+        child: FloatingActionButton(
+          onPressed: () => _showAddDeedDialog(context, l10n, isArabic),
+          backgroundColor: const Color(0xFFD4AF37),
+          child: const Icon(Icons.add_rounded, color: Color(0xFF0B3D2E), size: 32),
+        ),
       ),
     );
   }
@@ -401,42 +437,26 @@ class _GoodDeedsScreenState extends State<GoodDeedsScreen> {
 
   Widget _buildEmptyState(AppLocalizations l10n) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 40),
-          Icon(Icons.volunteer_activism_rounded, size: 80, color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
-          const SizedBox(height: 16),
-          Text(
-            l10n.noDeedsTitle,
-            style: GoogleFonts.elMessiri(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.noDeedsDesc,
-            style: GoogleFonts.elMessiri(color: Colors.white70, fontSize: 16),
-          ),
-        ],
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.volunteer_activism_rounded, size: 80, color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+            const SizedBox(height: 16),
+            Text(
+              l10n.noDeedsTitle,
+              style: GoogleFonts.elMessiri(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.noDeedsDesc,
+              style: GoogleFonts.elMessiri(color: Colors.white70, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildDeedsList(AppLocalizations l10n) {
-    final filteredDeeds = _selectedCategory == null
-        ? deeds
-        : deeds.where((d) => d.category == _selectedCategory).toList();
-
-    return Column(
-      children: filteredDeeds.map((deed) => _DeedGlassCard(
-        deed: deed, 
-        l10n: l10n, 
-        color: categoryColors[deed.category] ?? Colors.grey, 
-        icon: categoryIcons[deed.category] ?? Icons.favorite_rounded,
-        onDelete: () async {
-          await DeedsService.deleteDeed(deed.id);
-          _loadData();
-        },
-      )).toList(),
     );
   }
 }

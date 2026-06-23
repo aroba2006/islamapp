@@ -25,11 +25,15 @@ class _IslamicGoalsScreenState extends State<IslamicGoalsScreen> {
 
   Future<void> _loadGoals() async {
     setState(() => _isLoading = true);
-    final loadedGoals = await GoalsService.getAllGoals();
-    setState(() {
-      goals = loadedGoals;
-      _isLoading = false;
-    });
+    try {
+      final loadedGoals = await GoalsService.getAllGoals();
+      setState(() {
+        goals = loadedGoals;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
   }
 
   void _showAddGoalDialog(BuildContext context, AppLocalizations l10n) {
@@ -191,10 +195,14 @@ class _IslamicGoalsScreenState extends State<IslamicGoalsScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddGoalDialog(context, l10n),
-        backgroundColor: const Color(0xFFD4AF37),
-        child: const Icon(Icons.add_rounded, color: Color(0xFF0B3D2E), size: 32),
+      // PROTECTED FAB: Forces the button above Android's navigation bar
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: SafeArea(
+        child: FloatingActionButton(
+          onPressed: () => _showAddGoalDialog(context, l10n),
+          backgroundColor: const Color(0xFFD4AF37),
+          child: const Icon(Icons.add_rounded, color: Color(0xFF0B3D2E), size: 32),
+        ),
       ),
     );
   }
@@ -225,21 +233,25 @@ class _IslamicGoalsScreenState extends State<IslamicGoalsScreen> {
 
   Widget _buildEmptyState(BuildContext context, AppLocalizations l10n) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.flag_circle_rounded, size: 80, color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
-          const SizedBox(height: 16),
-          Text(
-            l10n.noGoalsTitle,
-            style: GoogleFonts.elMessiri(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.noGoalsDesc,
-            style: GoogleFonts.elMessiri(color: Colors.white.withValues(alpha: 0.7), fontSize: 16),
-          ),
-        ],
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.flag_circle_rounded, size: 80, color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+            const SizedBox(height: 16),
+            Text(
+              l10n.noGoalsTitle,
+              style: GoogleFonts.elMessiri(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.noGoalsDesc,
+              style: GoogleFonts.elMessiri(color: Colors.white.withValues(alpha: 0.7), fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

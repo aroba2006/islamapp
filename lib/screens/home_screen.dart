@@ -55,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     
     // Detect if the current language is Arabic to apply the best font
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
@@ -139,10 +139,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       child: GridView(
                         padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
                         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 320, // Slightly wider for elegance
-                          mainAxisSpacing: 20,
+                          maxCrossAxisExtent: 350,
                           crossAxisSpacing: 20,
-                          childAspectRatio: 0.95, // Slightly taller than wide
+                          mainAxisSpacing: 20,
+                          mainAxisExtent: 180, // <--- Add this! (Delete childAspectRatio if it is there)
                         ),
                         children: [
                           _AnimatedCardWrapper(
@@ -271,18 +271,22 @@ class _GlassCardState extends State<_GlassCard> {
       onExit: (_) => setState(() => _isHovered = false),
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: widget.onTap,
+        onTapDown: (_) => setState(() => _isHovered = true),
+        onTapUp: (_) => setState(() => _isHovered = false),
+        onTapCancel: () => setState(() => _isHovered = false),
+        onTap: () {
+          Future.delayed(const Duration(milliseconds: 100), widget.onTap);
+        },
         child: AnimatedScale(
-          scale: _isHovered ? 1.04 : 1.0,
-          duration: const Duration(milliseconds: 250),
+          scale: _isHovered ? 0.98 : 1.0,
+          duration: const Duration(milliseconds: 150),
           curve: Curves.easeOutBack,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(28),
             child: BackdropFilter(
-              // The frosted glass blur effect
               filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
+                duration: const Duration(milliseconds: 200),
                 decoration: BoxDecoration(
                   color: _isHovered 
                       ? const Color(0xFF144D32).withValues(alpha: 0.85)
@@ -303,14 +307,13 @@ class _GlassCardState extends State<_GlassCard> {
                       )
                   ],
                 ),
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Icon Container
                     AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      padding: const EdgeInsets.all(18),
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.all(16), // Slightly reduced for perfect fit
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: _isHovered
@@ -328,37 +331,36 @@ class _GlassCardState extends State<_GlassCard> {
                       child: Icon(
                         widget.icon,
                         color: _isHovered ? const Color(0xFF0B3D2E) : const Color(0xFFD4AF37),
-                        size: 34,
+                        size: 32,
                       ),
                     ),
                     
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
                     
-                    // Title
                     Text(
                       widget.title,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.elMessiri(
                         color: _isHovered ? Colors.white : const Color(0xFFD4AF37),
-                        fontSize: 22,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         height: 1.2,
                       ),
                     ),
                     
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     
-                    // Description
-                    Expanded(
+                    // 🛠️ THE FIX: Replaced Expanded with Flexible so it doesn't force infinite height stretching!
+                    Flexible(
                       child: Text(
                         widget.description,
                         textAlign: TextAlign.center,
-                        maxLines: 3,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.elMessiri(
                           color: Colors.white.withValues(alpha: _isHovered ? 0.9 : 0.6),
-                          fontSize: 14,
-                          height: 1.5,
+                          fontSize: 13,
+                          height: 1.3,
                         ),
                       ),
                     ),

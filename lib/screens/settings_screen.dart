@@ -44,7 +44,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     final isArabic = _selectedLanguage == 'ar';
 
     return Scaffold(
@@ -123,76 +123,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(width: 12),
             Text(
               l10n.language,
-              style: GoogleFonts.elMessiri(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+              style: GoogleFonts.elMessiri(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ],
         ),
         const SizedBox(height: 16),
-        _buildLanguageOption(context, l10n.arabic, 'ar'),
+        _InteractiveOptionCard(
+          label: l10n.arabic,
+          isSelected: _selectedLanguage == 'ar',
+          onTap: () {
+            setState(() => _selectedLanguage = 'ar');
+            IslamicApp.of(context)?.setLocale('ar');
+          },
+        ),
         const SizedBox(height: 12),
-        _buildLanguageOption(context, l10n.english, 'en'),
+        _InteractiveOptionCard(
+          label: l10n.english,
+          isSelected: _selectedLanguage == 'en',
+          onTap: () {
+            setState(() => _selectedLanguage = 'en');
+            IslamicApp.of(context)?.setLocale('en');
+          },
+        ),
         const SizedBox(height: 12),
-        _buildLanguageOption(context, l10n.french, 'fr'),
+        _InteractiveOptionCard(
+          label: l10n.french,
+          isSelected: _selectedLanguage == 'fr',
+          onTap: () {
+            setState(() => _selectedLanguage = 'fr');
+            IslamicApp.of(context)?.setLocale('fr');
+          },
+        ),
       ],
-    );
-  }
-
-  Widget _buildLanguageOption(BuildContext context, String label, String code) {
-    final isSelected = _selectedLanguage == code;
-    return GestureDetector(
-      onTap: () {
-        setState(() => _selectedLanguage = code);
-        IslamicApp.of(context)?.setLocale(code);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: isSelected 
-              ? const Color(0xFFD4AF37).withValues(alpha: 0.15) 
-              : const Color(0xFF144D32).withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.2),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Theme(
-              data: ThemeData(unselectedWidgetColor: Colors.white70),
-              child: Radio<String>(
-                value: code,
-                groupValue: _selectedLanguage,
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _selectedLanguage = value);
-                    IslamicApp.of(context)?.setLocale(value);
-                  }
-                },
-                activeColor: const Color(0xFFD4AF37),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                label,
-                style: GoogleFonts.elMessiri(
-                  fontSize: 18,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? const Color(0xFFD4AF37) : Colors.white,
-                ),
-              ),
-            ),
-            if (isSelected)
-              const Icon(Icons.check_circle_rounded, color: Color(0xFFD4AF37), size: 24),
-          ],
-        ),
-      ),
     );
   }
 
@@ -206,32 +168,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(width: 12),
             Text(
               l10n.adhan,
-              style: GoogleFonts.elMessiri(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+              style: GoogleFonts.elMessiri(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ],
         ),
         const SizedBox(height: 8),
         Text(
           l10n.selectAdhanReciter,
-          style: GoogleFonts.elMessiri(
-            fontSize: 16,
-            color: Colors.white.withValues(alpha: 0.6),
-          ),
+          style: GoogleFonts.elMessiri(fontSize: 16, color: Colors.white.withValues(alpha: 0.6)),
         ),
         const SizedBox(height: 16),
-        _buildReciterOption(l10n.misharyAfasi, 'mishary'),
+        _InteractiveOptionCard(label: l10n.misharyAfasi, isSelected: _selectedReciter == 'mishary', onTap: () => _updateReciter('mishary')),
         const SizedBox(height: 12),
-        _buildReciterOption(l10n.nasserQattami, 'nasser'),
+        _InteractiveOptionCard(label: l10n.nasserQattami, isSelected: _selectedReciter == 'nasser', onTap: () => _updateReciter('nasser')),
         const SizedBox(height: 12),
-        _buildReciterOption(l10n.mohamedQassas, 'qassas'),
+        _InteractiveOptionCard(label: l10n.mohamedQassas, isSelected: _selectedReciter == 'qassas', onTap: () => _updateReciter('qassas')),
         const SizedBox(height: 12),
-        _buildReciterOption(l10n.moRefaat, 'refaat'),
+        _InteractiveOptionCard(label: l10n.moRefaat, isSelected: _selectedReciter == 'refaat', onTap: () => _updateReciter('refaat')),
         const SizedBox(height: 12),
-        _buildReciterOption(l10n.nasTobar, 'tobar'),
+        _InteractiveOptionCard(label: l10n.nasTobar, isSelected: _selectedReciter == 'tobar', onTap: () => _updateReciter('tobar')),
         const SizedBox(height: 24),
         
         Row(
@@ -273,59 +228,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildReciterOption(String label, String reciterId) {
-    final isSelected = _selectedReciter == reciterId;
-    return GestureDetector(
-      onTap: () {
-        setState(() => _selectedReciter = reciterId);
-        IslamicApp.of(context)?.setAdhanReciter(reciterId);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: isSelected 
-              ? const Color(0xFFD4AF37).withValues(alpha: 0.15) 
-              : const Color(0xFF144D32).withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.2),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Theme(
-              data: ThemeData(unselectedWidgetColor: Colors.white70),
-              child: Radio<String>(
-                value: reciterId,
-                groupValue: _selectedReciter,
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _selectedReciter = value);
-                    IslamicApp.of(context)?.setAdhanReciter(value);
-                  }
-                },
-                activeColor: const Color(0xFFD4AF37),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                label,
-                style: GoogleFonts.elMessiri(
-                  fontSize: 18,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? const Color(0xFFD4AF37) : Colors.white,
-                ),
-              ),
-            ),
-            if (isSelected)
-              const Icon(Icons.check_circle_rounded, color: Color(0xFFD4AF37), size: 24),
-          ],
-        ),
-      ),
-    );
+  void _updateReciter(String reciterId) {
+    setState(() => _selectedReciter = reciterId);
+    IslamicApp.of(context)?.setAdhanReciter(reciterId);
   }
 
   Widget _buildNotificationSection(BuildContext context, AppLocalizations l10n) {
@@ -343,19 +248,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Expanded(
             child: Text(
               l10n.adhanNotifications,
-              style: GoogleFonts.elMessiri(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+              style: GoogleFonts.elMessiri(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ),
           Switch(
             value: _notificationsEnabled,
-            onChanged: (value) {
-              setState(() => _notificationsEnabled = value);
-            },
-            activeColor: const Color(0xFFD4AF37),
+            onChanged: (value) => setState(() => _notificationsEnabled = value),
+            activeThumbColor: const Color(0xFFD4AF37),
             activeTrackColor: const Color(0xFFD4AF37).withValues(alpha: 0.3),
             inactiveThumbColor: Colors.white54,
             inactiveTrackColor: Colors.black.withValues(alpha: 0.3),
@@ -373,12 +272,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await AdhanService.playAdhan(_selectedReciter);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${l10n.errorMessage}: $e', style: GoogleFonts.elMessiri()),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${l10n.errorMessage}: $e', style: GoogleFonts.elMessiri()), backgroundColor: Colors.redAccent));
         setState(() => _adhanPlaying = false);
       }
     }
@@ -388,8 +282,75 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       await AdhanService.stopAdhan();
       setState(() => _adhanPlaying = false);
-    } catch (e) {
-      // Ignore stop errors
-    }
+    } catch (e) {}
+  }
+}
+
+// ── CUSTOM INTERACTIVE OPTION CARD FOR MOBILE TOUCH ──
+class _InteractiveOptionCard extends StatefulWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _InteractiveOptionCard({required this.label, required this.isSelected, required this.onTap});
+
+  @override
+  State<_InteractiveOptionCard> createState() => _InteractiveOptionCardState();
+}
+
+class _InteractiveOptionCardState extends State<_InteractiveOptionCard> {
+  bool _isHovered = false;
+  double _scale = 1.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _scale = 0.97),
+        onTapUp: (_) => setState(() => _scale = 1.0),
+        onTapCancel: () => setState(() => _scale = 1.0),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _scale,
+          duration: const Duration(milliseconds: 150),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              color: widget.isSelected || _isHovered
+                  ? const Color(0xFFD4AF37).withValues(alpha: 0.15) 
+                  : const Color(0xFF144D32).withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: widget.isSelected || _isHovered ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                width: widget.isSelected ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  widget.isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                  color: widget.isSelected ? const Color(0xFFD4AF37) : Colors.white54,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    widget.label,
+                    style: GoogleFonts.elMessiri(
+                      fontSize: 18,
+                      fontWeight: widget.isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: widget.isSelected ? const Color(0xFFD4AF37) : Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
