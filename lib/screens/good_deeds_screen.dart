@@ -222,8 +222,8 @@ class _GoodDeedsScreenState extends State<GoodDeedsScreen> {
     final l10n = AppLocalizations.of(context)!;
     final lang = Localizations.localeOf(context).languageCode;
     final isArabic = lang == 'ar';
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    // Verify filtered state specifically to avoid blank screens
     final filteredDeeds = _selectedCategory == null
         ? deeds
         : deeds.where((d) => d.category == _selectedCategory).toList();
@@ -240,24 +240,21 @@ class _GoodDeedsScreenState extends State<GoodDeedsScreen> {
                     : Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 800),
-                          // STRICT FLEX LAYOUT: Prevents scroll collapse
                           child: Column(
                             children: [
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                                child: _buildStatsCards(l10n),
+                                child: _buildStatsCards(l10n, isDarkMode),
                               ),
                               const SizedBox(height: 24),
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                                child: _buildCategoryFilter(l10n),
+                                child: _buildCategoryFilter(l10n, isDarkMode),
                               ),
                               const SizedBox(height: 24),
-                              
-                              // Expanding the list guarantees the empty state vertically centers
                               Expanded(
                                 child: filteredDeeds.isEmpty
-                                    ? _buildEmptyState(l10n)
+                                    ? _buildEmptyState(l10n, isDarkMode)
                                     : ListView.builder(
                                         padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
                                         itemCount: filteredDeeds.length,
@@ -285,7 +282,6 @@ class _GoodDeedsScreenState extends State<GoodDeedsScreen> {
           ),
         ),
       ),
-      // PROTECTED FAB: Forces the button above Android's navigation bar
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: SafeArea(
         child: FloatingActionButton(
@@ -321,84 +317,151 @@ class _GoodDeedsScreenState extends State<GoodDeedsScreen> {
     );
   }
 
-  Widget _buildStatsCards(AppLocalizations l10n) {
+  Widget _buildStatsCards(AppLocalizations l10n, bool isDarkMode) {
     return Row(
       children: [
-        Expanded(child: _buildStatCard(Icons.local_fire_department_rounded, l10n.streakLabel, _currentStreak.toString(), const Color(0xFFF44336))),
+        Expanded(child: _buildStatCard(Icons.local_fire_department_rounded, l10n.streakLabel, _currentStreak.toString(), const Color(0xFFF44336), isDarkMode)),
         const SizedBox(width: 16),
-        Expanded(child: _buildStatCard(Icons.today_rounded, l10n.todayLabel, _todayDeeds.toString(), const Color(0xFF2196F3))),
+        Expanded(child: _buildStatCard(Icons.today_rounded, l10n.todayLabel, _todayDeeds.toString(), const Color(0xFF2196F3), isDarkMode)),
         const SizedBox(width: 16),
-        Expanded(child: _buildStatCard(Icons.trending_up_rounded, l10n.totalLabel, _totalDeeds.toString(), const Color(0xFF4CAF50))),
+        Expanded(child: _buildStatCard(Icons.trending_up_rounded, l10n.totalLabel, _totalDeeds.toString(), const Color(0xFF4CAF50), isDarkMode)),
       ],
     );
   }
 
-  Widget _buildStatCard(IconData icon, String label, String value, Color color) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0B3D2E).withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 28),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: GoogleFonts.elMessiri(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryFilter(AppLocalizations l10n) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0B3D2E).withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.2)),
-          ),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
+  Widget _buildStatCard(IconData icon, String label, String value, Color color, bool isDarkMode) {
+    if (isDarkMode) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0B3D2E).withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _buildFilterPill(l10n.allFilter, null),
-                const SizedBox(width: 8),
-                ...categories.map((cat) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: _buildFilterPill(_getCategoryName(cat, l10n), cat, icon: categoryIcons[cat], color: categoryColors[cat]),
-                  );
-                }),
+                Icon(icon, color: color, size: 28),
+                const SizedBox(height: 8),
+                Text(
+                  value,
+                  style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: GoogleFonts.elMessiri(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, fontWeight: FontWeight.w600),
+                ),
               ],
             ),
           ),
         ),
-      ),
-    );
+      );
+    } else {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(color: color, fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.elMessiri(color: Colors.black54, fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
-  Widget _buildFilterPill(String label, String? cat, {IconData? icon, Color? color}) {
+  Widget _buildCategoryFilter(AppLocalizations l10n, bool isDarkMode) {
+    if (isDarkMode) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0B3D2E).withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.2)),
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildFilterPill(l10n.allFilter, null, isDarkMode),
+                  const SizedBox(width: 8),
+                  ...categories.map((cat) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: _buildFilterPill(_getCategoryName(cat, l10n), cat, isDarkMode, icon: categoryIcons[cat], color: categoryColors[cat]),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    } else {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFD4AF37).withValues(alpha: 0.08),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            )
+          ],
+        ),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _buildFilterPill(l10n.allFilter, null, isDarkMode),
+              const SizedBox(width: 8),
+              ...categories.map((cat) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: _buildFilterPill(_getCategoryName(cat, l10n), cat, isDarkMode, icon: categoryIcons[cat], color: categoryColors[cat]),
+                );
+              }),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildFilterPill(String label, String? cat, bool isDarkMode, {IconData? icon, Color? color}) {
     final isSelected = _selectedCategory == cat;
     final accentColor = color ?? const Color(0xFFD4AF37);
     
@@ -408,23 +471,27 @@ class _GoodDeedsScreenState extends State<GoodDeedsScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? accentColor.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.2),
+          color: isSelected
+              ? accentColor.withValues(alpha: 0.2)
+              : (isDarkMode ? Colors.black.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.1)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? accentColor : Colors.white.withValues(alpha: 0.1),
+            color: isSelected
+                ? accentColor
+                : (isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade300),
             width: isSelected ? 1.5 : 1,
           ),
         ),
         child: Row(
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 16, color: isSelected ? accentColor : Colors.white60),
+              Icon(icon, size: 16, color: isSelected ? accentColor : (isDarkMode ? Colors.white60 : Colors.black54)),
               const SizedBox(width: 6),
             ],
             Text(
               label,
               style: GoogleFonts.elMessiri(
-                color: isSelected ? Colors.white : Colors.white60,
+                color: isSelected ? (isDarkMode ? Colors.white : accentColor) : (isDarkMode ? Colors.white60 : Colors.black54),
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
@@ -435,7 +502,7 @@ class _GoodDeedsScreenState extends State<GoodDeedsScreen> {
     );
   }
 
-  Widget _buildEmptyState(AppLocalizations l10n) {
+  Widget _buildEmptyState(AppLocalizations l10n, bool isDarkMode) {
     return Center(
       child: SingleChildScrollView(
         child: Column(
@@ -445,13 +512,20 @@ class _GoodDeedsScreenState extends State<GoodDeedsScreen> {
             const SizedBox(height: 16),
             Text(
               l10n.noDeedsTitle,
-              style: GoogleFonts.elMessiri(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+              style: GoogleFonts.elMessiri(
+                color: isDarkMode ? Colors.white : Colors.black,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               l10n.noDeedsDesc,
-              style: GoogleFonts.elMessiri(color: Colors.white70, fontSize: 16),
+              style: GoogleFonts.elMessiri(
+                color: isDarkMode ? Colors.white70 : Colors.black54,
+                fontSize: 16,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -479,6 +553,7 @@ class _DeedGlassCardState extends State<_DeedGlassCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final timeFormat = DateFormat('dd MMM, HH:mm');
 
     return MouseRegion(
@@ -489,71 +564,110 @@ class _DeedGlassCardState extends State<_DeedGlassCard> {
         margin: const EdgeInsets.only(bottom: 16),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: _isHovered ? const Color(0xFF144D32).withValues(alpha: 0.7) : const Color(0xFF0B3D2E).withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _isHovered ? widget.color : widget.color.withValues(alpha: 0.3),
-                  width: _isHovered ? 1.5 : 1,
-                ),
-                boxShadow: _isHovered ? [BoxShadow(color: widget.color.withValues(alpha: 0.15), blurRadius: 12)] : [],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: widget.color.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: widget.color.withValues(alpha: 0.5)),
-                    ),
-                    child: Icon(widget.icon, color: widget.color, size: 24),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.deed.title,
-                          style: GoogleFonts.elMessiri(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          timeFormat.format(widget.deed.timestamp),
-                          style: GoogleFonts.elMessiri(color: Colors.white.withValues(alpha: 0.5), fontSize: 13),
-                        ),
-                        if (widget.deed.notes != null && widget.deed.notes!.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            widget.deed.notes!,
-                            style: GoogleFonts.elMessiri(
-                              color: Colors.white.withValues(alpha: 0.8),
-                              fontSize: 14,
-                              fontStyle: FontStyle.italic,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ]
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: widget.onDelete,
-                    icon: Icon(Icons.close_rounded, color: Colors.white.withValues(alpha: 0.6), size: 24),
-                    hoverColor: Colors.redAccent.withValues(alpha: 0.2),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          child: isDarkMode
+              ? BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  child: _buildDarkCard(timeFormat),
+                )
+              : _buildLightCard(timeFormat),
         ),
       ),
+    );
+  }
+
+  Widget _buildDarkCard(DateFormat timeFormat) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _isHovered ? const Color(0xFF144D32).withValues(alpha: 0.7) : const Color(0xFF0B3D2E).withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _isHovered ? widget.color : widget.color.withValues(alpha: 0.3),
+          width: _isHovered ? 1.5 : 1,
+        ),
+        boxShadow: _isHovered ? [BoxShadow(color: widget.color.withValues(alpha: 0.15), blurRadius: 12)] : [],
+      ),
+      child: _buildCardContent(timeFormat, true),
+    );
+  }
+
+  Widget _buildLightCard(DateFormat timeFormat) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _isHovered ? widget.color : widget.color.withValues(alpha: 0.3),
+          width: _isHovered ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: widget.color.withValues(alpha: _isHovered ? 0.15 : 0.08),
+            blurRadius: _isHovered ? 12 : 6,
+            offset: const Offset(0, 2),
+          )
+        ],
+      ),
+      child: _buildCardContent(timeFormat, false),
+    );
+  }
+
+  Widget _buildCardContent(DateFormat timeFormat, bool isDarkMode) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: widget.color.withValues(alpha: 0.15),
+            shape: BoxShape.circle,
+            border: Border.all(color: widget.color.withValues(alpha: 0.5)),
+          ),
+          child: Icon(widget.icon, color: widget.color, size: 24),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.deed.title,
+                style: GoogleFonts.elMessiri(
+                  color: isDarkMode ? Colors.white : Colors.black,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                timeFormat.format(widget.deed.timestamp),
+                style: GoogleFonts.elMessiri(
+                  color: isDarkMode ? Colors.white.withValues(alpha: 0.5) : Colors.black54,
+                  fontSize: 13,
+                ),
+              ),
+              if (widget.deed.notes != null && widget.deed.notes!.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  widget.deed.notes!,
+                  style: GoogleFonts.elMessiri(
+                    color: isDarkMode ? Colors.white.withValues(alpha: 0.8) : Colors.black87,
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ]
+            ],
+          ),
+        ),
+        IconButton(
+          onPressed: widget.onDelete,
+          icon: Icon(Icons.close_rounded, color: isDarkMode ? Colors.white.withValues(alpha: 0.6) : Colors.black38, size: 24),
+          hoverColor: Colors.redAccent.withValues(alpha: 0.2),
+        ),
+      ],
     );
   }
 }

@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import 'l10n/app_localizations.dart';
 import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
 import 'services/adhan_service.dart';
+import 'services/theme_service.dart';
+import 'app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialize services
   await NotificationService.initialize();
-  await AdhanService.initialize();  // ← ADD THIS LINE
+  await AdhanService.initialize();
+  await ThemeService().initialize();
   
   runApp(const IslamicApp());
 }
@@ -28,6 +32,7 @@ class IslamicApp extends StatefulWidget {
 
 class _IslamicAppState extends State<IslamicApp> {
   String _locale = 'ar';
+  final ThemeService _themeService = ThemeService();
 
   @override
   void initState() {
@@ -55,32 +60,51 @@ class _IslamicAppState extends State<IslamicApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Islamy App',
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('ar'),
-        Locale('en'),
-        Locale('fr'),
-      ],
-      locale: Locale(_locale),
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1B5E3F),
-          primary: const Color(0xFF1B5E3F),
-          secondary: const Color(0xFFD4AF37),
-        ),
-        scaffoldBackgroundColor: const Color(0xFF0B3D2E),
-        fontFamily: 'Roboto',
+    return ChangeNotifierProvider.value(
+      value: _themeService,
+      child: Consumer<ThemeService>(
+        builder: (context, themeService, _) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Islamy App',
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('ar'),
+              Locale('en'),
+              Locale('fr'),
+            ],
+            locale: Locale(_locale),
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: _mapThemeMode(themeService.themeMode),
+            builder: (context, child) {
+              return MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: themeService.textScaler,
+                ),
+                child: child!,
+              );
+            },
+            home: const HomeScreen(),
+          );
+        },
       ),
-      home: const HomeScreen(),
     );
+  }
+
+  ThemeMode _mapThemeMode(AppThemeMode serviceMode) {
+    switch (serviceMode) {
+      case AppThemeMode.light:
+        return ThemeMode.light;
+      case AppThemeMode.dark:
+        return ThemeMode.dark;
+      case AppThemeMode.system:
+        return ThemeMode.system;
+    }
   }
 }

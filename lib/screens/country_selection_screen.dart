@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb; // Needed to detect Web vs Mobile
-import 'dart:convert'; // Needed for JSON decoding
-import 'package:http/http.dart' as http; // Needed for Web API fallback
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
@@ -10,6 +10,7 @@ import '../data/countries_data.dart';
 import '../models/country_data.dart';
 import '../widgets/islamic_pattern_background.dart';
 import '../l10n/app_localizations.dart';
+import '../app_theme.dart';
 import 'region_selection_screen.dart';
 import 'prayer_times_screen.dart';
 import '../data/geo_translations.dart';
@@ -209,7 +210,7 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
           Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24),
+                icon: Icon(Icons.arrow_back_ios_new_rounded, color: Theme.of(context).colorScheme.secondary, size: 24),
                 onPressed: () => Navigator.pop(context),
               ),
               const SizedBox(width: 8),
@@ -217,8 +218,8 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
                 child: Text(
                   l10n.selectCountry,
                   style: isArabic 
-                      ? GoogleFonts.amiri(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold)
-                      : GoogleFonts.arefRuqaa(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold),
+                      ? GoogleFonts.amiri(color: Theme.of(context).colorScheme.secondary, fontSize: 32, fontWeight: FontWeight.bold)
+                      : GoogleFonts.arefRuqaa(color: Theme.of(context).colorScheme.secondary, fontSize: 32, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -229,23 +230,37 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
   }
 
   Widget _buildSearchField(BuildContext context, AppLocalizations l10n, bool isArabic) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = AppTheme.getOnBackgroundColor(context);
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: TextField(
           controller: _searchController,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: textColor),
           decoration: InputDecoration(
             hintText: l10n.searchCountries,
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
-            prefixIcon: const Icon(Icons.search, color: Color(0xFFD4AF37)),
+            hintStyle: TextStyle(color: textColor.withValues(alpha: 0.6)),
+            prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.secondary),
             filled: true,
-            fillColor: const Color(0xFF0B3D2E).withValues(alpha: 0.65),
+            fillColor: isDark
+                ? const Color(0xFF0B3D2E).withValues(alpha: 0.65)
+                : const Color(0xFFF0F8F4).withValues(alpha: 0.65),
             contentPadding: const EdgeInsets.symmetric(vertical: 16),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: const Color(0xFFD4AF37).withValues(alpha: 0.3))),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: const Color(0xFFD4AF37).withValues(alpha: 0.3))),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFD4AF37), width: 2)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.secondary, width: 2),
+            ),
           ),
         ),
       ),
@@ -257,6 +272,9 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
     if (lang == 'ar') btnText = 'تحديد موقعي تلقائياً';
     if (lang == 'fr') btnText = 'Détecter ma position';
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = AppTheme.getOnBackgroundColor(context);
+
     return GestureDetector(
       onTap: _isDetecting ? null : () => _detectLocation(lang),
       child: AnimatedContainer(
@@ -264,27 +282,27 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.5), width: 1.5),
+          border: Border.all(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5), width: 1.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (_isDetecting)
-              const SizedBox(
+              SizedBox(
                 width: 20, height: 20,
-                child: CircularProgressIndicator(color: Color(0xFFD4AF37), strokeWidth: 2),
+                child: CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary, strokeWidth: 2),
               )
             else
-              const Icon(Icons.my_location_rounded, color: Color(0xFFD4AF37)),
+              Icon(Icons.my_location_rounded, color: Theme.of(context).colorScheme.secondary),
             const SizedBox(width: 12),
             Text(
               _isDetecting 
                   ? (lang == 'ar' ? 'جاري التحديد...' : (lang == 'fr' ? 'Détection...' : 'Detecting...'))
                   : btnText,
               style: GoogleFonts.elMessiri(
-                color: const Color(0xFFD4AF37),
+                color: Theme.of(context).colorScheme.secondary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -298,7 +316,13 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
   Widget _buildCountryList(BuildContext context, AppLocalizations l10n, bool isArabic) {
     if (_filtered.isEmpty) {
       return Center(
-        child: Text(l10n.noCountriesFound, style: GoogleFonts.elMessiri(color: Colors.white70, fontSize: 18)),
+        child: Text(
+          l10n.noCountriesFound,
+          style: GoogleFonts.elMessiri(
+            color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.7),
+            fontSize: 18,
+          ),
+        ),
       );
     }
     return ListView.builder(
@@ -336,6 +360,7 @@ class _CountryTileState extends State<_CountryTile> {
   @override
   Widget build(BuildContext context) {
     final isActive = _isHovered || _isPressed;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -360,9 +385,14 @@ class _CountryTileState extends State<_CountryTile> {
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   decoration: BoxDecoration(
-                    color: isActive ? const Color(0xFF144D32).withValues(alpha: 0.85) : const Color(0xFF0B3D2E).withValues(alpha: 0.65),
+                    color: isActive 
+                        ? (isDark ? const Color(0xFF144D32).withValues(alpha: 0.85) : const Color(0xFFE8F3EE).withValues(alpha: 0.85))
+                        : (isDark ? const Color(0xFF0B3D2E).withValues(alpha: 0.65) : const Color(0xFFF0F8F4).withValues(alpha: 0.65)),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: isActive ? const Color(0xFFD4AF37).withValues(alpha: 0.8) : const Color(0xFFD4AF37).withValues(alpha: 0.2), width: isActive ? 2 : 1),
+                    border: Border.all(
+                      color: isActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
+                      width: isActive ? 2 : 1,
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -371,10 +401,14 @@ class _CountryTileState extends State<_CountryTile> {
                       Expanded(
                         child: Text(
                           GeoTranslations.translate(context, widget.country.name),
-                          style: GoogleFonts.elMessiri(fontSize: 18, fontWeight: FontWeight.w600, color: isActive ? Colors.white : const Color(0xFFD4AF37)),
+                          style: GoogleFonts.elMessiri(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: isActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.secondary,
+                          ),
                         ),
                       ),
-                      Icon(Icons.chevron_right_rounded, color: isActive ? Colors.white : const Color(0xFFD4AF37).withValues(alpha: 0.5)),
+                      Icon(Icons.chevron_right_rounded, color: isActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
                     ],
                   ),
                 ),

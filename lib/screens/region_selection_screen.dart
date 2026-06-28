@@ -116,15 +116,15 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
         children: [
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24),
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: Theme.of(context).colorScheme.secondary, size: 24),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               GeoTranslations.translate(context, widget.country.name),
               style: isArabic 
-                  ? GoogleFonts.amiri(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold)
-                  : GoogleFonts.arefRuqaa(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold),
+                  ? GoogleFonts.amiri(color: Theme.of(context).colorScheme.secondary, fontSize: 32, fontWeight: FontWeight.bold)
+                  : GoogleFonts.arefRuqaa(color: Theme.of(context).colorScheme.secondary, fontSize: 32, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -136,7 +136,6 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
     final regions = widget.country.regions;
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
-      // FIXED: Changed Count to Extent here
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 280, 
         childAspectRatio: 2.2, 
@@ -190,6 +189,7 @@ class _RegionGlassCardState extends State<_RegionGlassCard> {
   @override
   Widget build(BuildContext context) {
     final isActive = _isHovered || _isPressed;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -212,13 +212,13 @@ class _RegionGlassCardState extends State<_RegionGlassCard> {
                 duration: const Duration(milliseconds: 200),
                 decoration: BoxDecoration(
                   color: isActive 
-                      ? const Color(0xFF144D32).withValues(alpha: 0.85)
-                      : const Color(0xFF0B3D2E).withValues(alpha: 0.65),
+                      ? (isDark ? const Color(0xFF144D32).withValues(alpha: 0.85) : const Color(0xFFE8F3EE).withValues(alpha: 0.85))
+                      : (isDark ? const Color(0xFF0B3D2E).withValues(alpha: 0.65) : const Color(0xFFF0F8F4).withValues(alpha: 0.65)),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isActive 
-                        ? const Color(0xFFD4AF37).withValues(alpha: 0.8)
-                        : const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                        ? Theme.of(context).colorScheme.secondary
+                        : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
                     width: isActive ? 2 : 1,
                   ),
                 ),
@@ -230,7 +230,10 @@ class _RegionGlassCardState extends State<_RegionGlassCard> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.elMessiri(
-                    color: isActive ? Colors.white : const Color(0xFFD4AF37),
+                    // ✅ FIXED: Use proper color based on theme
+                    color: isActive 
+                        ? Theme.of(context).colorScheme.secondary
+                        : (isDark ? Theme.of(context).colorScheme.secondary : const Color(0xFF1B5E3F)),
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),

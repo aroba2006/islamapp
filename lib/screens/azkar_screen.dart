@@ -401,9 +401,9 @@ class _AzkarScreenState extends State<AzkarScreen>
                         itemCount: _categories.length,
                         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                           maxCrossAxisExtent: 300,
-                          crossAxisSpacing: 16, // Slightly reduced spacing to save space
+                          crossAxisSpacing: 16, 
                           mainAxisSpacing: 16,
-                          mainAxisExtent: 160,  // <--- ADD THIS: Forces a fixed height for all cards
+                          mainAxisExtent: 160,
                         ),
                         itemBuilder: (context, index) {
                           final cat = _categories[index];
@@ -462,6 +462,8 @@ class _CategoryGlassCardState extends State<_CategoryGlassCard> {
   @override
   Widget build(BuildContext context) {
     final cat = widget.category;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -482,8 +484,12 @@ class _CategoryGlassCardState extends State<_CategoryGlassCard> {
                 duration: const Duration(milliseconds: 200),
                 decoration: BoxDecoration(
                   color: _isHovered 
-                      ? const Color(0xFF144D32).withValues(alpha: 0.8)
-                      : const Color(0xFF0B3D2E).withValues(alpha: 0.6),
+                      ? (isDarkMode 
+                          ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.8) 
+                          : Colors.white.withValues(alpha: 0.9))
+                      : (isDarkMode 
+                          ? Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.6) 
+                          : Colors.white.withValues(alpha: 0.65)),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: _isHovered 
@@ -496,34 +502,36 @@ class _CategoryGlassCardState extends State<_CategoryGlassCard> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-  Text(cat.emoji, style: const TextStyle(fontSize: 32)), // Slightly smaller emoji
-  const SizedBox(height: 8),
-  Flexible( // <--- Wraps the text so it never overflows
-    child: Text(
-      widget.lang == 'ar' ? cat.titleAr : (widget.lang == 'fr' ? cat.titleFr : cat.titleEn),
-      textAlign: TextAlign.center,
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-      style: GoogleFonts.elMessiri(
-        color: _isHovered ? Colors.white : const Color(0xFFD4AF37),
-        fontSize: 16, // Slightly smaller font
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
-  const SizedBox(height: 8),
-  Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-    decoration: BoxDecoration(
-      color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Text(
-      '${cat.items.length} ${widget.lang == 'ar' ? 'أذكار' : '...' }',
-      style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 10, fontWeight: FontWeight.bold),
-    ),
-  ),
-],
+                    Text(cat.emoji, style: const TextStyle(fontSize: 32)),
+                    const SizedBox(height: 8),
+                    Flexible(
+                      child: Text(
+                        widget.lang == 'ar' ? cat.titleAr : (widget.lang == 'fr' ? cat.titleFr : cat.titleEn),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.elMessiri(
+                          color: _isHovered 
+                              ? (isDarkMode ? Colors.white : const Color(0xFFD4AF37)) 
+                              : const Color(0xFFD4AF37),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${cat.items.length} ${widget.lang == 'ar' ? 'أذكار' : '...' }',
+                        style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -570,6 +578,7 @@ class _AzkarDetailScreenState extends State<_AzkarDetailScreen> {
   Widget build(BuildContext context) {
     final cat = widget.category;
     final isArabic = widget.lang == 'ar';
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: IslamicPatternBackground(
@@ -600,14 +609,14 @@ class _AzkarDetailScreenState extends State<_AzkarDetailScreen> {
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.2),
+                        color: isDarkMode ? Colors.black.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.5),
                         shape: BoxShape.circle,
                         border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
                       ),
                       child: IconButton(
                         icon: Icon(
                           _showTransliteration ? Icons.translate : Icons.translate_outlined,
-                          color: _showTransliteration ? const Color(0xFFD4AF37) : Colors.white54,
+                          color: _showTransliteration ? const Color(0xFFD4AF37) : (isDarkMode ? Colors.white54 : Colors.black54),
                           size: 22,
                         ),
                         onPressed: () => setState(() => _showTransliteration = !_showTransliteration),
@@ -626,7 +635,10 @@ class _AzkarDetailScreenState extends State<_AzkarDetailScreen> {
                       children: [
                         Text(
                           '${_counts.where((c) => c > 0).length} / ${cat.items.length}',
-                          style: GoogleFonts.elMessiri(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
+                          style: GoogleFonts.elMessiri(
+                            color: isDarkMode ? Colors.white.withValues(alpha: 0.7) : Colors.black87, 
+                            fontSize: 14
+                          ),
                         ),
                         if (_allDone)
                           Text(
@@ -640,7 +652,7 @@ class _AzkarDetailScreenState extends State<_AzkarDetailScreen> {
                       borderRadius: BorderRadius.circular(8),
                       child: LinearProgressIndicator(
                         value: cat.items.isEmpty ? 0 : _counts.asMap().entries.where((e) => e.value >= cat.items[e.key].count).length / cat.items.length,
-                        backgroundColor: Colors.black.withValues(alpha: 0.4),
+                        backgroundColor: isDarkMode ? Colors.black.withValues(alpha: 0.4) : Colors.black12,
                         valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
                         minHeight: 6,
                       ),
@@ -689,10 +701,10 @@ class _AzkarDetailScreenState extends State<_AzkarDetailScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                 child: TextButton.icon(
                   onPressed: _resetAll,
-                  icon: const Icon(Icons.refresh_rounded, color: Colors.white54, size: 20),
+                  icon: Icon(Icons.refresh_rounded, color: isDarkMode ? Colors.white54 : Colors.black54, size: 20),
                   label: Text(
                     isArabic ? 'إعادة ضبط الكل' : (widget.lang == 'fr' ? 'Tout réinitialiser' : 'Reset All'),
-                    style: GoogleFonts.elMessiri(color: Colors.white54, fontSize: 16),
+                    style: GoogleFonts.elMessiri(color: isDarkMode ? Colors.white54 : Colors.black54, fontSize: 16),
                   ),
                 ),
               ),
@@ -704,7 +716,7 @@ class _AzkarDetailScreenState extends State<_AzkarDetailScreen> {
   }
 }
 
-// ── NEW FROSTED GLASS ZIKR CARD ────────────────────────────────
+// ── NEW FROSTED GLASS ZIKR CARD (THEME AWARE) ──────────────────
 class _ZikrGlassCard extends StatefulWidget {
   final _ZikrItem zikr;
   final int progress;
@@ -734,6 +746,8 @@ class _ZikrGlassCardState extends State<_ZikrGlassCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -757,8 +771,8 @@ class _ZikrGlassCardState extends State<_ZikrGlassCard> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: widget.isDone 
-                        ? const Color(0xFF1B5E3F).withValues(alpha: 0.85)
-                        : const Color(0xFF0B3D2E).withValues(alpha: 0.65),
+                        ? (isDarkMode ? const Color(0xFF1B5E3F).withValues(alpha: 0.85) : const Color(0xFFE8F5E9).withValues(alpha: 0.9))
+                        : (isDarkMode ? Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.75)),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: widget.isDone 
@@ -778,7 +792,9 @@ class _ZikrGlassCardState extends State<_ZikrGlassCard> {
                         textAlign: TextAlign.right,
                         textDirection: TextDirection.rtl,
                         style: GoogleFonts.amiri(
-                          color: widget.isDone ? const Color(0xFFD4AF37) : Colors.white,
+                          color: widget.isDone 
+                              ? (isDarkMode ? const Color(0xFFD4AF37) : const Color(0xFF1B5E3F)) 
+                              : (isDarkMode ? Colors.white : Colors.black87),
                           fontSize: 24,
                           height: 2.0,
                           fontWeight: FontWeight.bold,
@@ -789,7 +805,7 @@ class _ZikrGlassCardState extends State<_ZikrGlassCard> {
                         Text(
                           widget.zikr.transliteration,
                           style: GoogleFonts.elMessiri(
-                            color: const Color(0xFFD4AF37).withValues(alpha: 0.8),
+                            color: isDarkMode ? const Color(0xFFD4AF37).withValues(alpha: 0.8) : const Color(0xFFB8860B),
                             fontSize: 14,
                             fontStyle: FontStyle.italic,
                             height: 1.5,
@@ -800,7 +816,7 @@ class _ZikrGlassCardState extends State<_ZikrGlassCard> {
                       Text(
                         widget.lang == 'fr' ? widget.zikr.translationFr : widget.zikr.translation,
                         style: GoogleFonts.elMessiri(
-                          color: Colors.white.withValues(alpha: 0.65),
+                          color: isDarkMode ? Colors.white.withValues(alpha: 0.65) : Colors.black54,
                           fontSize: 15,
                           height: 1.5,
                         ),
@@ -816,13 +832,17 @@ class _ZikrGlassCardState extends State<_ZikrGlassCard> {
                                 Icon(
                                   Icons.refresh_rounded,
                                   size: 18,
-                                  color: widget.progress > 0 ? Colors.white54 : Colors.transparent,
+                                  color: widget.progress > 0 
+                                      ? (isDarkMode ? Colors.white54 : Colors.black45) 
+                                      : Colors.transparent,
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
                                   widget.lang == 'ar' ? 'إعادة' : (widget.lang == 'fr' ? 'Réinit.' : 'Reset'),
                                   style: GoogleFonts.elMessiri(
-                                    color: widget.progress > 0 ? Colors.white54 : Colors.transparent,
+                                    color: widget.progress > 0 
+                                        ? (isDarkMode ? Colors.white54 : Colors.black45) 
+                                        : Colors.transparent,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -833,10 +853,14 @@ class _ZikrGlassCardState extends State<_ZikrGlassCard> {
                             duration: const Duration(milliseconds: 250),
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                             decoration: BoxDecoration(
-                              color: widget.isDone ? const Color(0xFFD4AF37) : Colors.black.withValues(alpha: 0.3),
+                              color: widget.isDone 
+                                  ? const Color(0xFFD4AF37) 
+                                  : (isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.5)),
                               borderRadius: BorderRadius.circular(30),
                               border: Border.all(
-                                color: widget.isDone ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.5)
+                                color: widget.isDone 
+                                    ? const Color(0xFFD4AF37) 
+                                    : const Color(0xFFD4AF37).withValues(alpha: 0.5)
                               ),
                             ),
                             child: Row(
@@ -844,7 +868,9 @@ class _ZikrGlassCardState extends State<_ZikrGlassCard> {
                                 Text(
                                   '${widget.progress} / ${widget.zikr.count}',
                                   style: TextStyle(
-                                    color: widget.isDone ? const Color(0xFF0B3D2E) : const Color(0xFFD4AF37),
+                                    color: widget.isDone 
+                                        ? (isDarkMode ? Theme.of(context).scaffoldBackgroundColor : Colors.white) 
+                                        : const Color(0xFFD4AF37),
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
@@ -853,7 +879,9 @@ class _ZikrGlassCardState extends State<_ZikrGlassCard> {
                                 Icon(
                                   widget.isDone ? Icons.check_circle_rounded : Icons.touch_app_rounded,
                                   size: 18,
-                                  color: widget.isDone ? const Color(0xFF0B3D2E) : const Color(0xFFD4AF37).withValues(alpha: 0.8),
+                                  color: widget.isDone 
+                                      ? (isDarkMode ? Theme.of(context).scaffoldBackgroundColor : Colors.white) 
+                                      : const Color(0xFFD4AF37).withValues(alpha: 0.8),
                                 ),
                               ],
                             ),

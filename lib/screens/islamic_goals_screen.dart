@@ -92,7 +92,7 @@ class _IslamicGoalsScreenState extends State<IslamicGoalsScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: titleController,
-                  style: GoogleFonts.elMessiri(),
+                  style: GoogleFonts.elMessiri(color: Colors.black87),
                   decoration: InputDecoration(
                     labelText: l10n.goalTitleLabel,
                     labelStyle: GoogleFonts.elMessiri(color: Colors.grey.shade700),
@@ -109,7 +109,7 @@ class _IslamicGoalsScreenState extends State<IslamicGoalsScreen> {
                 TextField(
                   controller: targetController,
                   keyboardType: TextInputType.number,
-                  style: GoogleFonts.elMessiri(),
+                  style: GoogleFonts.elMessiri(color: Colors.black87),
                   decoration: InputDecoration(
                     labelText: selectedType == 'surah' ? l10n.surahNumberLabel : l10n.numberOfDaysLabel,
                     labelStyle: GoogleFonts.elMessiri(color: Colors.grey.shade700),
@@ -172,8 +172,10 @@ class _IslamicGoalsScreenState extends State<IslamicGoalsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDarkMode ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFF5F5F5),
       body: IslamicPatternBackground(
         child: SafeArea(
           child: Column(
@@ -186,8 +188,8 @@ class _IslamicGoalsScreenState extends State<IslamicGoalsScreen> {
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 800),
                           child: goals.isEmpty
-                              ? _buildEmptyState(context, l10n)
-                              : _buildGoalsList(context, l10n),
+                              ? _buildEmptyState(context, l10n, isDarkMode)
+                              : _buildGoalsList(context, l10n, isDarkMode),
                         ),
                       ),
               ),
@@ -195,7 +197,6 @@ class _IslamicGoalsScreenState extends State<IslamicGoalsScreen> {
           ),
         ),
       ),
-      // PROTECTED FAB: Forces the button above Android's navigation bar
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: SafeArea(
         child: FloatingActionButton(
@@ -231,7 +232,7 @@ class _IslamicGoalsScreenState extends State<IslamicGoalsScreen> {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, AppLocalizations l10n) {
+  Widget _buildEmptyState(BuildContext context, AppLocalizations l10n, bool isDarkMode) {
     return Center(
       child: SingleChildScrollView(
         child: Column(
@@ -241,13 +242,20 @@ class _IslamicGoalsScreenState extends State<IslamicGoalsScreen> {
             const SizedBox(height: 16),
             Text(
               l10n.noGoalsTitle,
-              style: GoogleFonts.elMessiri(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+              style: GoogleFonts.elMessiri(
+                color: isDarkMode ? Colors.white : Colors.black87, 
+                fontSize: 22, 
+                fontWeight: FontWeight.bold
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               l10n.noGoalsDesc,
-              style: GoogleFonts.elMessiri(color: Colors.white.withValues(alpha: 0.7), fontSize: 16),
+              style: GoogleFonts.elMessiri(
+                color: isDarkMode ? Colors.white.withValues(alpha: 0.7) : Colors.black54, 
+                fontSize: 16
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -256,7 +264,7 @@ class _IslamicGoalsScreenState extends State<IslamicGoalsScreen> {
     );
   }
 
-  Widget _buildGoalsList(BuildContext context, AppLocalizations l10n) {
+  Widget _buildGoalsList(BuildContext context, AppLocalizations l10n, bool isDarkMode) {
     final activeGoals = goals.where((g) => !g.isCompleted).toList();
     final completedGoals = goals.where((g) => g.isCompleted).toList();
 
@@ -268,12 +276,17 @@ class _IslamicGoalsScreenState extends State<IslamicGoalsScreen> {
             padding: const EdgeInsets.only(left: 4, bottom: 16),
             child: Text(
               '${l10n.activeGoals} (${activeGoals.length})',
-              style: GoogleFonts.elMessiri(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              style: GoogleFonts.elMessiri(
+                color: isDarkMode ? Colors.white : Colors.black87, 
+                fontSize: 20, 
+                fontWeight: FontWeight.bold
+              ),
             ),
           ),
           ...activeGoals.map((goal) => _GoalGlassCard(
             goal: goal, 
             l10n: l10n,
+            isDarkMode: isDarkMode,
             onUpdate: () => _showProgressDialog(context, goal, l10n),
             onDelete: () => _showDeleteConfirmation(context, goal, l10n),
           )),
@@ -284,12 +297,17 @@ class _IslamicGoalsScreenState extends State<IslamicGoalsScreen> {
             padding: const EdgeInsets.only(left: 4, bottom: 16),
             child: Text(
               '${l10n.completedGoals} (${completedGoals.length})',
-              style: GoogleFonts.elMessiri(color: Colors.white.withValues(alpha: 0.7), fontSize: 20, fontWeight: FontWeight.bold),
+              style: GoogleFonts.elMessiri(
+                color: isDarkMode ? Colors.white.withValues(alpha: 0.7) : Colors.black54, 
+                fontSize: 20, 
+                fontWeight: FontWeight.bold
+              ),
             ),
           ),
           ...completedGoals.map((goal) => _GoalGlassCard(
             goal: goal, 
             l10n: l10n,
+            isDarkMode: isDarkMode,
             onUpdate: () => _showProgressDialog(context, goal, l10n),
             onDelete: () => _showDeleteConfirmation(context, goal, l10n),
           )),
@@ -313,7 +331,7 @@ class _IslamicGoalsScreenState extends State<IslamicGoalsScreen> {
             TextField(
               controller: progressController,
               keyboardType: TextInputType.number,
-              style: GoogleFonts.elMessiri(),
+              style: GoogleFonts.elMessiri(color: Colors.black87),
               decoration: InputDecoration(
                 labelText: '${l10n.progressLabel} (${goal.targetValue} max)',
                 labelStyle: GoogleFonts.elMessiri(color: Colors.grey.shade700),
@@ -355,7 +373,7 @@ class _IslamicGoalsScreenState extends State<IslamicGoalsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: const Color(0xFFF8FAF9),
         title: Text(l10n.deleteGoalTitle, style: GoogleFonts.elMessiri(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-        content: Text('${l10n.deleteGoalDesc}\n"${goal.title}"', style: GoogleFonts.elMessiri(fontSize: 16)),
+        content: Text('${l10n.deleteGoalDesc}\n"${goal.title}"', style: GoogleFonts.elMessiri(fontSize: 16, color: Colors.black87)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
@@ -380,10 +398,17 @@ class _IslamicGoalsScreenState extends State<IslamicGoalsScreen> {
 class _GoalGlassCard extends StatefulWidget {
   final IslamicGoal goal;
   final AppLocalizations l10n;
+  final bool isDarkMode;
   final VoidCallback onUpdate;
   final VoidCallback onDelete;
 
-  const _GoalGlassCard({required this.goal, required this.l10n, required this.onUpdate, required this.onDelete});
+  const _GoalGlassCard({
+    required this.goal, 
+    required this.l10n, 
+    required this.isDarkMode,
+    required this.onUpdate, 
+    required this.onDelete
+  });
 
   @override
   State<_GoalGlassCard> createState() => _GoalGlassCardState();
@@ -419,15 +444,20 @@ class _GoalGlassCardState extends State<_GoalGlassCard> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: goal.isCompleted
-                    ? const Color(0xFF0B3D2E).withValues(alpha: 0.4)
-                    : (_isHovered ? const Color(0xFF144D32).withValues(alpha: 0.8) : const Color(0xFF0B3D2E).withValues(alpha: 0.65)),
+                    ? (widget.isDarkMode ? const Color(0xFF0B3D2E).withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.5))
+                    : (_isHovered 
+                        ? (widget.isDarkMode ? const Color(0xFF144D32).withValues(alpha: 0.8) : Colors.white) 
+                        : (widget.isDarkMode ? const Color(0xFF0B3D2E).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.8))),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: goal.isCompleted
-                      ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+                      ? (widget.isDarkMode ? const Color(0xFFD4AF37).withValues(alpha: 0.15) : Colors.grey.withValues(alpha: 0.3))
                       : (_isHovered ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.3)),
                   width: _isHovered ? 2 : 1,
                 ),
+                boxShadow: !widget.isDarkMode && !goal.isCompleted 
+                    ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))] 
+                    : [],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -451,18 +481,20 @@ class _GoalGlassCardState extends State<_GoalGlassCard> {
                             Text(
                               goal.title,
                               style: GoogleFonts.elMessiri(
-                                color: goal.isCompleted ? Colors.white54 : Colors.white,
+                                color: goal.isCompleted 
+                                    ? (widget.isDarkMode ? Colors.white54 : Colors.black38) 
+                                    : (widget.isDarkMode ? Colors.white : Colors.black87),
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
                                 decoration: goal.isCompleted ? TextDecoration.lineThrough : null,
-                                decorationColor: Colors.white54,
+                                decorationColor: widget.isDarkMode ? Colors.white54 : Colors.black38,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               goal.description,
                               style: GoogleFonts.elMessiri(
-                                color: Colors.white.withValues(alpha: 0.6),
+                                color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.6) : Colors.black54,
                                 fontSize: 14,
                               ),
                             ),
@@ -479,7 +511,7 @@ class _GoalGlassCardState extends State<_GoalGlassCard> {
                     child: LinearProgressIndicator(
                       value: goal.progressPercentage / 100,
                       minHeight: 10,
-                      backgroundColor: Colors.black.withValues(alpha: 0.3),
+                      backgroundColor: widget.isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.2),
                       valueColor: AlwaysStoppedAnimation<Color>(
                         goal.isCompleted ? const Color(0xFF4CAF50) : const Color(0xFFD4AF37),
                       ),
@@ -491,11 +523,19 @@ class _GoalGlassCardState extends State<_GoalGlassCard> {
                     children: [
                       Text(
                         '${goal.currentProgress} / ${goal.targetValue}',
-                        style: GoogleFonts.elMessiri(color: Colors.white.withValues(alpha: 0.8), fontSize: 15, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.elMessiri(
+                          color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.8) : Colors.black54, 
+                          fontSize: 15, 
+                          fontWeight: FontWeight.w600
+                        ),
                       ),
                       Text(
                         '${goal.progressPercentage.toStringAsFixed(0)}%',
-                        style: GoogleFonts.elMessiri(color: goal.isCompleted ? const Color(0xFF4CAF50) : const Color(0xFFD4AF37), fontSize: 16, fontWeight: FontWeight.bold),
+                        style: GoogleFonts.elMessiri(
+                          color: goal.isCompleted ? const Color(0xFF4CAF50) : const Color(0xFFD4AF37), 
+                          fontSize: 16, 
+                          fontWeight: FontWeight.bold
+                        ),
                       ),
                     ],
                   ),
@@ -513,6 +553,7 @@ class _GoalGlassCardState extends State<_GoalGlassCard> {
                               foregroundColor: const Color(0xFF0B3D2E),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              elevation: 0,
                             ),
                           ),
                         ),
@@ -520,10 +561,11 @@ class _GoalGlassCardState extends State<_GoalGlassCard> {
                         ElevatedButton(
                           onPressed: widget.onDelete,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent.withValues(alpha: 0.2),
-                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.redAccent.withValues(alpha: 0.15),
+                            foregroundColor: Colors.redAccent, // Changed to red so it pops on both dark/light backgrounds
                             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
                           ),
                           child: const Icon(Icons.delete_outline_rounded, size: 20),
                         ),

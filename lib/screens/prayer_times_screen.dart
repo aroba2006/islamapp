@@ -12,6 +12,8 @@ import '../widgets/islamic_pattern_background.dart';
 import '../l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/geo_translations.dart';
+import '../app_theme.dart'; // Fixed: Missing import
+import '../utils/adhan_reciter_translations.dart'; // Fixed: Missing import for translations
 
 class PrayerTimesScreen extends StatefulWidget {
   final CountryData country;
@@ -197,7 +199,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              _buildCustomHeader(context, l10n, isArabic),
+              _buildCustomHeader(context, l10n!, isArabic),
               Expanded(
                 child: Center(
                   child: ConstrainedBox(
@@ -227,15 +229,15 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24),
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: Theme.of(context).colorScheme.secondary, size: 24),
           ),
           Expanded(
             child: Text(
               l10n.prayerTimes,
               textAlign: TextAlign.center,
               style: isArabic 
-                  ? GoogleFonts.amiri(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold)
-                  : GoogleFonts.arefRuqaa(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold),
+                  ? GoogleFonts.amiri(color: Theme.of(context).colorScheme.secondary, fontSize: 32, fontWeight: FontWeight.bold)
+                  : GoogleFonts.arefRuqaa(color: Theme.of(context).colorScheme.secondary, fontSize: 32, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(width: 48),
@@ -248,11 +250,11 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const CircularProgressIndicator(color: Color(0xFFD4AF37)),
+        CircularProgressIndicator(color: Theme.of(context).colorScheme.secondary),
         const SizedBox(height: 16),
         Text(
           l10n.fetchingPrayerTimes,
-          style: GoogleFonts.elMessiri(color: const Color(0xFFD4AF37), fontSize: 18),
+          style: GoogleFonts.elMessiri(color: Theme.of(context).colorScheme.secondary, fontSize: 18),
         ),
       ],
     );
@@ -273,7 +275,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         ElevatedButton(
           onPressed: _load,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFD4AF37),
+            backgroundColor: Theme.of(context).colorScheme.secondary,
             foregroundColor: const Color(0xFF0B3D2E),
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
           ),
@@ -290,10 +292,11 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
       child: Column(
         children: [
+          // Fixed: Uses AppTheme to switch color in light/dark mode
           Text(
             "${GeoTranslations.translate(context, widget.country.name)} - ${GeoTranslations.translate(context, widget.region)}",
             style: GoogleFonts.elMessiri(
-              color: Colors.white.withValues(alpha: 0.9),
+              color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.9),
               fontSize: 20,
               fontWeight: FontWeight.w600,
             ),
@@ -345,6 +348,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   }
 
   Widget _buildCountdownCard(AppLocalizations l10n, bool isArabic) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
@@ -352,22 +357,28 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+          // Fixed: Theme-aware background
           decoration: BoxDecoration(
-            color: const Color(0xFF0B3D2E).withValues(alpha: 0.65),
+            color: isDark 
+                ? const Color(0xFF0B3D2E).withValues(alpha: 0.65)
+                : const Color(0xFFE8F3EE).withValues(alpha: 0.75), 
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+            border: Border.all(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3)),
           ),
           child: Column(
             children: [
               Text(
                 "${l10n.timeUntil} ${_nextPrayerName != null ? _getLocalizedPrayerName(_nextPrayerName!, l10n) : '--'}",
-                style: GoogleFonts.elMessiri(color: Colors.white70, fontSize: 18),
+                style: GoogleFonts.elMessiri(
+                  color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.7), 
+                  fontSize: 18
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 _timeUntilNext != null ? _formatDuration(_timeUntilNext!) : "--:--:--",
-                style: const TextStyle(
-                  color: Color(0xFFD4AF37),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.secondary,
                   fontSize: 48,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2.0,
@@ -381,6 +392,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   }
 
   Widget _buildAdhanControlPanel(AppLocalizations l10n, bool isArabic) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currentLang = Localizations.localeOf(context).languageCode;
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -388,23 +402,25 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFF144D32).withValues(alpha: 0.4),
+            color: isDark 
+                ? const Color(0xFF144D32).withValues(alpha: 0.4)
+                : const Color(0xFFF0F8F4).withValues(alpha: 0.65),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.2)),
+            border: Border.all(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Icon(Icons.volume_up_rounded, color: Color(0xFFD4AF37), size: 24),
+                  Icon(Icons.volume_up_rounded, color: Theme.of(context).colorScheme.secondary, size: 24),
                   const SizedBox(width: 12),
                   Text(
                     l10n.selectAdhanReciter,
                     style: GoogleFonts.elMessiri(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppTheme.getOnBackgroundColor(context),
                     ),
                   ),
                 ],
@@ -413,22 +429,28 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0B3D2E).withValues(alpha: 0.8),
+                  color: isDark 
+                      ? const Color(0xFF0B3D2E).withValues(alpha: 0.8)
+                      : const Color(0xFFE8F3EE).withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.5)),
+                  border: Border.all(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selectedReciter,
                     isExpanded: true,
-                    dropdownColor: const Color(0xFF0B3D2E),
-                    icon: const Icon(Icons.arrow_drop_down, color: Color(0xFFD4AF37)),
+                    dropdownColor: isDark ? const Color(0xFF0B3D2E) : const Color(0xFFE8F3EE),
+                    icon: Icon(Icons.arrow_drop_down, color: Theme.of(context).colorScheme.secondary),
                     items: AdhanService.reciterNames.entries.map((entry) {
                       return DropdownMenuItem<String>(
                         value: entry.key,
                         child: Text(
-                          entry.value, 
-                          style: GoogleFonts.elMessiri(color: Colors.white, fontSize: 16)
+                          // Fixed: Translating Reciters dynamically
+                          AdhanReciterTranslations.getReciterName(entry.key, currentLang), 
+                          style: GoogleFonts.elMessiri(
+                            color: AppTheme.getOnBackgroundColor(context), 
+                            fontSize: 16
+                          )
                         ),
                       );
                     }).toList(),
@@ -455,7 +477,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                       icon: Icon(_adhanPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded),
                       label: Text(_adhanPlaying ? l10n.stop : l10n.playAdhan),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _adhanPlaying ? Colors.redAccent.withValues(alpha: 0.8) : const Color(0xFFD4AF37),
+                        backgroundColor: _adhanPlaying ? Colors.redAccent.withValues(alpha: 0.8) : Theme.of(context).colorScheme.secondary,
                         foregroundColor: _adhanPlaying ? Colors.white : const Color(0xFF0B3D2E),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -498,6 +520,8 @@ class _PrayerRowState extends State<_PrayerRow> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -512,13 +536,15 @@ class _PrayerRowState extends State<_PrayerRow> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
               decoration: BoxDecoration(
                 color: widget.isNext 
-                    ? const Color(0xFFD4AF37).withValues(alpha: 0.2)
-                    : (_isHovered ? const Color(0xFF144D32).withValues(alpha: 0.6) : const Color(0xFF0B3D2E).withValues(alpha: 0.5)),
+                    ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2)
+                    : (_isHovered 
+                        ? (isDark ? const Color(0xFF144D32).withValues(alpha: 0.6) : const Color(0xFFE8F3EE).withValues(alpha: 0.8)) 
+                        : (isDark ? const Color(0xFF0B3D2E).withValues(alpha: 0.5) : const Color(0xFFF0F8F4).withValues(alpha: 0.6))),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: widget.isNext || _isHovered 
-                      ? const Color(0xFFD4AF37) 
-                      : const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                      ? Theme.of(context).colorScheme.secondary 
+                      : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
                   width: widget.isNext ? 2 : 1,
                 ),
               ),
@@ -526,7 +552,7 @@ class _PrayerRowState extends State<_PrayerRow> {
                 children: [
                   Icon(
                     widget.icon,
-                    color: widget.isNext || _isHovered ? const Color(0xFFD4AF37) : Colors.white70,
+                    color: widget.isNext || _isHovered ? Theme.of(context).colorScheme.secondary : AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.7),
                     size: 26,
                   ),
                   const SizedBox(width: 16),
@@ -536,7 +562,7 @@ class _PrayerRowState extends State<_PrayerRow> {
                       style: GoogleFonts.elMessiri(
                         fontSize: 20,
                         fontWeight: widget.isNext ? FontWeight.bold : FontWeight.w500,
-                        color: widget.isNext || _isHovered ? Colors.white : Colors.white70,
+                        color: widget.isNext || _isHovered ? AppTheme.getOnBackgroundColor(context) : AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.7),
                       ),
                     ),
                   ),
@@ -545,7 +571,7 @@ class _PrayerRowState extends State<_PrayerRow> {
                       margin: const EdgeInsets.only(right: 12),
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFD4AF37),
+                        color: Theme.of(context).colorScheme.secondary,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -553,7 +579,7 @@ class _PrayerRowState extends State<_PrayerRow> {
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF0B3D2E),
+                          color: Color(0xFF0B3D2E), // Keep dark text on gold badge
                         ),
                       ),
                     ),
@@ -562,7 +588,7 @@ class _PrayerRowState extends State<_PrayerRow> {
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: widget.isNext || _isHovered ? const Color(0xFFD4AF37) : Colors.white,
+                      color: widget.isNext || _isHovered ? Theme.of(context).colorScheme.secondary : AppTheme.getOnBackgroundColor(context),
                     ),
                   ),
                 ],

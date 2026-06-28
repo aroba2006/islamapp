@@ -1,24 +1,34 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import '../app_theme.dart';
 
 /// A repeating Islamic 8-point star geometric pattern, drawn with CustomPainter.
-/// Used as a subtle decorative background across the app.
+/// Automatically adapts colors based on light/dark theme.
 class IslamicPatternBackground extends StatelessWidget {
   final Widget child;
-  final Color baseColor;
-  final Color patternColor;
-  final double opacity;
+  final bool showPattern;
 
   const IslamicPatternBackground({
     super.key,
     required this.child,
-    this.baseColor = const Color(0xFF0B3D2E),
-    this.patternColor = const Color(0xFF1B5E3F),
-    this.opacity = 0.18,
+    this.showPattern = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Theme-aware colors
+    final baseColor = isDark
+        ? const Color(0xFF0B3D2E)  // Dark green for dark mode
+        : const Color(0xFFFFFBF5); // Warm white for light mode
+    
+    final patternColor = isDark
+        ? const Color(0xFF1B5E3F)  // Lighter green for dark mode
+        : const Color(0xFFE8C547); // Light gold for light mode
+    
+    final opacity = isDark ? 0.18 : 0.12; // Adjust opacity based on mode
+
     return Stack(
       children: [
         Container(
@@ -28,19 +38,20 @@ class IslamicPatternBackground extends StatelessWidget {
               end: Alignment.bottomCenter,
               colors: [
                 baseColor,
-                Color.lerp(baseColor, Colors.black, 0.25)!,
+                Color.lerp(baseColor, isDark ? Colors.black : Colors.white, 0.15)!,
               ],
             ),
           ),
         ),
-        Positioned.fill(
-          child: Opacity(
-            opacity: opacity,
-            child: CustomPaint(
-              painter: _IslamicStarPatternPainter(color: patternColor),
+        if (showPattern)
+          Positioned.fill(
+            child: Opacity(
+              opacity: opacity,
+              child: CustomPaint(
+                painter: _IslamicStarPatternPainter(color: patternColor),
+              ),
             ),
           ),
-        ),
         child,
       ],
     );
@@ -99,31 +110,33 @@ class _IslamicStarPatternPainter extends CustomPainter {
 
 /// A smaller decorative star divider, e.g. used between header and list.
 class IslamicDivider extends StatelessWidget {
-  final Color color;
-  const IslamicDivider({super.key, this.color = Colors.white});
+  final Color? color;
+  const IslamicDivider({super.key, this.color});
 
   @override
   Widget build(BuildContext context) {
+    final dividerColor = color ?? AppTheme.getOnBackgroundColor(context);
+    
     return SizedBox(
       height: 24,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _line(),
+          _line(dividerColor),
           const SizedBox(width: 8),
-          Icon(Icons.star, size: 14, color: color.withValues(alpha:0.8)),
+          Icon(Icons.star, size: 14, color: dividerColor.withValues(alpha: 0.8)),
           const SizedBox(width: 8),
-          _line(),
+          _line(dividerColor),
         ],
       ),
     );
   }
 
-  Widget _line() {
+  Widget _line(Color color) {
     return Container(
       width: 50,
       height: 1,
-      color: color.withValues(alpha:0.4),
+      color: color.withValues(alpha: 0.4),
     );
   }
 }
