@@ -126,6 +126,18 @@ class EnUS extends AppLocalizations {
   String get islamicGoalsDesc => 'Set personal targets for reading Quran, memorization, and prayer streaks.';
 
 
+  @override
+String get qiblahFinderTitle => 'Qiblah Direction';
+
+@override
+String get qiblahFinderDesc => 'Find the direction of Makkah';
+
+@override
+String get nearestMosqueTitle => 'Nearby Mosques';
+
+@override
+String get nearestMosqueDesc => 'Find mosques near you';
+
   // === SCREENS TRANSLATIONS ===
   @override String get cancelBtn => 'Cancel';
   @override String get recordDeedTitle => 'Record a Good Deed';

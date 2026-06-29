@@ -6,6 +6,9 @@ import '../widgets/islamic_pattern_background.dart';
 import '../app_theme.dart';
 import '../services/theme_service.dart';
 import '../l10n/app_localizations.dart';
+import 'package:geolocator/geolocator.dart';
+import '../services/overpass_service.dart';
+import 'mosque_map_screen.dart';
 
 // Extract constants
 class _MosqueFinderConstants {
@@ -29,6 +32,8 @@ class _MosqueFinderScreenState extends State<MosqueFinderScreen> {
   bool _isLoading = true;
   List<Mosque> _nearbyMosques = [];
   String? _errorMessage;
+  double? _currentLatitude;
+double? _currentLongitude;
 
   @override
   void initState() {
@@ -37,44 +42,74 @@ class _MosqueFinderScreenState extends State<MosqueFinderScreen> {
   }
 
   Future<void> _initializeMosqueFinder() async {
-    try {
-      // TODO: Implement location and mosque search logic here
-      // For now, this is a placeholder with sample data
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      if (!mounted) return;
-      
-      setState(() {
-        _isLoading = false;
-        _nearbyMosques = [
-          Mosque(
-            name: 'Al-Azhar Mosque',
-            distance: 0.5,
-            direction: 'North',
-            prayerTime: '12:30 PM',
-          ),
-          Mosque(
-            name: 'Al-Hakim Mosque',
-            distance: 1.2,
-            direction: 'Northeast',
-            prayerTime: '12:35 PM',
-          ),
-          Mosque(
-            name: 'Ibn Tulun Mosque',
-            distance: 2.1,
-            direction: 'East',
-            prayerTime: '12:40 PM',
-          ),
-        ];
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _errorMessage = 'Failed to load nearby mosques';
-      });
+  try {
+
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      throw Exception("Location services are disabled");
     }
+
+    LocationPermission permission =
+        await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      throw Exception("Location permission denied");
+    }
+
+    final position =
+        await Geolocator.getCurrentPosition();
+
+        _currentLatitude = position.latitude;
+_currentLongitude = position.longitude;
+
+        final mosques = await OverpassService.getNearbyMosques(
+  position.latitude,
+  position.longitude,
+);
+
+    print(position.latitude);
+    print(position.longitude);
+
+    if (!mounted) return;
+
+    setState(() {
+  _isLoading = false;
+
+  _nearbyMosques = mosques.map((m) {
+  return Mosque(
+    name: m.name,
+    latitude: m.latitude,
+    longitude: m.longitude,
+    distance: Geolocator.distanceBetween(
+      position.latitude,
+      position.longitude,
+      m.latitude,
+      m.longitude,
+    ) /
+    1000,
+    direction: "",
+    prayerTime: "--:--",
+  );
+}).toList();
+});
+
+  _nearbyMosques.sort(
+  (a, b) => a.distance.compareTo(b.distance),
+);
+
+  } catch (e) {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+      _errorMessage = e.toString();
+    });
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -143,7 +178,7 @@ class _MosqueFinderScreenState extends State<MosqueFinderScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.error_outline,
               color: _MosqueFinderConstants.primaryGold,
               size: 48,
@@ -185,6 +220,8 @@ class _MosqueFinderScreenState extends State<MosqueFinderScreen> {
         return _MosqueCard(
           mosque: mosque,
           isArabic: isArabic,
+          userLat: _currentLatitude!,
+          userLng: _currentLongitude!,
         );
       },
     );
@@ -194,10 +231,14 @@ class _MosqueFinderScreenState extends State<MosqueFinderScreen> {
 class _MosqueCard extends StatefulWidget {
   final Mosque mosque;
   final bool isArabic;
+  final double userLat;
+  final double userLng;
 
   const _MosqueCard({
     required this.mosque,
     required this.isArabic,
+    required this.userLat,
+    required this.userLng,
   });
 
   @override
@@ -223,15 +264,22 @@ class _MosqueCardState extends State<_MosqueCard>
           cursor: SystemMouseCursors.click,
           child: GestureDetector(
             onTap: () {
-              // TODO: Navigate to mosque details
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Tapped: ${widget.mosque.name}',
-                  ),
-                ),
-              );
-            },
+                print("USER: ${widget.userLat}, ${widget.userLng}");
+  print("MOSQUE: ${widget.mosque.latitude}, ${widget.mosque.longitude}");
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => MosqueMapScreen(
+        userLat: widget.userLat,
+        userLng: widget.userLng,
+        mosqueLat: widget.mosque.latitude,
+        mosqueLng: widget.mosque.longitude,
+        mosqueName: widget.mosque.name,
+      ),
+    ),
+  );
+},
             child: AnimatedScale(
               scale: _isHovered
                   ? _MosqueFinderConstants.hoverScale
@@ -304,7 +352,7 @@ class _MosqueCardState extends State<_MosqueCard>
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '${widget.mosque.distance} km away • ${widget.mosque.direction}',
+                                '${widget.mosque.distance.toStringAsFixed(2)} km away • ${widget.mosque.direction}',
                                 style: GoogleFonts.elMessiri(
                                   color: AppTheme.getOnBackgroundColor(context)
                                       .withValues(
@@ -352,12 +400,16 @@ class _MosqueCardState extends State<_MosqueCard>
 
 class Mosque {
   final String name;
+  final double latitude;
+  final double longitude;
   final double distance;
   final String direction;
   final String prayerTime;
 
   Mosque({
     required this.name,
+    required this.latitude,
+    required this.longitude,
     required this.distance,
     required this.direction,
     required this.prayerTime,

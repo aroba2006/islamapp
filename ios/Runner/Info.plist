@@ -52,6 +52,6 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
-    <string>This app requires access to your location to accurately calculate your local prayer times.</string>
+    <string>This app requires access to your location to accurately calculate your local prayer times and to find nearby mosques.</string>
 </dict>
 </plist>

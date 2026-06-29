@@ -124,6 +124,18 @@ class ArAR extends AppLocalizations {
   @override
   String get islamicGoalsDesc => 'حدد أهدافًا شخصية لقراءة القرآن والحفظ والحفاظ على الصلاة.';
 
+  @override
+String get qiblahFinderTitle => 'اتجاه القبلة';
+
+@override
+String get qiblahFinderDesc => 'اعثر على اتجاه القبلة';
+
+@override
+String get nearestMosqueTitle => 'المساجد القريبة';
+
+@override
+String get nearestMosqueDesc => 'اعثر على المساجد القريبة منك';
+
   // === SCREENS TRANSLATIONS ===
   @override String get cancelBtn => 'إلغاء';
   @override String get recordDeedTitle => 'سجل عملاً صالحاً';

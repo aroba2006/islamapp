@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'dart:math' as Math;
-import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-import '../widgets/islamic_pattern_background.dart';
-import '../app_theme.dart';
-import '../services/theme_service.dart';
 import '../l10n/app_localizations.dart';
+import 'package:flutter_qiblah/flutter_qiblah.dart';
 
 class QiblahFinderScreen extends StatefulWidget {
   const QiblahFinderScreen({super.key});
@@ -16,217 +11,159 @@ class QiblahFinderScreen extends StatefulWidget {
 }
 
 class _QiblahFinderScreenState extends State<QiblahFinderScreen> {
-  double _qiblahAngle = 0.0;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeQiblahFinder();
-  }
-
-  Future<void> _initializeQiblahFinder() async {
-    // TODO: Implement location and compass logic here
-    // For now, this is a placeholder
-    await Future.delayed(const Duration(milliseconds: 500));
-    setState(() {
-      _isLoading = false;
-      _qiblahAngle = 0.0; // Replace with actual qiblah calculation
-    });
-  }
+  // Using the correct android method we fixed earlier!
+  final _deviceSupport = FlutterQiblah.androidDeviceSensorSupport();
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    return Consumer<ThemeService>(
-      builder: (context, themeService, _) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(isArabic ? 'اتجاه القبلة' : 'Qiblah Compass'),
+        centerTitle: true,
+      ),
+      body: FutureBuilder(
+        future: _deviceSupport,
+        builder: (_, AsyncSnapshot<bool?> snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error.toString()}"));
+          }
+          if (snapshot.data == true) {
+            return QiblahCompassWidget(isArabic: isArabic);
+          } else {
+            return const Center(
+              child: Text(
+                "Your device does not support the compass sensor.",
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+}
 
-        return Scaffold(
-          body: IslamicPatternBackground(
-            child: SafeArea(
-              child: Column(
-                children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            isArabic ? 'اتجاه القبلة' : 'Qiblah Finder',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.amiri(
-                              color: Theme.of(context).colorScheme.secondary,
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 48),
-                      ],
-                    ),
+class QiblahCompassWidget extends StatelessWidget {
+  final bool isArabic;
+  const QiblahCompassWidget({super.key, required this.isArabic});
+
+  // Custom widget to draw the Kaaba
+  Widget _buildKaaba() {
+    return Container(
+      width: 32,
+      height: 38,
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(4),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          )
+        ]
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          Container(
+            height: 6,
+            color: const Color(0xFFD4AF37), // The Gold Band
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QiblahDirection>(
+      stream: FlutterQiblah.qiblahStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFFD4AF37)),
+          );
+        }
+
+        final qiblahDirection = snapshot.data;
+        if (qiblahDirection == null) {
+          return const Center(child: Text("Waiting for compass data..."));
+        }
+
+        // CORRECT MATH FOR THE COMPASS:
+        // direction is how much your phone is rotated from North
+        // qiblah is the angle of Makkah from North
+        final compassAngle = (qiblahDirection.direction * (Math.pi / 180) * -1);
+        final qiblahAngle = ((qiblahDirection.qiblah - qiblahDirection.direction) * (Math.pi / 180));
+
+        return Center(
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // 1. The Compass Background (Rotates to keep North up)
+              Transform.rotate(
+                angle: compassAngle,
+                child: SizedBox(
+                  width: 300,
+                  height: 300,
+                  child: Image.asset(
+                    'assets/compass-icon.png',
+                    fit: BoxFit.contain,
                   ),
-                  // Content
-                  Expanded(
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 500),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(28),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                            child: Container(
+                ),
+              ),
+
+              // 2. The Kaaba Needle (Rotates to point exactly to Makkah)
+              Transform.rotate(
+                angle: qiblahAngle,
+                child: SizedBox(
+                  width: 300,
+                  height: 300,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Positioned(
+                        top: 20, // Pushes it to the edge of the compass
+                        child: Column(
+                          children: [
+                            _buildKaaba(), // Your new custom Kaaba icon!
+                            const SizedBox(height: 4),
+                            Container(
+                              width: 3,
+                              height: 40,
                               decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF0B3D2E).withValues(alpha: 0.7)
-                                    : const Color(0xFFF0F8F4).withValues(alpha: 0.7),
-                                border: Border.all(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .secondary
-                                      .withValues(alpha: 0.3),
-                                ),
-                                borderRadius: BorderRadius.circular(28),
+                                color: const Color(0xFFD4AF37),
+                                borderRadius: BorderRadius.circular(2),
                               ),
-                              padding: const EdgeInsets.all(40),
-                              child: _isLoading
-                                  ? const Center(
-                                      child: CircularProgressIndicator(
-                                        color: Color(0xFFD4AF37),
-                                      ),
-                                    )
-                                  : Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        // Compass circle
-                                        Container(
-                                          width: 250,
-                                          height: 250,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .secondary,
-                                              width: 2,
-                                            ),
-                                          ),
-                                          child: Stack(
-                                            alignment: Alignment.center,
-                                            children: [
-                                              // Compass dial
-                                              CustomPaint(
-                                                size: const Size(250, 250),
-                                                painter: CompassPainter(
-                                                  angle: _qiblahAngle,
-                                                  isDark: isDark,
-                                                ),
-                                              ),
-                                              // Qiblah indicator arrow
-                                              Transform.rotate(
-                                                angle:
-                                                    _qiblahAngle * 3.14159 / 180,
-                                                child: const Icon(
-                                                  Icons.arrow_upward,
-                                                  size: 40,
-                                                  color: Color(0xFFD4AF37),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(height: 30),
-                                        Text(
-                                          isArabic
-                                              ? 'وجه هاتفك نحو هذا الاتجاه'
-                                              : 'Point your phone toward this direction',
-                                          textAlign: TextAlign.center,
-                                          style: GoogleFonts.elMessiri(
-                                            color: AppTheme.getOnBackgroundColor(
-                                                context),
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 20),
-                                        Text(
-                                          '${_qiblahAngle.toStringAsFixed(1)}°',
-                                          style: GoogleFonts.elMessiri(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .secondary,
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+
+              // 3. Center Pin
+              Container(
+                width: 14,
+                height: 14,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFD4AF37),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
           ),
         );
       },
     );
   }
-}
-
-class CompassPainter extends CustomPainter {
-  final double angle;
-  final bool isDark;
-
-  CompassPainter({required this.angle, required this.isDark});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFD4AF37).withValues(alpha: 0.3)
-      ..strokeWidth = 1;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 10;
-
-    // Draw cardinal directions
-    const directions = ['N', 'E', 'S', 'W'];
-    for (int i = 0; i < 4; i++) {
-      final angle = (i * 90) * 3.14159 / 180;
-      final x = center.dx + radius * 0.85 * Math.cos(angle);
-      final y = center.dy + radius * 0.85 * Math.sin(angle);
-
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: directions[i],
-          style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 14),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-      textPainter.paint(
-        canvas,
-        Offset(x - textPainter.width / 2, y - textPainter.height / 2),
-      );
-    }
-
-    // Draw circle
-    canvas.drawCircle(center, radius, paint);
-  }
-
-  @override
-  bool shouldRepaint(CompassPainter oldDelegate) =>
-      oldDelegate.angle != angle || oldDelegate.isDark != isDark;
 }

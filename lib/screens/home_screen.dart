@@ -243,8 +243,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 index: 6,
                                 child: _GlassCard(
                                   icon: Icons.explore_rounded,
-                                  title: isArabic ? 'اتجاه القبلة' : 'Qiblah Finder',
-                                  description: isArabic ? 'اعثر على اتجاه القبلة بدقة' : 'Find the direction to Mecca',
+                                  title: l10n.qiblahFinderTitle,
+                                  description: l10n.qiblahFinderDesc,
                                   onTap: () => _navigate(const QiblahFinderScreen()),
                                 ),
                               ),
@@ -252,8 +252,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 index: 7,
                                 child: _GlassCard(
                                   icon: Icons.location_on_rounded,
-                                  title: isArabic ? 'أقرب مسجد' : 'Nearest Mosque',
-                                  description: isArabic ? 'ابحث عن المساجد القريبة منك' : 'Locate nearby mosques',
+                                  title: l10n.nearestMosqueTitle,
+                                  description: l10n.nearestMosqueDesc,
                                   onTap: () => _navigate(const MosqueFinderScreen()),
                                 ),
                               ),

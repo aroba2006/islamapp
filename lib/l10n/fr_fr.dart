@@ -168,4 +168,17 @@ class FrFR extends AppLocalizations {
   @override String get updateDialogTitle => 'Mettre à jour le progrès';
   @override String get progressLabel => 'Progrès';
   @override String get updateBtn => 'Mettre à jour';
+
+
+  @override
+String get qiblahFinderTitle => 'Direction de la Qibla';
+
+@override
+String get qiblahFinderDesc => 'Trouvez la direction de La Mecque';
+
+@override
+String get nearestMosqueTitle => 'Mosquées à proximité';
+
+@override
+String get nearestMosqueDesc => 'Trouvez les mosquées près de vous';
 }

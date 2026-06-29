@@ -119,6 +119,12 @@ abstract class AppLocalizations {
   String get updateDialogTitle;
   String get progressLabel;
   String get updateBtn;
+
+  String get qiblahFinderTitle;
+  String get qiblahFinderDesc;
+
+  String get nearestMosqueTitle;
+  String get nearestMosqueDesc;
 }
 
 class _AppLocalizationsDelegate
