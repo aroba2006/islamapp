@@ -583,11 +583,18 @@ class _FontSizeSliderState extends State<_FontSizeSlider>
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            _SizePreviewLetter(size: 14, active: _currentIndex == 0),
+            // For Arabic RTL, reverse the visual order of sizes
+            _SizePreviewLetter(
+              size: widget.language == 'ar' ? 28 : 14,
+              active: _currentIndex == (widget.language == 'ar' ? 2 : 0),
+            ),
             const SizedBox(width: 12),
             _SizePreviewLetter(size: 20, active: _currentIndex == 1),
             const SizedBox(width: 12),
-            _SizePreviewLetter(size: 28, active: _currentIndex == 2),
+            _SizePreviewLetter(
+              size: widget.language == 'ar' ? 14 : 28,
+              active: _currentIndex == (widget.language == 'ar' ? 0 : 2),
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -599,11 +606,19 @@ class _FontSizeSliderState extends State<_FontSizeSlider>
             final thumbW = segW - 8;
             return GestureDetector(
               onTapDown: (d) {
-                final tappedSeg = (d.localPosition.dx / segW).floor().clamp(0, 2);
+                var tappedSeg = (d.localPosition.dx / segW).floor().clamp(0, 2);
+                // Reverse tap detection for Arabic RTL
+                /*if (widget.language == 'ar') {
+                  tappedSeg = 2 - tappedSeg;
+                }*/
                 widget.onChanged(_scales[tappedSeg]);
               },
               onHorizontalDragUpdate: (d) {
-                final seg = (d.localPosition.dx / segW).floor().clamp(0, 2);
+                var seg = (d.localPosition.dx / segW).floor().clamp(0, 2);
+                // Reverse drag detection for Arabic RTL
+                /*if (widget.language == 'ar') {
+                  seg = 2 - seg;
+                }*/
                 if (_scales[seg] != widget.current) {
                   widget.onChanged(_scales[seg]);
                 }
@@ -628,7 +643,13 @@ class _FontSizeSliderState extends State<_FontSizeSlider>
                     AnimatedBuilder(
                       animation: _thumbAnim,
                       builder: (context, _) {
-                        final left = 4 + _thumbAnim.value * segW;
+                        // For Arabic, the visual position is reversed
+                        final thumbIndex = widget.language == 'ar' 
+                            ? 2 - _thumbAnim.value 
+                            : _thumbAnim.value;
+                        final left = widget.language == 'ar'
+    ? 4 + (2 - thumbIndex) * segW
+    : 4 + thumbIndex * segW;
                         return Positioned(
                           left: left,
                           child: Container(
@@ -655,25 +676,47 @@ class _FontSizeSliderState extends State<_FontSizeSlider>
                     ),
                     // Labels row
                     Row(
-                      children: List.generate(3, (i) {
-                        final isActive = _currentIndex == i;
-                        return Expanded(
-                          child: Center(
-                            child: Text(
-                              _label(_scales[i]),
-                              style: GoogleFonts.elMessiri(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: isActive
-                                    ? Colors.white
-                                    : (isDark
-                                        ? Colors.white.withValues(alpha: 0.55)
-                                        : const Color(0xFF1B5E3F).withValues(alpha: 0.65)),
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
+                      children: widget.language == 'ar'
+                          ? List.generate(3, (i) {
+                              final scaleIndex = widget.language == 'ar' ? 2 - i : i;
+                              final isActive = _currentIndex == scaleIndex;
+                              return Expanded(
+                                child: Center(
+                                  child: Text(
+                                    _label(_scales[scaleIndex]),
+                                    style: GoogleFonts.elMessiri(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: isActive
+                                          ? Colors.white
+                                          : (isDark
+                                              ? Colors.white.withValues(alpha: 0.55)
+                                              : const Color(0xFF1B5E3F).withValues(alpha: 0.65)),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList()
+                          : List.generate(3, (i) {
+                              final scaleIndex = i;
+                              final isActive = _currentIndex == scaleIndex;
+                              return Expanded(
+                                child: Center(
+                                  child: Text(
+                                    _label(_scales[scaleIndex]),
+                                    style: GoogleFonts.elMessiri(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: isActive
+                                          ? Colors.white
+                                          : (isDark
+                                              ? Colors.white.withValues(alpha: 0.55)
+                                              : const Color(0xFF1B5E3F).withValues(alpha: 0.65)),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
                     ),
                   ],
                 ),

@@ -14,6 +14,8 @@ import 'quran_screen.dart';
 import 'duaa_screen.dart';
 import 'good_deeds_screen.dart';
 import 'islamic_goals_screen.dart';
+import 'qiblah_finder_screen.dart';
+import 'mosque_finder_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -64,7 +66,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         final l10n = AppLocalizations.of(context);
         final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
+         // Add this here
+    final cardHeight = switch (themeService.textScaleFactor) {
+  TextScaleFactor.small => 190.0,
+  TextScaleFactor.medium => 215.0,
+  TextScaleFactor.large => 250.0,
+};
+            
         // Scale the title size based on text scale setting
+        
         final scaledTitleSize = themeService.getScaledSize(44);
         final scaledDescSize = themeService.getScaledSize(16);
 
@@ -102,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 style: titleStyle,
                               ),
                               Text(
-                                'السلام عليكم',
+                                'رفيقك الإسلامي في حياتك اليومية',
                                 textAlign: TextAlign.center,
                                 style: GoogleFonts.amiri(
                                   color: AppTheme.getOnBackgroundColor(context)
@@ -168,12 +178,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           constraints: const BoxConstraints(maxWidth: 1200),
                           child: GridView(
                             padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
-                            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 350,
-                              crossAxisSpacing: 20,
-                              mainAxisSpacing: 20,
-                              mainAxisExtent: 180,
-                            ),
+                            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+  maxCrossAxisExtent: 350,
+  crossAxisSpacing: 20,
+  mainAxisSpacing: 20,
+  mainAxisExtent: cardHeight,
+),
                             children: [
                               _AnimatedCardWrapper(
                                 index: 0,
@@ -227,6 +237,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   title: l10n.islamicGoalsTitle,
                                   description: l10n.islamicGoalsDesc,
                                   onTap: () => _navigate(const IslamicGoalsScreen()),
+                                ),
+                              ),
+                              _AnimatedCardWrapper(
+                                index: 6,
+                                child: _GlassCard(
+                                  icon: Icons.explore_rounded,
+                                  title: isArabic ? 'اتجاه القبلة' : 'Qiblah Finder',
+                                  description: isArabic ? 'اعثر على اتجاه القبلة بدقة' : 'Find the direction to Mecca',
+                                  onTap: () => _navigate(const QiblahFinderScreen()),
+                                ),
+                              ),
+                              _AnimatedCardWrapper(
+                                index: 7,
+                                child: _GlassCard(
+                                  icon: Icons.location_on_rounded,
+                                  title: isArabic ? 'أقرب مسجد' : 'Nearest Mosque',
+                                  description: isArabic ? 'ابحث عن المساجد القريبة منك' : 'Locate nearby mosques',
+                                  onTap: () => _navigate(const MosqueFinderScreen()),
                                 ),
                               ),
                             ],
@@ -344,67 +372,73 @@ class _GlassCardState extends State<_GlassCard> {
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: _isHovered
-                                  ? [const Color(0xFFD4AF37), const Color(0xFFB5952F)]
-                                  : [
-                                      const Color(0xFFD4AF37).withValues(alpha: 0.1),
-                                      const Color(0xFFD4AF37).withValues(alpha: 0.05)
-                                    ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFFD4AF37)
-                                  .withValues(alpha: _isHovered ? 1.0 : 0.3),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Icon(
-                            widget.icon,
-                            color: _isHovered
-                                ? Theme.of(context).scaffoldBackgroundColor
-                                : const Color(0xFFD4AF37),
-                            size: 32,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          widget.title,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.elMessiri(
-                            color: _isHovered
-                                ? AppTheme.getOnBackgroundColor(context)
-                                : const Color(0xFFD4AF37),
-                            fontSize: scaledCardTitleSize,
-                            fontWeight: FontWeight.bold,
-                            height: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Flexible(
-                          child: Text(
-                            widget.description,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.elMessiri(
-                              color: AppTheme.getOnBackgroundColor(context)
-                                  .withValues(alpha: _isHovered ? 0.9 : 0.6),
-                              fontSize: scaledCardDescSize,
-                              height: 1.3,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+  crossAxisAlignment: CrossAxisAlignment.stretch,
+  children: [
+    Center(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: _isHovered
+                ? [const Color(0xFFD4AF37), const Color(0xFFB5952F)]
+                : [
+                    const Color(0xFFD4AF37).withValues(alpha: 0.1),
+                    const Color(0xFFD4AF37).withValues(alpha: 0.05),
+                  ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: const Color(0xFFD4AF37)
+                .withValues(alpha: _isHovered ? 1.0 : 0.3),
+            width: 1.5,
+          ),
+        ),
+        child: Icon(
+          widget.icon,
+          color: _isHovered
+              ? Theme.of(context).scaffoldBackgroundColor
+              : const Color(0xFFD4AF37),
+          size: 32,
+        ),
+      ),
+    ),
+
+    const SizedBox(height: 14),
+
+    Text(
+      widget.title,
+      textAlign: TextAlign.center,
+      maxLines: 2,
+      overflow: TextOverflow.visible,
+      style: GoogleFonts.elMessiri(
+        color: _isHovered
+            ? AppTheme.getOnBackgroundColor(context)
+            : const Color(0xFFD4AF37),
+        fontSize: scaledCardTitleSize,
+        fontWeight: FontWeight.bold,
+        height: 1.15,
+      ),
+    ),
+
+    const SizedBox(height: 8),
+
+    Expanded(
+      child: Text(
+        widget.description,
+        textAlign: TextAlign.center,
+        style: GoogleFonts.elMessiri(
+          color: AppTheme.getOnBackgroundColor(context)
+              .withValues(alpha: _isHovered ? 0.9 : 0.6),
+          fontSize: scaledCardDescSize,
+          height: 1.3,
+        ),
+      ),
+    ),
+  ],
+)
                   ),
                 ),
               ),

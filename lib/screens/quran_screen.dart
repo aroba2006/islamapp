@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:ui'; 
 import 'package:google_fonts/google_fonts.dart';
 import 'package:audioplayers/audioplayers.dart';
-import '../data/quran_data.dart';        // ← Already there
-import '../data/tafseer_data.dart';      // ← ADD THIS NEW LINE
+import '../data/quran_data.dart';        
+import '../data/tafseer_data.dart';      
 import '../l10n/app_localizations.dart';
 import '../services/quran_reciter_service.dart';
 import '../widgets/islamic_pattern_background.dart';
@@ -109,7 +109,8 @@ class _QuranScreenState extends State<QuranScreen> {
       for (var juz in QuranData.parts) {
         for (var surah in juz.surahs) {
           
-          int startNumber = (juz.id == 2 && surah.id == 2) ? 142 : 1;
+          // FIX #1: Reads the correct starting number from our generated data!
+          int startNumber = surah.startingVerseNumber;
 
           for (int i = 0; i < surah.versesAr.length; i++) {
             final cleanVerseAr = _removeDiacritics(surah.versesAr[i]);
@@ -529,7 +530,8 @@ class _SurahGlassCardState extends State<_SurahGlassCard> {
               builder: (context) => SurahReaderScreen(
                 surah: widget.surah, 
                 lang: widget.lang, 
-                startVerseNumber: (widget.part.id == 2) ? 142 : 1, 
+                // FIX #2: Grabs the exact starting verse from the Python generated data!
+                startVerseNumber: widget.surah.startingVerseNumber, 
               ),
             ),
           );
@@ -738,22 +740,25 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                         child: Column(
                           children: [
-                            if (widget.surah.id != 1 && widget.surah.id != 9)
+                            
+                            // FIX #3: Only show the Basmalah if the segment actually starts at Verse 1!
+                            if (widget.surah.id != 1 && widget.surah.id != 9 && widget.startVerseNumber == 1)
                               Padding(padding: const EdgeInsets.only(top: 8.0, bottom: 8.0), child: Text('بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ', style: GoogleFonts.amiri(fontSize: 32, color: const Color(0xFFD4AF37), fontWeight: FontWeight.bold))),
-                            if (widget.surah.id != 1 && widget.surah.id != 9)
+                            if (widget.surah.id != 1 && widget.surah.id != 9 && widget.startVerseNumber == 1)
                               Divider(color: const Color(0xFFD4AF37).withValues(alpha: 0.5), indent: 80, endIndent: 80, thickness: 1.5),
+                            
                             const SizedBox(height: 16),
                             ...List.generate(widget.surah.versesAr.length, (index) {
                               final isHighlighted = _isVerseHighlighted(index);
                               final verseKey = _verseKeys.putIfAbsent(index, () => GlobalKey());
                               String translatedVerse = '';
-                              if (index < widget.surah.versesEn.length) {
-                                if (widget.lang == 'fr') {
-                                  translatedVerse = _getFrenchVerse(widget.surah.id, index, widget.surah.versesEn[index]);
-                                } else {
-                                  translatedVerse = widget.surah.versesEn[index];
-                                }
-                              }
+if (widget.lang == 'fr' && index < widget.surah.versesFr.length) {
+  // Pull directly from your new French data list
+  translatedVerse = widget.surah.versesFr[index];
+} else if (index < widget.surah.versesEn.length) {
+  // Default back to English for other languages
+  translatedVerse = widget.surah.versesEn[index];
+}
 
                               return Container(
                                 key: verseKey,
@@ -1080,7 +1085,7 @@ class _TafseerContentView extends StatelessWidget {
           const SizedBox(height: 24),
         ],
 
-        // English Section[cite: 1]
+        // English Section
         if (englishText.isNotEmpty) ...[
           Text(
             'English Translation:',
@@ -1103,7 +1108,7 @@ class _TafseerContentView extends StatelessWidget {
           const SizedBox(height: 24),
         ],
 
-        // French Section[cite: 1]
+        // French Section
         if (frenchText.isNotEmpty) ...[
           Text(
             'Traduction Française:',
@@ -1142,6 +1147,4 @@ class _TafseerContentView extends StatelessWidget {
       ],
     );
   }
-  
 }
-
