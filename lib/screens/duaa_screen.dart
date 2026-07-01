@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:share_plus/share_plus.dart'; // REQUIRED FOR SHARING
 import '../data/duaa_data.dart';
 import '../widgets/islamic_pattern_background.dart';
 import '../l10n/app_localizations.dart';
@@ -34,11 +35,16 @@ class _DuaaScreenState extends State<DuaaScreen> with SingleTickerProviderStateM
 
   String _getFrenchCategory(String englishText) {
     final Map<String, String> categoryFrMap = {
-      'Worry & Grief': 'Inquiétude et Chagrin', 'Knowledge & Education': 'Savoir et Éducation',
-      'Sickness & Healing': 'Maladie et Guérison', 'Travel & Protection': 'Voyage et Protection',
-      'Success & Guidance': 'Succès et Guidance', 'Completing the Quran': 'Achèvement du Coran',
-      'Life & Sustenance': 'Vie et Subsistance', 'Family & Friends': 'Famille et Amis',
-      'Sleep & Rest': 'Sommeil et Repos', 'Fear & Security': 'Peur et Sécurité',
+      'Worry & Grief': 'Inquiétude et Chagrin', 
+      'Knowledge & Education': 'Savoir et Éducation',
+      'Sickness & Healing': 'Maladie et Guérison', 
+      'Travel & Protection': 'Voyage et Protection',
+      'Success & Guidance': 'Succès et Guidance', 
+      'Completing the Quran': 'Achèvement du Coran',
+      'Life & Sustenance': 'Vie et Subsistance', 
+      'Family & Friends': 'Famille et Amis',
+      'Sleep & Rest': 'Sommeil et Repos', 
+      'Fear & Security': 'Peur et Sécurité',
     };
     return categoryFrMap[englishText] ?? englishText;
   }
@@ -177,17 +183,34 @@ class _DuaaCardState extends State<_DuaaCard> {
   String _translateToFrench(String englishText) {
     if (englishText.isEmpty) return englishText;
     final Map<String, String> frTranslations = {
-      'Dua for Distress': 'Douâa pour la Détresse', 
-      'Dua for Anxiety & Sorrow': 'Douâa pour l\'Anxiété et le Chagrin',
-      'There is no deity except You, exalted are You. Indeed, I have been of the wrongdoers.': 
-          'Il n\'y a de divinité que Toi, exalté sois-Tu. J\'ai été vraiment du nombre des injustes.',
+      'Dua for Distress': 'Invocation pour la détresse',
+      'Dua for Anxiety & Sorrow': 'Invocation contre l\'anxiété et le chagrin',
+      'Dua for Knowledge': 'Invocation pour le savoir',
+      'Dua for Understanding': 'Invocation pour la compréhension',
+      'Dua for Memorization': 'Invocation pour la mémorisation',
+      'Dua for Healing': 'Invocation pour la guérison',
+      'Dua When Visiting the Sick': 'Invocation lors de la visite d\'un malade',
+      'Traveler\'s Dua': 'Invocation du voyageur',
+      'Travel Remembrances': 'Évocations du voyage',
+      'Dua for Divine Help': 'Invocation pour l\'aide divine',
+      'Istikhara Dua': 'Invocation de consultation (Istikhara)',
+      'Dua Upon Completing Quran': 'Invocation lors de l\'achèvement du Coran',
+      'Dua for Sustenance': 'Invocation pour la subsistance',
+      'Dua for Good Character': 'Invocation pour un bon caractère',
+      'Dua for Parents': 'Invocation pour les parents',
+      'Dua for a Righteous Spouse': 'Invocation pour un conjoint pieux',
+      'Dua for Children': 'Invocation pour les enfants',
+      'Sleep Dua': 'Invocation du sommeil',
+      'Waking Up Dua': 'Invocation du réveil',
+      'Dua Against Fear': 'Invocation contre la peur',
+      'Protection Dua': 'Invocation de protection',
     };
     return frTranslations[englishText.trim()] ?? englishText;
   }
 
-  Future<void> _copyToClipboard(String arabic, String translation) async {
-    final textToCopy = "$arabic\n\n$translation";
-    await Clipboard.setData(ClipboardData(text: textToCopy));
+  // FIX: Copies ONLY the Arabic text
+  Future<void> _copyToClipboard(String arabic) async {
+    await Clipboard.setData(ClipboardData(text: arabic));
     if (!mounted) return;
     
     ScaffoldMessenger.of(context).showSnackBar(
@@ -353,18 +376,56 @@ class _DuaaCardState extends State<_DuaaCard> {
                     fontStyle: FontStyle.italic,
                   ),
                 ),
+                
+                // NEW: Shows the benefit/context if available in duaa_data.dart
+                if (widget.duaa.benefitAr != null && widget.duaa.benefitEn != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? Colors.black.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline_rounded, color: Color(0xFFD4AF37), size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            widget.lang == 'ar' 
+                                ? widget.duaa.benefitAr! 
+                                : (widget.lang == 'fr' ? 'Contexte: ${widget.duaa.benefitEn!}' : 'Context: ${widget.duaa.benefitEn!}'),
+                            style: GoogleFonts.elMessiri(
+                              fontSize: 14,
+                              color: isDarkMode ? Colors.white70 : Colors.black54,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
           const SizedBox(height: 16),
+          // FIX: Added the Share button back and ensured copy only takes Arabic text
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               IconButton(
-                onPressed: () => _copyToClipboard(widget.duaa.duaaAr, translatedDuaaText),
+                onPressed: () => _copyToClipboard(widget.duaa.duaaAr),
                 icon: const Icon(Icons.copy_rounded),
                 color: const Color(0xFFD4AF37),
                 tooltip: widget.lang == 'ar' ? 'نسخ' : 'Copy',
+              ),
+              IconButton(
+                onPressed: () {
+                  Share.share(widget.duaa.duaaAr);
+                },
+                icon: const Icon(Icons.share_rounded),
+                color: const Color(0xFFD4AF37),
+                tooltip: widget.lang == 'ar' ? 'مشاركة' : 'Share',
               ),
             ],
           )

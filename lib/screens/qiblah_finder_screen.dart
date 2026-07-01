@@ -97,53 +97,65 @@ class QiblahCompassWidget extends StatelessWidget {
           return const Center(child: Text("Waiting for compass data..."));
         }
 
-        // CORRECT MATH FOR THE COMPASS:
-        // direction is how much your phone is rotated from North
-        // qiblah is the angle of Makkah from North
+        // CORRECT MATH - Only rotate the compass to keep North up
+        // The Kaaba needle angle is relative to the compass
         final compassAngle = (qiblahDirection.direction * (Math.pi / 180) * -1);
-        final qiblahAngle = ((qiblahDirection.qiblah - qiblahDirection.direction) * (Math.pi / 180));
+        // Calculate relative angle and flip with -1 to get correct direction
+        final qiblahAngle = ((qiblahDirection.qiblah - qiblahDirection.direction) * (Math.pi / 180) * -1);
 
         return Center(
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // 1. The Compass Background (Rotates to keep North up)
+              // The entire compass + needle system rotates together to keep North up
               Transform.rotate(
                 angle: compassAngle,
-                child: SizedBox(
-                  width: 300,
-                  height: 300,
-                  child: Image.asset(
-                    'assets/compass-icon.png',
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-
-              // 2. The Kaaba Needle (Rotates to point exactly to Makkah)
-              Transform.rotate(
-                angle: qiblahAngle,
                 child: SizedBox(
                   width: 300,
                   height: 300,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      Positioned(
-                        top: 20, // Pushes it to the edge of the compass
-                        child: Column(
+                      // 1. The Compass Background
+                      Image.asset(
+                        'assets/compass-icon.png',
+                        fit: BoxFit.contain,
+                      ),
+
+                      // 2. The Kaaba Needle (rotates INSIDE the compass)
+                      Transform.rotate(
+                        angle: qiblahAngle,
+                        child: Stack(
+                          alignment: Alignment.center,
                           children: [
-                            _buildKaaba(), // Your new custom Kaaba icon!
-                            const SizedBox(height: 4),
-                            Container(
-                              width: 3,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFD4AF37),
-                                borderRadius: BorderRadius.circular(2),
+                            Positioned(
+                              top: 20, // Pushes it to the edge of the compass
+                              child: Column(
+                                children: [
+                                  _buildKaaba(), // Your custom Kaaba icon!
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    width: 3,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFD4AF37),
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
+                        ),
+                      ),
+
+                      // 3. Center Pin
+                      Container(
+                        width: 14,
+                        height: 14,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFD4AF37),
+                          shape: BoxShape.circle,
                         ),
                       ),
                     ],
@@ -151,13 +163,23 @@ class QiblahCompassWidget extends StatelessWidget {
                 ),
               ),
 
-              // 3. Center Pin
-              Container(
-                width: 14,
-                height: 14,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFD4AF37),
-                  shape: BoxShape.circle,
+              // Debug text showing actual Qiblah angle
+              Positioned(
+                bottom: 40,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Qiblah: ${qiblahDirection.qiblah.toStringAsFixed(1)}° | Direction: ${qiblahDirection.direction.toStringAsFixed(1)}°',
+                    style: const TextStyle(
+                      color: Color(0xFFD4AF37),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],

@@ -7,6 +7,7 @@ import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
 import 'services/adhan_service.dart';
 import 'services/theme_service.dart';
+import 'widgets/prayer_notification_popup.dart';
 import 'app_theme.dart';
 
 void main() async {
@@ -30,14 +31,43 @@ class IslamicApp extends StatefulWidget {
   State<IslamicApp> createState() => _IslamicAppState();
 }
 
-class _IslamicAppState extends State<IslamicApp> {
+class _IslamicAppState extends State<IslamicApp> with WidgetsBindingObserver {
   String _locale = 'ar';
   final ThemeService _themeService = ThemeService();
+  PrayerNotificationPopup? _currentNotification;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadPreferences();
+    
+    // Mark app as in foreground from the start
+    NotificationService.setAppInForeground(true);
+    
+    // Setup notification callback for in-app popups
+    NotificationService.onPrayerTimeNotification = _showInAppNotification;
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Tell notification service if app is in foreground
+    if (state == AppLifecycleState.resumed) {
+      NotificationService.setAppInForeground(true);
+    } else {
+      NotificationService.setAppInForeground(false);
+    }
+  }
+
+  void _showInAppNotification(String prayerName) {
+    setState(() {
+      _currentNotification = PrayerNotificationPopup(
+        prayerName: prayerName,
+        onDismiss: () {
+          setState(() => _currentNotification = null);
+        },
+      );
+    });
   }
 
   Future<void> _loadPreferences() async {
@@ -56,6 +86,13 @@ class _IslamicAppState extends State<IslamicApp> {
   Future<void> setAdhanReciter(String reciter) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('adhanReciter', reciter);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    NotificationService.dispose();
+    super.dispose();
   }
 
   @override
@@ -87,7 +124,19 @@ class _IslamicAppState extends State<IslamicApp> {
                 data: MediaQuery.of(context).copyWith(
                   textScaler: themeService.textScaler,
                 ),
-                child: child!,
+                child: Stack(
+                  children: [
+                    child!,
+                    // Prayer notification popup overlay
+                    if (_currentNotification != null)
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: SafeArea(child: _currentNotification!),
+                      ),
+                  ],
+                ),
               );
             },
             home: const HomeScreen(),

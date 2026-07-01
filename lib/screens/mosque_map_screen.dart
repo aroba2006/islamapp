@@ -30,10 +30,13 @@ class MosqueMapScreen extends StatelessWidget {
           initialZoom: 15,
         ),
         children: [
+          // Use Esri WorldImagery (very reliable)
           TileLayer(
             urlTemplate:
-                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+            maxZoom: 18,
           ),
+          
           MarkerLayer(
             markers: [
               Marker(
@@ -55,6 +58,20 @@ class MosqueMapScreen extends StatelessWidget {
                   color: Colors.red,
                   size: 40,
                 ),
+              ),
+            ],
+          ),
+          
+          // FIX 2: Optional - Add simple routing line between user and mosque
+          PolylineLayer(
+            polylines: [
+              Polyline(
+                points: [
+                  LatLng(userLat, userLng),
+                  LatLng(mosqueLat, mosqueLng),
+                ],
+                color: Colors.blue.withValues(alpha: 0.5),
+                strokeWidth: 2,
               ),
             ],
           ),

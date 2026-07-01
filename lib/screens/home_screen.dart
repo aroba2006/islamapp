@@ -16,6 +16,7 @@ import 'good_deeds_screen.dart';
 import 'islamic_goals_screen.dart';
 import 'qiblah_finder_screen.dart';
 import 'mosque_finder_screen.dart';
+//import 'adhan_test_screen.dart'; // ADD THIS IMPORT
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -215,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               _AnimatedCardWrapper(
                                 index: 3,
                                 child: _GlassCard(
-                                  icon: Icons.favorite_rounded,
+                                  icon: Icons.lightbulb_rounded,
                                   title: l10n.duaaTitle,
                                   description: l10n.duaaDesc,
                                   onTap: () => _navigate(const DuaaScreen()),
@@ -224,7 +225,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               _AnimatedCardWrapper(
                                 index: 4,
                                 child: _GlassCard(
-                                  icon: Icons.volunteer_activism_rounded,
+                                  icon: Icons.favorite_rounded,
                                   title: l10n.goodDeedsTitle,
                                   description: l10n.goodDeedsDesc,
                                   onTap: () => _navigate(const GoodDeedsScreen()),
@@ -233,9 +234,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               _AnimatedCardWrapper(
                                 index: 5,
                                 child: _GlassCard(
-                                  icon: Icons.track_changes_rounded,
-                                  title: l10n.islamicGoalsTitle,
-                                  description: l10n.islamicGoalsDesc,
+                                  icon: Icons.star_rounded,
+                                  title: isArabic ? 'الأهداف الإسلامية' : 'Islamic Goals',
+                                  description: isArabic 
+                                    ? 'ضع أهدافك الإسلامية وحققها'
+                                    : 'Set and achieve Islamic goals',
                                   onTap: () => _navigate(const IslamicGoalsScreen()),
                                 ),
                               ),
@@ -257,6 +260,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   onTap: () => _navigate(const MosqueFinderScreen()),
                                 ),
                               ),
+                              /*
+                              // ADD THIS NEW CARD - Test Notifications
+                              _AnimatedCardWrapper(
+                                index: 8,
+                                child: _GlassCard(
+                                  icon: Icons.notifications_active_rounded,
+                                  title: isArabic ? 'اختبار الأذان' : 'Test Adhan',
+                                  description: isArabic 
+                                    ? 'اختبر إشعارات الأذان وتشغيل الصوت'
+                                    : 'Test adhan notifications and audio',
+                                  onTap: () => _navigate(const AdhanTestScreen()),
+                                ),
+                              ),
+                              */
                             ],
                           ),
                         ),

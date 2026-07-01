@@ -23,16 +23,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _selectedLanguage;
   bool _notificationsEnabled = true;
   bool _adhanPlaying = false;
-  // (PageController removed – replaced by segmented slider)
+  late Duration _notificationAdhanDuration;
+
+  final List<Duration> _durationOptions = const [
+    Duration(seconds: 5),
+    Duration(seconds: 10),
+    Duration(seconds: 30),
+    Duration(minutes: 5), // Whole Adhan
+  ];
 
   @override
   void initState() {
     super.initState();
     _selectedReciter = 'mishary';
     _selectedLanguage = 'ar';
+    _notificationAdhanDuration = const Duration(seconds: 30);
     _loadSavedSettings();
-    
-
   }
 
   @override
@@ -45,6 +51,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _selectedReciter = prefs.getString('adhanReciter') ?? 'mishary';
       _selectedLanguage = prefs.getString('locale') ?? 'ar';
+      
+      final durationSeconds = prefs.getInt('notificationAdhanDuration') ?? 30;
+      _notificationAdhanDuration = Duration(seconds: durationSeconds);
+    });
+  }
+
+  Future<void> _selectDuration(Duration duration) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('notificationAdhanDuration', duration.inSeconds);
+    
+    setState(() {
+      _notificationAdhanDuration = duration;
     });
   }
 
@@ -95,6 +113,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               _buildLanguageSection(context, l10n),
                               const SizedBox(height: 32),
                               _buildAdhanSection(context, l10n),
+                              const SizedBox(height: 32),
+                              _buildNotificationDurationSection(context),
                               const SizedBox(height: 32),
                               _buildNotificationSection(context, l10n),
                             ],
@@ -150,8 +170,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   /// ── THEME SECTION ──
   Widget _buildThemeSection(BuildContext context, AppLocalizations l10n) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Consumer<ThemeService>(
       builder: (context, themeService, _) {
         return Column(
@@ -179,24 +197,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _ThemeOptionCard(
               label: _getSystemDefaultLabel(l10n),
               isSelected: themeService.themeMode == AppThemeMode.system,
-              onTap: () =>
-                  themeService.setThemeMode(AppThemeMode.system),
+              onTap: () => themeService.setThemeMode(AppThemeMode.system),
               icon: Icons.brightness_auto_rounded,
             ),
             const SizedBox(height: 12),
             _ThemeOptionCard(
               label: _getLightModeLabel(l10n),
               isSelected: themeService.themeMode == AppThemeMode.light,
-              onTap: () =>
-                  themeService.setThemeMode(AppThemeMode.light),
+              onTap: () => themeService.setThemeMode(AppThemeMode.light),
               icon: Icons.brightness_7_rounded,
             ),
             const SizedBox(height: 12),
             _ThemeOptionCard(
               label: _getDarkModeLabel(l10n),
               isSelected: themeService.themeMode == AppThemeMode.dark,
-              onTap: () =>
-                  themeService.setThemeMode(AppThemeMode.dark),
+              onTap: () => themeService.setThemeMode(AppThemeMode.dark),
               icon: Icons.brightness_4_rounded,
             ),
           ],
@@ -329,8 +344,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildAdhanSection(BuildContext context, AppLocalizations l10n) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -429,6 +442,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _updateReciter(String reciterId) {
     setState(() => _selectedReciter = reciterId);
     IslamicApp.of(context)?.setAdhanReciter(reciterId);
+  }
+
+ /// ── NEW: NOTIFICATION ADHAN DURATION SECTION ──
+  Widget _buildNotificationDurationSection(BuildContext context) {
+    final lang = _selectedLanguage;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.timer_rounded,
+              color: Theme.of(context).colorScheme.secondary,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              lang == 'ar' ? 'مدة الأذان في الإشعار' : (lang == 'fr' ? 'Durée de l\'Adhan' : 'Adhan Duration'),
+              style: GoogleFonts.elMessiri(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.getOnBackgroundColor(context),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          lang == 'ar'
+              ? 'اختر مدة تشغيل الأذان عند استلام الإشعار'
+              : (lang == 'fr' ? 'Choisissez la durée de lecture de l\'adhan' : 'Choose how long the adhan plays when notification arrives'),
+          style: GoogleFonts.elMessiri(
+            fontSize: 14,
+            color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.7),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ..._durationOptions.map((duration) {
+          String label;
+          if (duration.inMinutes >= 5) {
+            label = lang == 'ar' ? 'الأذان كاملاً' : (lang == 'fr' ? 'Adhan complet' : 'Whole Adhan');
+          } else {
+            if (lang == 'ar') {
+              // Proper Arabic grammar rules for plural vs singular
+              label = duration.inSeconds <= 10 
+                  ? '${duration.inSeconds} ثوان' 
+                  : '${duration.inSeconds} ثانية';
+            } else {
+              label = '${duration.inSeconds} sec';
+            }
+          }
+          
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _InteractiveOptionCard(
+              label: label,
+              isSelected: _notificationAdhanDuration == duration,
+              onTap: () => _selectDuration(duration),
+            ),
+          );
+        }),
+      ],
+    );
   }
 
   Widget _buildNotificationSection(BuildContext context, AppLocalizations l10n) {
@@ -607,18 +684,10 @@ class _FontSizeSliderState extends State<_FontSizeSlider>
             return GestureDetector(
               onTapDown: (d) {
                 var tappedSeg = (d.localPosition.dx / segW).floor().clamp(0, 2);
-                // Reverse tap detection for Arabic RTL
-                /*if (widget.language == 'ar') {
-                  tappedSeg = 2 - tappedSeg;
-                }*/
                 widget.onChanged(_scales[tappedSeg]);
               },
               onHorizontalDragUpdate: (d) {
                 var seg = (d.localPosition.dx / segW).floor().clamp(0, 2);
-                // Reverse drag detection for Arabic RTL
-                /*if (widget.language == 'ar') {
-                  seg = 2 - seg;
-                }*/
                 if (_scales[seg] != widget.current) {
                   widget.onChanged(_scales[seg]);
                 }
@@ -643,13 +712,12 @@ class _FontSizeSliderState extends State<_FontSizeSlider>
                     AnimatedBuilder(
                       animation: _thumbAnim,
                       builder: (context, _) {
-                        // For Arabic, the visual position is reversed
                         final thumbIndex = widget.language == 'ar' 
                             ? 2 - _thumbAnim.value 
                             : _thumbAnim.value;
                         final left = widget.language == 'ar'
-    ? 4 + (2 - thumbIndex) * segW
-    : 4 + thumbIndex * segW;
+                            ? 4 + (2 - thumbIndex) * segW
+                            : 4 + thumbIndex * segW;
                         return Positioned(
                           left: left,
                           child: Container(

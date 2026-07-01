@@ -91,6 +91,7 @@ class QuranScreen extends StatefulWidget {
 class _QuranScreenState extends State<QuranScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  // Now stores grouped maps: {'surah': QuranSurah, 'startVerseNumber': int, 'verses': [...]}
   final List<Map<String, dynamic>> _searchResults = [];
 
   String _removeDiacritics(String text) {
@@ -108,25 +109,43 @@ class _QuranScreenState extends State<QuranScreen> {
 
       for (var juz in QuranData.parts) {
         for (var surah in juz.surahs) {
-          
-          // FIX #1: Reads the correct starting number from our generated data!
           int startNumber = surah.startingVerseNumber;
+
+          // Check if the query matches the Surah name in any language
+          final cleanSurahNameAr = _removeDiacritics(surah.nameAr);
+          final surahNameEn = surah.nameEn.toLowerCase();
+          final surahNameFr = (surahNamesFr[surah.id] ?? '').toLowerCase();
+          final surahNameEnTrans = (surahNamesEnTrans[surah.id] ?? '').toLowerCase();
+          
+          bool surahNameMatches = cleanSurahNameAr.contains(cleanQuery) || 
+                                 surahNameEn.contains(cleanQuery) || 
+                                 surahNameFr.contains(cleanQuery) || 
+                                 surahNameEnTrans.contains(cleanQuery);
+
+          List<Map<String, dynamic>> matchedVersesForSurah = [];
 
           for (int i = 0; i < surah.versesAr.length; i++) {
             final cleanVerseAr = _removeDiacritics(surah.versesAr[i]);
             final verseEn = i < surah.versesEn.length ? surah.versesEn[i].toLowerCase() : '';
 
-            if (cleanVerseAr.contains(cleanQuery) || verseEn.contains(cleanQuery)) {
-              _searchResults.add({
-                'surah': surah,
+            // If the Surah name matches, include all verses, OR filter by specific verse text matches
+            if (surahNameMatches || cleanVerseAr.contains(cleanQuery) || verseEn.contains(cleanQuery)) {
+              matchedVersesForSurah.add({
                 'verseIndex': i,
                 'trueVerseNumber': i + startNumber, 
-                'startVerseNumber': startNumber, 
                 'verseAr': surah.versesAr[i],
                 'verseEn': i < surah.versesEn.length ? surah.versesEn[i] : '',
-                'searchQuery': query,
               });
             }
+          }
+
+          // If there are any matching verses or the surah matched by name, add the group
+          if (matchedVersesForSurah.isNotEmpty) {
+            _searchResults.add({
+              'surah': surah,
+              'startVerseNumber': startNumber,
+              'verses': matchedVersesForSurah,
+            });
           }
         }
       }
@@ -186,8 +205,8 @@ class _QuranScreenState extends State<QuranScreen> {
                       textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
                       decoration: InputDecoration(
                         hintText: isArabic 
-                            ? 'ابحث عن آية أو كلمة...' 
-                            : (lang == 'fr' ? 'Rechercher un verset ou mot...' : 'Search for a verse or word...'),
+                            ? 'ابحث عن سورة، آية أو كلمة...' 
+                            : (lang == 'fr' ? 'Rechercher une sourate, verset...' : 'Search for a surah, verse...'),
                         hintStyle: TextStyle(color: isDarkMode ? Colors.white.withValues(alpha: 0.6) : Colors.black54),
                         prefixIcon: const Icon(Icons.search, color: Color(0xFFD4AF37)),
                         filled: true,
@@ -271,23 +290,69 @@ class _QuranScreenState extends State<QuranScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
-        final result = _searchResults[index];
-        final surah = result['surah'] as QuranSurah;
-        final verseIndex = result['verseIndex'] as int;
-        final startNumber = result['startVerseNumber'] as int;
+        final group = _searchResults[index];
+        final surah = group['surah'] as QuranSurah;
+        final startVerseNumber = group['startVerseNumber'] as int;
+        final verses = group['verses'] as List<Map<String, dynamic>>;
 
-        return _SearchResultGlassCard(
-          searchResult: result, 
-          lang: lang,
-          isDarkMode: isDarkMode,
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => SurahReaderScreen(
-              surah: surah, 
-              lang: lang, 
-              highlightedVerseIndex: verseIndex,
-              startVerseNumber: startNumber, 
-            )));
-          },
+        // Format the Header title elegantly according to active translation maps
+        String surahHeaderTitle;
+        if (lang == 'ar') {
+          surahHeaderTitle = 'سورة ${surah.nameAr}';
+        } else if (lang == 'fr') {
+          surahHeaderTitle = '${surah.nameEn} (${surahNamesFr[surah.id] ?? ''})';
+        } else {
+          surahHeaderTitle = '${surah.nameEn} (${surahNamesEnTrans[surah.id] ?? ''})';
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Sticky-style section header label for Surah name
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 16, 8, 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.menu_book_rounded, color: Color(0xFFD4AF37), size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    surahHeaderTitle,
+                    style: GoogleFonts.elMessiri(
+                      color: const Color(0xFFD4AF37),
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // List out individual glass sub-cards mapping matching contents
+            ...verses.map((verse) {
+              final verseIndex = verse['verseIndex'] as int;
+              return _SearchResultGlassCard(
+                searchResult: {
+                  'surah': surah,
+                  'trueVerseNumber': verse['trueVerseNumber'],
+                  'verseAr': verse['verseAr'],
+                  'verseEn': verse['verseEn'],
+                }, 
+                lang: lang,
+                isDarkMode: isDarkMode,
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => SurahReaderScreen(
+                    surah: surah, 
+                    lang: lang, 
+                    highlightedVerseIndex: verseIndex,
+                    startVerseNumber: startVerseNumber, 
+                  )));
+                },
+              );
+            }),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: Divider(color: Colors.white10, thickness: 1),
+            ),
+          ],
         );
       },
     );
@@ -321,8 +386,8 @@ class _SearchResultGlassCardState extends State<_SearchResultGlassCard> {
     final verseAr = widget.searchResult['verseAr'] as String;
 
     String cardLabel = widget.lang == 'ar' 
-        ? '${surah.nameAr} - الآية $verseNum' 
-        : '${surah.nameEn} - Verse $verseNum';
+        ? 'الآية $verseNum' 
+        : 'Verse $verseNum';
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
