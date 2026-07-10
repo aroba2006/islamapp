@@ -10,7 +10,7 @@ class ArAR extends AppLocalizations {
   @override
   String get searchCountries => 'ابحث عن الدول...';
   @override
-  String get noCountriesFound => 'لم يتم العثور على دول.';
+  String get noCountriesFound => 'لم يتم العثور على دول';
   @override
   String get chooseYourState => 'اختر ولايتك أو محافظتك';
   @override
@@ -32,9 +32,9 @@ class ArAR extends AppLocalizations {
   @override
   String get adhan => 'الأذان';
   @override
-  String get selectAdhanReciter => 'اختر مؤذن الأذان';
+  String get selectAdhanReciter => 'اختر القارئ';
   @override
-  String get adhanNotifications => 'إخطارات الأذان';
+  String get adhanNotifications => 'إشعارات الأذان';
   @override
   String get playAdhan => 'تشغيل الأذان';
   @override
@@ -48,29 +48,29 @@ class ArAR extends AppLocalizations {
   @override
   String get sunrise => 'الشروق';
   @override
-  String get errorMessage => 'حدث خطأ ما.';
+  String get errorMessage => 'حدث خطأ ما';
   @override
   String get arabic => 'العربية';
   @override
-  String get english => 'English';
+  String get english => 'الإنجليزية';
   @override
-  String get french => 'Français';
+  String get french => 'الفرنسية';
   @override
-  String get misharyAfasi => 'الشيخ مشاري العفاسي';
+  String get misharyAfasi => 'مشاري العفاسي';
   @override
-  String get nasserQattami => 'القاري ناصر القطامي';
+  String get nasserQattami => 'ناصر القطامي';
   @override
-  String get aliMala => 'الشيخ علي الملا';
+  String get aliMala => 'علي الملا';
   @override
   String get mohamedQassas => 'محمد مروان قصاص';
   @override
-  String get moRefaat => 'الشيخ محمد رفعت';
+  String get moRefaat => 'محمد رفعت';
   @override
-  String get nasTobar => 'الشيخ نصر الدين طوبار';
+  String get nasTobar => 'نصر الدين طوبار';
   @override
-  String get abdelbassetAbdelsamad => 'الشيخ عبد الباسط عبد الصمد';
+  String get abdelbassetAbdelsamad => 'عبد الباسط عبد الصمد';
   @override
-  String get saoudShubayt => 'الشيخ سعود الشبيت';
+  String get saoudShubayt => 'سعود الشبيت';
   @override
   String get save => 'حفظ';
   @override
@@ -83,11 +83,10 @@ class ArAR extends AppLocalizations {
   String get quranSection => 'قسم القرآن';
   @override
   String get selectSurah => 'اختر السورة';
-  
   @override
   String get stop => 'إيقاف';
   @override
-  String get errorLoadingPrayerTimes => 'خطأ في تحميل أوقات الصلاة. يرجى المحاولة مرة أخرى.';
+  String get errorLoadingPrayerTimes => 'خطأ في تحميل أوقات الصلاة';
   @override
   String get retry => 'إعادة محاولة';
   
@@ -102,80 +101,157 @@ class ArAR extends AppLocalizations {
   @override
   String get isha => 'العشاء';
 
-  // === THE MISSING OVERRIDES ===
   @override
-  String get prayerTimesDesc => 'أوقات الصلاة الدقيقة لبلدك ومنطقتك.';
+  String get prayerTimesDesc => 'أوقات الصلاة الدقيقة لبلدك ومنطقتك';
   @override
-  String get azkarDesc => 'أذكار الصباح والمساء والصلاة والنوم وغيرها.';
+  String get azkarDesc => 'أذكار الصباح والمساء والصلاة والنوم';
   @override
-  String get quranDesc => 'اقرأ القرآن الكريم مع خاصية التنقل بين السور.';
+  String get quranDesc => 'اقرأ القرآن الكريم مع خاصية التنقل بين السور';
   @override
   String get duaaTitle => 'الأدعية';
   @override
-  String get duaaDesc => 'أدعية مختارة للشفاء والتوفيق والرزق والحماية.';
-
+  String get duaaDesc => 'أدعية مختارة للشفاء والتوفيق والرزق والحماية';
 
   @override
   String get goodDeedsTitle => 'الأعمال الصالحة';
   @override
-  String get goodDeedsDesc => 'سجل وتتبع أعمالك الصالحة اليومية لبناء عادات إيجابية.';
+  String get goodDeedsDesc => 'سجل وتتبع أعمالك الصالحة اليومية لبناء عادات إيجابية';
   @override
   String get islamicGoalsTitle => 'الأهداف الإسلامية';
   @override
-  String get islamicGoalsDesc => 'حدد أهدافًا شخصية لقراءة القرآن والحفظ والحفاظ على الصلاة.';
+  String get islamicGoalsDesc => 'حدد أهدافًا شخصية لقراءة القرآن والحفظ والصلاة';
 
   @override
-String get qiblahFinderTitle => 'اتجاه القبلة';
+  String get qiblahFinderTitle => 'اتجاه القبلة';
+  @override
+  String get qiblahFinderDesc => 'جد اتجاه القبلة بدقة';
 
-@override
-String get qiblahFinderDesc => 'اعثر على اتجاه القبلة';
-
-@override
-String get nearestMosqueTitle => 'المساجد القريبة';
-
-@override
-String get nearestMosqueDesc => 'اعثر على المساجد القريبة منك';
+  @override
+  String get nearestMosqueTitle => 'المساجد القريبة';
+  @override
+  String get nearestMosqueDesc => 'جد المساجد القريبة منك';
 
   // === SCREENS TRANSLATIONS ===
-  @override String get cancelBtn => 'إلغاء';
-  @override String get recordDeedTitle => 'سجل عملاً صالحاً';
-  @override String get deedTitleLabel => 'عنوان العمل';
-  @override String get deedTitleHint => 'مثال: صليت الفجر في وقته';
-  @override String get categoryLabel => 'الفئة';
-  @override String get notesLabel => 'ملاحظات (اختياري)';
-  @override String get notesHint => 'أضف أي تفاصيل أخرى...';
-  @override String get recordBtn => 'تسجيل العمل';
-  @override String get streakLabel => 'التتابع';
-  @override String get todayLabel => 'اليوم';
-  @override String get totalLabel => 'المجموع';
-  @override String get allFilter => 'الكل';
-  @override String get noDeedsTitle => 'لا توجد أعمال مسجلة';
-  @override String get noDeedsDesc => 'ابدأ بتسجيل أعمالك الصالحة اليوم';
-  @override String get catPrayer => 'الصلاة';
-  @override String get catCharity => 'الصدقة';
-  @override String get catLearning => 'التعلم';
-  @override String get catFamily => 'العائلة';
-  @override String get catOther => 'أخرى';
+  @override
+  String get cancelBtn => 'إلغاء';
+  @override
+  String get recordDeedTitle => 'سجل عملاً صالحاً';
+  @override
+  String get deedTitleLabel => 'عنوان العمل';
+  @override
+  String get deedTitleHint => 'مثال: صليت الفجر في وقته';
+  @override
+  String get categoryLabel => 'الفئة';
+  @override
+  String get notesLabel => 'ملاحظات (اختياري)';
+  @override
+  String get notesHint => 'أضف أي تفاصيل أخرى...';
+  @override
+  String get recordBtn => 'تسجيل العمل';
+  @override
+  String get streakLabel => 'السلسلة';
+  @override
+  String get todayLabel => 'اليوم';
+  @override
+  String get totalLabel => 'المجموع';
+  @override
+  String get allFilter => 'الكل';
+  @override
+  String get noDeedsTitle => 'لا توجد أعمال مسجلة';
+  @override
+  String get noDeedsDesc => 'ابدأ بتسجيل أعمالك الصالحة اليوم';
+  @override
+  String get catPrayer => 'الصلاة';
+  @override
+  String get catCharity => 'الصدقة';
+  @override
+  String get catLearning => 'التعلم';
+  @override
+  String get catFamily => 'العائلة';
+  @override
+  String get catOther => 'أخرى';
   
-  @override String get addGoalTitle => 'إضافة هدف إسلامي';
-  @override String get goalTypeLabel => 'نوع الهدف';
-  @override String get goalTypeQuran => 'ختم القرآن في عدد من الأيام';
-  @override String get goalTypeSurah => 'حفظ سورة';
-  @override String get goalTypePrayer => 'المحافظة على الصلاة';
-  @override String get goalTitleLabel => 'عنوان الهدف';
-  @override String get goalTitleHint => 'مثال: ختم القرآن قبل رمضان';
-  @override String get surahNumberLabel => 'رقم السورة';
-  @override String get numberOfDaysLabel => 'عدد الأيام';
-  @override String get createGoalBtn => 'إنشاء الهدف';
-  @override String get noGoalsTitle => 'لا توجد أهداف بعد';
-  @override String get noGoalsDesc => 'أنشئ هدفك الإسلامي الأول';
-  @override String get activeGoals => 'الأهداف الحالية';
-  @override String get completedGoals => 'الأهداف المكتملة';
-  @override String get updateProgressBtn => 'تحديث التقدم';
-  @override String get deleteBtn => 'حذف';
-  @override String get deleteGoalTitle => 'حذف الهدف؟';
-  @override String get deleteGoalDesc => 'لا يمكن التراجع عن هذا الإجراء.';
-  @override String get updateDialogTitle => 'تحديث التقدم';
-  @override String get progressLabel => 'التقدم';
-  @override String get updateBtn => 'تحديث';
+  @override
+  String get addGoalTitle => 'أضف هدفاً إسلامياً';
+  @override
+  String get goalTypeLabel => 'نوع الهدف';
+  @override
+  String get goalTypeQuran => 'ختم القرآن في عدد أيام';
+  @override
+  String get goalTypeSurah => 'حفظ سورة';
+  @override
+  String get goalTypePrayer => 'المحافظة على الصلاة';
+  @override
+  String get goalTitleLabel => 'عنوان الهدف';
+  @override
+  String get goalTitleHint => 'مثال: ختم القرآن قبل رمضان';
+  @override
+  String get surahNumberLabel => 'رقم السورة';
+  @override
+  String get numberOfDaysLabel => 'عدد الأيام';
+  @override
+  String get createGoalBtn => 'إنشاء الهدف';
+  @override
+  String get noGoalsTitle => 'لا توجد أهداف بعد';
+  @override
+  String get noGoalsDesc => 'أنشئ هدفك الإسلامي الأول';
+  @override
+  String get activeGoals => 'الأهداف الحالية';
+  @override
+  String get completedGoals => 'الأهداف المكتملة';
+  @override
+  String get updateProgressBtn => 'تحديث التقدم';
+  @override
+  String get deleteBtn => 'حذف';
+  @override
+  String get deleteGoalTitle => 'حذف الهدف؟';
+  @override
+  String get deleteGoalDesc => 'لا يمكن التراجع عن هذا الإجراء';
+  @override
+  String get updateDialogTitle => 'تحديث التقدم';
+  @override
+  String get progressLabel => 'التقدم';
+  @override
+  String get updateBtn => 'تحديث';
+
+  // === QUICK ACCESS NAMES (for home screen cards) ===
+  @override
+  String get qiblaTitle => 'اتجاه القبلة';
+  @override
+  String get qiblaDesc => 'جد اتجاه القبلة والمساجد القريبة';
+  @override
+  String get goalsTitle => 'الأهداف والأعمال';
+  @override
+  String get goalsDesc => 'تتبع أهدافك الإسلامية والأعمال الصالحة';
+  @override
+  String get quizTitle => 'الاختبارات';
+  @override
+  String get quizDesc => 'اختبر معلوماتك الإسلامية';
+  @override
+  String get prophetBioTitle => 'سيرة الأنبياء';
+  @override
+  String get prophetBioDesc => 'قصص الأنبياء والآيات القرآنية';
+
+  // === BOOKMARK TRANSLATIONS ===
+  @override
+  String get bookmarkPage => 'حفظ الصفحة';
+  @override
+  String get goToBookmark => 'الذهاب للصفحة المحفوظة';
+  @override
+  String get pageBookmarked => 'تم حفظ الصفحة';
+
+
+   // === RAMADAN TRANSLATIONS ===
+  @override
+  String get ramadan => 'رمضان';
+  @override
+  String get ramadanActiveDesc => 'شهر الرحمة والغفران';
+  @override
+  String get ramadanInactiveDesc => 'متبقي %d يوم';
+  @override
+  String get ramadanNotAvailable => 'غير متاح حالياً - رمضان لم يبدأ بعد';
+
+  // === HIJRI CALENDAR ===
+  @override
+  String get hijriCalendarTitle => 'التقويم الهجري';
 }

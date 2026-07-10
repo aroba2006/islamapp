@@ -16,7 +16,7 @@ dependencies:
   geocoding: ^4.0.0
   intl: ^0.20.2
   http: ^1.5.0
-  shared_preferences: ^2.2.2
+  shared_preferences: ^2.5.5
   flutter_local_notifications: ^17.0.0
   timezone: ^0.9.4
   audioplayers: ^6.0.0
@@ -32,6 +32,7 @@ dependencies:
   just_audio: ^0.9.31
   audio_session: ^0.1.14
   share_plus: ^13.2.0
+  equatable: ^2.1.0
 
 dev_dependencies:
   flutter_test:
@@ -48,3 +49,4 @@ flutter:
     - assets/reciters/sudais/
     - assets/reciters/muaiqly/
     - assets/reciters/minshawy/
+    - assets/quran_pages/

@@ -5,11 +5,13 @@ import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
 import '../main.dart';
 import '../services/adhan_service.dart';
+import '../services/notification_service.dart';
 import '../services/theme_service.dart' show ThemeService, AppThemeMode, TextScaleFactor;
 import '../app_theme.dart';
 import '../widgets/islamic_pattern_background.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/adhan_reciter_translations.dart';
+// Add this to your existing imports
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -39,6 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _selectedLanguage = 'ar';
     _notificationAdhanDuration = const Duration(seconds: 30);
     _loadSavedSettings();
+    _loadNotificationState();
   }
 
   @override
@@ -54,6 +57,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       
       final durationSeconds = prefs.getInt('notificationAdhanDuration') ?? 30;
       _notificationAdhanDuration = Duration(seconds: durationSeconds);
+    });
+  }
+
+  Future<void> _loadNotificationState() async {
+    setState(() {
+      _notificationsEnabled = NotificationService.areNotificationsEnabled();
     });
   }
 
@@ -117,6 +126,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               _buildNotificationDurationSection(context),
                               const SizedBox(height: 32),
                               _buildNotificationSection(context, l10n),
+                              
                             ],
                           ),
                         ),
@@ -532,7 +542,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           Switch(
             value: _notificationsEnabled,
-            onChanged: (value) => setState(() => _notificationsEnabled = value),
+            onChanged: (value) async {
+              // Update local state
+              setState(() => _notificationsEnabled = value);
+
+              // Persist to NotificationService (which saves to SharedPreferences)
+              await NotificationService.setNotificationsEnabled(value);
+
+              // Show confirmation snackbar
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      value 
+                        ? 'الإشعارات مفعلة' 
+                        : 'الإشعارات معطلة',
+                    ),
+                    duration: const Duration(seconds: 2),
+                    backgroundColor: value ? Colors.green : Colors.orange,
+                  ),
+                );
+              }
+            },
             activeThumbColor: Theme.of(context).colorScheme.secondary,
             activeTrackColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
             inactiveThumbColor: Colors.white54,

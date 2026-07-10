@@ -6,14 +6,14 @@ class QuranReciter {
   final String nameEn;
   final String nameAr;
   final String assetFolder; 
-  final Map<int, String> fileNames; // UPGRADED: Now holds multiple files mapped to Surah IDs
+  final Map<int, String> fileNames; // Serves as a fallback for non-standard file names
 
   const QuranReciter({
     required this.id,
     required this.nameEn,
     required this.nameAr,
     required this.assetFolder,
-    required this.fileNames,
+    this.fileNames = const {}, // Made optional so you don't have to define it if files are 001-114
   });
 }
 
@@ -31,10 +31,7 @@ class QuranReciterService {
       nameEn: 'Mishary Rashid Al-Afasy',
       nameAr: 'مشاري راشد العفاسي',
       assetFolder: 'afasi',
-      fileNames: {
-        1: 'alfatihah-afasi.mp3',
-       99: 'alzalzalah-afasi.mp3', // <-- UPDATE THIS TO YOUR EXACT FILE NAME
-      },
+      // fileNames is left empty! It will automatically use 001.mp3 to 114.mp3
     ),
     QuranReciter(
       id: 'sudais',
@@ -43,7 +40,7 @@ class QuranReciterService {
       assetFolder: 'sudais',
       fileNames: {
         1: 'alfatihah-sudais.mp3',
-       99: 'alzalzalah-sudais.mp3', // <-- UPDATE THIS TO YOUR EXACT FILE NAME
+       99: 'alzalzalah-sudais.mp3', 
       },
     ),
     QuranReciter(
@@ -53,7 +50,7 @@ class QuranReciterService {
       assetFolder: 'muaiqly',
       fileNames: {
         1: 'alfatihah-mieqly.mp3',
-        99: 'alzalzalah-maiq.mp3', // <-- UPDATE THIS TO YOUR EXACT FILE NAME
+        99: 'alzalzalah-maiq.mp3', 
       },
     ),
     QuranReciter(
@@ -63,7 +60,7 @@ class QuranReciterService {
       assetFolder: 'minshawy',
       fileNames: {
         1: 'alfatihah-minshawy.mp3',
-       99: 'alzalzalaah-minshawy.mp3', // <-- UPDATE THIS TO YOUR EXACT FILE NAME
+       99: 'alzalzalaah-minshawy.mp3', 
       },
     ),
   ];
@@ -103,20 +100,23 @@ class QuranReciterService {
     }
   }
 
-  /// Build asset path for surah using the fileNames map
+  /// Build asset path for surah utilizing dynamic numbering or the fallback map
   static String buildAssetPath(QuranReciter reciter, int surahNumber) {
     if (surahNumber < 1 || surahNumber > 114) {
       throw Exception('Invalid surah number: $surahNumber');
     }
 
-    // Check if we have the file for this specific Surah
-    if (reciter.fileNames.containsKey(surahNumber)) {
-      final fileName = reciter.fileNames[surahNumber]!;
-      return '$_basePath/${reciter.assetFolder}/$fileName';
+    String fileName;
+    
+    // 1. Check if there is a specific hardcoded filename in the map for this reciter
+    if (reciter.fileNames.isNotEmpty && reciter.fileNames.containsKey(surahNumber)) {
+      fileName = reciter.fileNames[surahNumber]!;
+    } else {
+      // 2. Dynamically generate the 3-digit file name (e.g., 1 -> '001.mp3', 114 -> '114.mp3')
+      fileName = '${surahNumber.toString().padLeft(3, '0')}.mp3';
     }
 
-    // If the Surah isn't in our map, throw an error so the UI knows
-    throw Exception('Surah $surahNumber not yet available for ${reciter.nameEn}.');
+    return '$_basePath/${reciter.assetFolder}/$fileName';
   }
 
   /// Play Quran surah from local assets

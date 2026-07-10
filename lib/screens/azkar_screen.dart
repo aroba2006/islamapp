@@ -3,6 +3,9 @@ import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/islamic_pattern_background.dart';
 import '../l10n/app_localizations.dart'; 
+import '../utils/share_image_generator.dart';
+// If not already imported
+
 
 class _AzkarCategory {
   final String titleAr;
@@ -741,8 +744,54 @@ class _ZikrGlassCard extends StatefulWidget {
 }
 
 class _ZikrGlassCardState extends State<_ZikrGlassCard> {
+  bool _isSharing = false;
   bool _isHovered = false;
   double _scale = 1.0;
+
+  Future<void> _shareAsImage() async {
+  setState(() => _isSharing = true);
+  
+  try {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    String translationText;
+    if (widget.lang == 'fr') {
+      translationText = widget.zikr.translationFr;
+    } else {
+      translationText = widget.zikr.translation;
+    }
+
+    await ShareImageGenerator.generateAndShareImageWithWidget(
+      title: widget.zikr.arabic,
+      subtitle: translationText,
+      isDarkMode: isDarkMode,
+      lang: widget.lang,
+      context: context,
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(widget.lang == 'ar' ? 'تم إنشاء الصورة' : 'Image created'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(widget.lang == 'ar' ? 'خطأ: $e' : 'Error: $e'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  } finally {
+    if (mounted) {
+      setState(() => _isSharing = false);
+    }
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -825,69 +874,99 @@ class _ZikrGlassCardState extends State<_ZikrGlassCard> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          GestureDetector(
-                            onTap: widget.progress > 0 ? widget.onReset : null,
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.refresh_rounded,
-                                  size: 18,
-                                  color: widget.progress > 0 
-                                      ? (isDarkMode ? Colors.white54 : Colors.black45) 
-                                      : Colors.transparent,
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: widget.progress > 0 ? widget.onReset : null,
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.refresh_rounded,
+                                      size: 18,
+                                      color: widget.progress > 0 
+                                          ? (isDarkMode ? Colors.white54 : Colors.black45) 
+                                          : Colors.transparent,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      widget.lang == 'ar' ? 'إعادة' : (widget.lang == 'fr' ? 'Réinit.' : 'Reset'),
+                                      style: GoogleFonts.elMessiri(
+                                        color: widget.progress > 0 
+                                            ? (isDarkMode ? Colors.white54 : Colors.black45) 
+                                            : Colors.transparent,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  widget.lang == 'ar' ? 'إعادة' : (widget.lang == 'fr' ? 'Réinit.' : 'Reset'),
-                                  style: GoogleFonts.elMessiri(
-                                    color: widget.progress > 0 
-                                        ? (isDarkMode ? Colors.white54 : Colors.black45) 
-                                        : Colors.transparent,
-                                    fontSize: 14,
-                                  ),
+                              ),
+                              // NEW SHARE BUTTON FOR ZEKR
+                              const SizedBox(width: 20),
+                              GestureDetector(
+                                onTap: () {
+                                  ShareImageGenerator.generateAndShareImageWithWidget(
+                                    title: widget.zikr.arabic,
+                                    subtitle: widget.lang == 'fr' ? widget.zikr.translationFr : widget.zikr.translation,
+                                    isDarkMode: isDarkMode,
+                                    lang: widget.lang,
+                                    context: context,
+                                  );
+                                },
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.share_rounded, size: 18, color: isDarkMode ? Colors.white54 : Colors.black45),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      widget.lang == 'ar' ? 'مشاركة' : (widget.lang == 'fr' ? 'Partager' : 'Share'),
+                                      style: GoogleFonts.elMessiri(
+                                        color: isDarkMode ? Colors.white54 : Colors.black45,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                           AnimatedContainer(
-                            duration: const Duration(milliseconds: 250),
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: widget.isDone 
-                                  ? const Color(0xFFD4AF37) 
-                                  : (isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.5)),
-                              borderRadius: BorderRadius.circular(30),
-                              border: Border.all(
-                                color: widget.isDone 
-                                    ? const Color(0xFFD4AF37) 
-                                    : const Color(0xFFD4AF37).withValues(alpha: 0.5)
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  '${widget.progress} / ${widget.zikr.count}',
-                                  style: TextStyle(
-                                    color: widget.isDone 
-                                        ? (isDarkMode ? Theme.of(context).scaffoldBackgroundColor : Colors.white) 
-                                        : const Color(0xFFD4AF37),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Icon(
-                                  widget.isDone ? Icons.check_circle_rounded : Icons.touch_app_rounded,
-                                  size: 18,
-                                  color: widget.isDone 
-                                      ? (isDarkMode ? Theme.of(context).scaffoldBackgroundColor : Colors.white) 
-                                      : const Color(0xFFD4AF37).withValues(alpha: 0.8),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+      duration: const Duration(milliseconds: 250),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      decoration: BoxDecoration(
+        color: widget.isDone 
+            ? const Color(0xFFD4AF37) 
+            : (isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: widget.isDone 
+              ? const Color(0xFFD4AF37) 
+              : const Color(0xFFD4AF37).withValues(alpha: 0.5)
+        ),
+      ),
+      child: Row(
+        children: [
+          Text(
+            '${widget.progress} / ${widget.zikr.count}',
+            style: TextStyle(
+              color: widget.isDone 
+                  ? (isDarkMode ? Theme.of(context).scaffoldBackgroundColor : Colors.white) 
+                  : const Color(0xFFD4AF37),
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(
+            widget.isDone ? Icons.check_circle_rounded : Icons.touch_app_rounded,
+            size: 18,
+            color: widget.isDone 
+                ? (isDarkMode ? Theme.of(context).scaffoldBackgroundColor : Colors.white) 
+                : const Color(0xFFD4AF37).withValues(alpha: 0.8),
+          ),
+        ],
+      ),
+    ),
+  ],
+),
                     ],
                   ),
                 ),

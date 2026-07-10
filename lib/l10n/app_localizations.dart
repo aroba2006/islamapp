@@ -125,6 +125,30 @@ abstract class AppLocalizations {
 
   String get nearestMosqueTitle;
   String get nearestMosqueDesc;
+
+  // === QUICK ACCESS NAMES (for home screen cards) ===
+  String get qiblaTitle;
+  String get qiblaDesc;
+  String get goalsTitle;
+  String get goalsDesc;
+  String get quizTitle;
+  String get quizDesc;
+  String get prophetBioTitle;
+  String get prophetBioDesc;
+
+  // === BOOKMARK TRANSLATIONS ===
+  String get bookmarkPage;
+  String get goToBookmark;
+  String get pageBookmarked;
+
+  // === RAMADAN TRANSLATIONS ===
+  String get ramadan;
+  String get ramadanActiveDesc;
+  String get ramadanInactiveDesc;
+  String get ramadanNotAvailable;
+
+  // === HIJRI CALENDAR ===
+  String get hijriCalendarTitle;
 }
 
 class _AppLocalizationsDelegate
