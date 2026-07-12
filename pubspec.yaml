@@ -45,8 +45,5 @@ flutter:
     - assets/app_icon.png
     - assets/compass-icon.png
     - assets/adhan/
-    - assets/reciters/afasi/
-    - assets/reciters/sudais/
-    - assets/reciters/muaiqly/
-    - assets/reciters/minshawy/
     - assets/quran_pages/
+    - assets/json/

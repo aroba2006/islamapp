@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../services/hijri_calendar_service.dart';
 import '../models/islamic_event.dart';
 import '../widgets/islamic_pattern_background.dart';
-import '../app_theme.dart';
 import '../l10n/app_localizations.dart';
 
 class HijriCalendarScreen extends StatefulWidget {

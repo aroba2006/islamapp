@@ -5,67 +5,51 @@ class QuranReciter {
   final String id;
   final String nameEn;
   final String nameAr;
-  final String assetFolder; 
-  final Map<int, String> fileNames; // Serves as a fallback for non-standard file names
+  final String folderName; // The exact folder path on the server
 
   const QuranReciter({
     required this.id,
     required this.nameEn,
     required this.nameAr,
-    required this.assetFolder,
-    this.fileNames = const {}, // Made optional so you don't have to define it if files are 001-114
+    required this.folderName,
   });
 }
 
-/// Service to handle Quran audio playback from LOCAL ASSETS
+/// Service to handle Quran audio playback from ONLINE URLs
 class QuranReciterService {
   static final _audioPlayer = AudioPlayer();
 
-  // Base path for Quran audio files
-  static const String _basePath = 'reciters';
+  // ✅ The rock-solid, official Quran audio CDN
+  static const String _baseUrl = 'https://download.quranicaudio.com/quran';
 
-  // List of available reciters matching YOUR exact file structure
+  // ✅ Your 4 reciters with their EXACT folder names from your links
   static const List<QuranReciter> reciters = [
     QuranReciter(
-      id: 'afasi',
+      id: 'afasy',
       nameEn: 'Mishary Rashid Al-Afasy',
       nameAr: 'مشاري راشد العفاسي',
-      assetFolder: 'afasi',
-      // fileNames is left empty! It will automatically use 001.mp3 to 114.mp3
+      folderName: 'mishaari_raashid_al_3afaasee',
     ),
     QuranReciter(
       id: 'sudais',
       nameEn: 'Abdul Rahman As-Sudais',
       nameAr: 'عبد الرحمن السديس',
-      assetFolder: 'sudais',
-      fileNames: {
-        1: 'alfatihah-sudais.mp3',
-       99: 'alzalzalah-sudais.mp3', 
-      },
+      folderName: 'abdurrahmaan_as-sudays',
     ),
     QuranReciter(
       id: 'muaiqly',
       nameEn: 'Maher Al-Muaiqly',
       nameAr: 'ماهر المعيقلي',
-      assetFolder: 'muaiqly',
-      fileNames: {
-        1: 'alfatihah-mieqly.mp3',
-        99: 'alzalzalah-maiq.mp3', 
-      },
+      folderName: 'maher_256', // NOTE: This is the correct folder name from your link
     ),
     QuranReciter(
       id: 'minshawy',
       nameEn: 'Mohamed Siddiq El-Minshawy',
       nameAr: 'محمد صديق المنشاوي',
-      assetFolder: 'minshawy',
-      fileNames: {
-        1: 'alfatihah-minshawy.mp3',
-       99: 'alzalzalaah-minshawy.mp3', 
-      },
+      folderName: 'muhammad_siddeeq_al-minshaawee',
     ),
   ];
 
-  /// Initialize audio player
   static Future<void> initialize() async {
     try {
       await _setupAudioContext();
@@ -74,7 +58,6 @@ class QuranReciterService {
     }
   }
 
-  /// Setup audio context
   static Future<void> _setupAudioContext() async {
     try {
       await _audioPlayer.setAudioContext(
@@ -87,11 +70,10 @@ class QuranReciterService {
         ),
       );
     } catch (e) {
-      // Ignore - not all platforms support audio context
+      // Ignore
     }
   }
 
-  /// Get reciter by ID
   static QuranReciter? getReciter(String id) {
     try {
       return reciters.firstWhere((r) => r.id == id);
@@ -100,26 +82,19 @@ class QuranReciterService {
     }
   }
 
-  /// Build asset path for surah utilizing dynamic numbering or the fallback map
-  static String buildAssetPath(QuranReciter reciter, int surahNumber) {
+  /// Constructs the exact URL: base/folder/001.mp3
+  static String buildAudioUrl(QuranReciter reciter, int surahNumber) {
     if (surahNumber < 1 || surahNumber > 114) {
       throw Exception('Invalid surah number: $surahNumber');
     }
 
-    String fileName;
-    
-    // 1. Check if there is a specific hardcoded filename in the map for this reciter
-    if (reciter.fileNames.isNotEmpty && reciter.fileNames.containsKey(surahNumber)) {
-      fileName = reciter.fileNames[surahNumber]!;
-    } else {
-      // 2. Dynamically generate the 3-digit file name (e.g., 1 -> '001.mp3', 114 -> '114.mp3')
-      fileName = '${surahNumber.toString().padLeft(3, '0')}.mp3';
-    }
+    // Zero-pad the number (1 becomes 001, 18 becomes 018, 114 becomes 114)
+    String fileName = '${surahNumber.toString().padLeft(3, '0')}.mp3';
 
-    return '$_basePath/${reciter.assetFolder}/$fileName';
+    return '$_baseUrl/${reciter.folderName}/$fileName';
   }
 
-  /// Play Quran surah from local assets
+  /// Play Quran surah from URL
   static Future<void> playSurah({
     required QuranReciter reciter,
     required int surahNumber,
@@ -127,19 +102,14 @@ class QuranReciterService {
     try {
       await _audioPlayer.stop();
 
-      final assetPath = buildAssetPath(reciter, surahNumber);
+      final audioUrl = buildAudioUrl(reciter, surahNumber);
 
       await _setupAudioContext();
       await _audioPlayer.setReleaseMode(ReleaseMode.stop);
       await _audioPlayer.setVolume(1.0);
 
-      // Use AssetSource with explicit MIME type for MP3
-      await _audioPlayer.play(
-        AssetSource(
-          assetPath,
-          mimeType: 'audio/mpeg',
-        ),
-      );
+      // Use UrlSource to stream from the CDN
+      await _audioPlayer.play(UrlSource(audioUrl));
     } catch (e) {
       rethrow;
     }

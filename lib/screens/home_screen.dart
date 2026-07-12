@@ -221,29 +221,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 opacity: _fadeCtrl,
                 child: Column(
                   children: [
- // ========== HEADER ==========
+     // ========== HEADER ==========
     Container(
-      width: double.infinity, // Forces the Row to fit exactly inside the screen
+      width: double.infinity,
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Pushes content to edges
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Settings button (Now it's the first child!)
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.settings_rounded, color: Color(0xFFD4AF37), size: 24),
-              onPressed: _openSettings,
-              tooltip: l10n.settings,
-            ),
-          ),
-          const SizedBox(width: 12), // Space between the icon and the text
-          
-          // Text Column wrapped in Expanded to take up the remaining space safely
+          // 1. TEXT GOES ON THE LEFT (FIX: Stops the title from crashing into right edge)
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,7 +259,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.calendar_today_rounded, color: const Color(0xFFD4AF37), size: 14),
+                        const Icon(Icons.calendar_today_rounded, color: Color(0xFFD4AF37), size: 14),
                         const SizedBox(width: 6),
                         Text(
                           _getHijriDateString(context),
@@ -284,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           ),
                         ),
                         const SizedBox(width: 4),
-                        Icon(Icons.chevron_right_rounded, color: const Color(0xFFD4AF37), size: 16),
+                        const Icon(Icons.chevron_right_rounded, color: Color(0xFFD4AF37), size: 16),
                       ],
                     ),
                   ),
@@ -321,6 +307,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ),
                 ],
               ],
+            ),
+          ),
+
+          // 2. SETTINGS ICON GOES ON THE RIGHT (FIX: Prevents overflow)
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.settings_rounded, color: Color(0xFFD4AF37), size: 24),
+              onPressed: _openSettings,
+              tooltip: l10n.settings,
             ),
           ),
         ],

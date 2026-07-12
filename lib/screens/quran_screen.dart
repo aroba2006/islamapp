@@ -102,8 +102,19 @@ class _QuranScreenState extends State<QuranScreen> {
   // 0: Whole Quran (Continuous), 1: Whole Surah, 2: Verse by Verse
   int _viewMode = 0; 
 
-  String _removeDiacritics(String text) {
-    return text.replaceAll(RegExp(r'[\u064B-\u065F\u0670]'), '');
+        String _removeDiacritics(String text) {
+    // 1. FIRST: Convert ALL Alif types (Hamza, Madda, Wasla) to standard Alif
+    // This ensures "ٱل" becomes "ال" immediately.
+    String cleaned = text.replaceAll(RegExp(r'[أإآٱ]'), 'ا');
+
+    // 2. SECOND: Remove Harakat (Fatha, Kasra, Damma, Sukoon, and Tanween)
+    // This removes the small symbols on top/bottom of letters.
+    cleaned = cleaned.replaceAll(RegExp(r'[\u064B-\u065F\u0670]'), '');
+
+    // 3. Normalize Ta Marbuta (ة) to Ha (ه) 
+    cleaned = cleaned.replaceAll('ة', 'ه');
+    
+    return cleaned;
   }
 
   void _performSearch(String query) async {  // ✅ CHANGE: async
@@ -139,6 +150,7 @@ List<Map<String, dynamic>> _executeSearch(String query) {
       int startNumber = surah.startingVerseNumber;
 
       final cleanSurahNameAr = _removeDiacritics(surah.nameAr);
+
       final surahNameEn = surah.nameEn.toLowerCase();
       final surahNameFr = (surahNamesFr[surah.id] ?? '').toLowerCase();
       final surahNameEnTrans = (surahNamesEnTrans[surah.id] ?? '').toLowerCase();
@@ -432,7 +444,7 @@ Widget _buildSearchLoadingState(BuildContext context, bool isDarkMode) {
   );
 }
   
-  Widget _buildSearchResults(BuildContext context, String lang, bool isDarkMode) {
+      Widget _buildSearchResults(BuildContext context, String lang, bool isDarkMode) {
     if (_searchResults.isEmpty) {
       return Center(
         child: Text(
@@ -455,16 +467,41 @@ Widget _buildSearchLoadingState(BuildContext context, bool isDarkMode) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // =========== CLICKABLE SURAH HEADER ===========
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 16, 8, 12),
-              child: Row(
-                children: [
-                  const Icon(Icons.menu_book_rounded, color: Color(0xFFD4AF37), size: 20),
-                  const SizedBox(width: 8),
-                  Text(surahHeaderTitle, style: GoogleFonts.elMessiri(color: const Color(0xFFD4AF37), fontSize: 22, fontWeight: FontWeight.bold)),
-                ],
+              child: GestureDetector(
+                // 🟢 CHANGED: Tap the title to navigate based on the CURRENT MODE
+                onTap: () {
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(
+                      builder: (context) => SurahReaderScreen(
+                        surah: surah, 
+                        lang: lang, 
+                        startVerseNumber: surah.startingVerseNumber, 
+                        viewMode: _viewMode, // Respects the user's toggle at the top!
+                      ),
+                    ),
+                  );
+                },
+                child: Row(
+                  children: [
+                    const Icon(Icons.menu_book_rounded, color: Color(0xFFD4AF37), size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      surahHeaderTitle, 
+                      style: GoogleFonts.elMessiri(color: const Color(0xFFD4AF37), fontSize: 22, fontWeight: FontWeight.bold)
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.chevron_right_rounded, color: Color(0xFFD4AF37), size: 20),
+                  ],
+                ),
               ),
             ),
+            // ===============================================
+
+            // Individual Verse Cards (These keep the exact verse navigation)
             ...verses.map((verse) {
               final verseIndex = verse['verseIndex'] as int;
               final pageNumber = verse['pageNumber'] as int?;
@@ -480,15 +517,15 @@ Widget _buildSearchLoadingState(BuildContext context, bool isDarkMode) {
                 lang: lang, 
                 isDarkMode: isDarkMode,
                 onTapSurah: () {
-  int targetViewMode = 2; // ✅ CHANGE: Force verse-by-verse mode
-  Navigator.push(context, MaterialPageRoute(builder: (context) => SurahReaderScreen(
-    surah: surah, 
-    lang: lang, 
-    highlightedVerseIndex: verseIndex, 
-    startVerseNumber: startVerseNumber, 
-    viewMode: 2,  // ✅ USE NEW MODE
-  )));
-},
+                  // Kept this logic so clicking a specific verse still forces Verse-by-Verse
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => SurahReaderScreen(
+                    surah: surah, 
+                    lang: lang, 
+                    highlightedVerseIndex: verseIndex, 
+                    startVerseNumber: startVerseNumber, 
+                    viewMode: 2, 
+                  )));
+                },
                 onTapMushaf: () {
                   if (pageNumber != null) {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => MushafViewerScreen(
@@ -711,6 +748,8 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   final Map<int, GlobalKey> _verseKeys = {};
+    final TextEditingController _surahSearchController = TextEditingController();
+  String _surahSearchQuery = '';
   
   int? _tappedVerseIndex; 
   late List<TapGestureRecognizer> _tapRecognizers;
@@ -942,23 +981,74 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
   );
 }
 
-  Widget _buildPageView(bool isDarkMode) {
+    bool _matchesSearch(int index) {
+    if (_surahSearchQuery.trim().isEmpty) return true;
+    
+    // ✅ FIXED: Apply _removeDiacritics to the user's search query too!
+    final query = _removeDiacritics(_surahSearchQuery.trim().toLowerCase());
+    
+    // Check Arabic text (remove diacritics for better search)
+    final cleanAr = _removeDiacritics(widget.surah.versesAr[index]).toLowerCase();
+
+    if (cleanAr.contains(query)) return true;
+
+    // Check English/French translation
+    if (widget.lang == 'fr' && index < widget.surah.versesFr.length) {
+      if (widget.surah.versesFr[index].toLowerCase().contains(query)) return true;
+    } else if (index < widget.surah.versesEn.length) {
+      if (widget.surah.versesEn[index].toLowerCase().contains(query)) return true;
+    }
+    return false;
+  }
+
+    String _removeDiacritics(String text) {
+    // 1. FIRST: Convert ALL Alif types (Hamza, Madda, Wasla) to standard Alif
+    String cleaned = text.replaceAll(RegExp(r'[أإآٱ]'), 'ا');
+
+    // 2. SECOND: Remove Harakat (Fatha, Kasra, Damma, Sukoon, and Tanween)
+    cleaned = cleaned.replaceAll(RegExp(r'[\u064B-\u065F\u0670]'), '');
+
+    // 3. Normalize Ta Marbuta (ة) to Ha (ه) 
+    cleaned = cleaned.replaceAll('ة', 'ه');
+    
+    return cleaned;
+  }
+
+    Widget _buildPageView(bool isDarkMode, {String searchQuery = ''}) {
     List<InlineSpan> spans = [];
+    final isSearching = searchQuery.trim().isNotEmpty;
+    final cleanQuery = _removeDiacritics(searchQuery.trim().toLowerCase());
     
     for (int i = 0; i < widget.surah.versesAr.length; i++) {
       final verseNum = i + widget.startVerseNumber;
       final isSearchedHighlight = _isVerseHighlighted(i);
       final isTappedHighlight = _tappedVerseIndex == i;
       
+      // Check if this specific verse contains the search text
+      final cleanVerse = _removeDiacritics(widget.surah.versesAr[i]).toLowerCase();
+      final verseMatches = isSearching && cleanVerse.contains(cleanQuery);
+      
+      // Highlight the text in gold if it matches the search
+      Color verseColor;
+      if (isSearchedHighlight || isTappedHighlight) {
+        verseColor = const Color(0xFFD4AF37);
+      } else if (verseMatches) {
+        verseColor = const Color(0xFFD4AF37); // Gold for search matches too
+      } else {
+        verseColor = isDarkMode ? Colors.white : Colors.black87;
+      }
+      
       spans.add(
         TextSpan(
           text: '${widget.surah.versesAr[i]} ',
           style: GoogleFonts.amiri(
             fontSize: 28,
-            color: isSearchedHighlight || isTappedHighlight ? const Color(0xFFD4AF37) : (isDarkMode ? Colors.white : Colors.black87),
-            backgroundColor: isTappedHighlight ? const Color(0xFFD4AF37).withValues(alpha: 0.25) : Colors.transparent,
+            color: verseColor,
+            backgroundColor: verseMatches 
+                ? const Color(0xFFD4AF37).withValues(alpha: 0.3) // Highlight background for matches
+                : (isTappedHighlight ? const Color(0xFFD4AF37).withValues(alpha: 0.25) : Colors.transparent),
             height: 2.2, 
-            fontWeight: isSearchedHighlight || isTappedHighlight ? FontWeight.bold : FontWeight.normal,
+            fontWeight: (isSearchedHighlight || isTappedHighlight || verseMatches) ? FontWeight.bold : FontWeight.normal,
           ),
           recognizer: _tapRecognizers[i],
         ),
@@ -969,8 +1059,10 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
           text: ' ﴿$verseNum﴾ ',
           style: TextStyle(
             fontSize: 22,
-            color: isTappedHighlight ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.7),
-            backgroundColor: isTappedHighlight ? const Color(0xFFD4AF37).withValues(alpha: 0.25) : Colors.transparent,
+            color: isTappedHighlight || verseMatches ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.7),
+            backgroundColor: verseMatches 
+                ? const Color(0xFFD4AF37).withValues(alpha: 0.3) 
+                : (isTappedHighlight ? const Color(0xFFD4AF37).withValues(alpha: 0.25) : Colors.transparent),
             fontFamily: 'Amiri', 
           ),
         ),
@@ -1033,7 +1125,7 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                     ],
                   ),
                 ),
-                Expanded(
+                                Expanded(
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 1000),
@@ -1042,6 +1134,48 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                         child: Column(
                           children: [
+                            // ============= ADDED SEARCH BAR =============
+                            // Only show search bar if we aren't in Whole Book Mode (0)
+                            if (widget.viewMode != 0) ...[
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 16.0),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                                    child: TextField(
+                                      controller: _surahSearchController,
+                                      onChanged: (val) => setState(() => _surahSearchQuery = val),
+                                      style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
+                                      textDirection: widget.lang == 'ar' ? TextDirection.rtl : TextDirection.ltr,
+                                      decoration: InputDecoration(
+                                        hintText: widget.lang == 'ar' 
+                                            ? 'ابحث داخل السورة...' 
+                                            : (widget.lang == 'fr' ? 'Rechercher dans la sourate...' : 'Search within Surah...'),
+                                        hintStyle: TextStyle(color: isDarkMode ? Colors.white.withValues(alpha: 0.6) : Colors.black54),
+                                        prefixIcon: const Icon(Icons.search, color: Color(0xFFD4AF37)),
+                                        filled: true,
+                                        fillColor: isDarkMode ? const Color(0xFF0B3D2E).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.8),
+                                        suffixIcon: _surahSearchQuery.isNotEmpty
+                                            ? IconButton(
+                                                icon: Icon(Icons.clear, color: isDarkMode ? Colors.white54 : Colors.black45),
+                                                onPressed: () {
+                                                  _surahSearchController.clear();
+                                                  setState(() => _surahSearchQuery = '');
+                                                },
+                                              )
+                                            : null,
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: const Color(0xFFD4AF37).withValues(alpha: 0.3))),
+                                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: const Color(0xFFD4AF37).withValues(alpha: 0.3))),
+                                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFD4AF37), width: 2)),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                            // =============================================
+
                             if (widget.surah.id != 1 && widget.surah.id != 9 && widget.startVerseNumber == 1)
                               Padding(
                                 padding: const EdgeInsets.only(top: 8.0, bottom: 8.0), 
@@ -1054,9 +1188,14 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                             
                             // Book Mode (0) OR Surah Mode (1) Use Page View
                             if (widget.viewMode == 0 || widget.viewMode == 1)
-                              _buildPageView(isDarkMode)
+                              // ✅ PASS THE SEARCH QUERY HERE
+                              _buildPageView(isDarkMode, searchQuery: _surahSearchQuery)
                             else
                               ...List.generate(widget.surah.versesAr.length, (index) {
+                                // ============ FILTER LOGIC ============
+                                if (!_matchesSearch(index)) return const SizedBox.shrink();
+                                // ======================================
+
                                 final isHighlighted = _isVerseHighlighted(index);
                                 final isTapped = _tappedVerseIndex == index;
                                 final verseKey = _verseKeys.putIfAbsent(index, () => GlobalKey());
@@ -1112,7 +1251,7 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                         Row(
                                           mainAxisAlignment: widget.lang == 'ar' ? MainAxisAlignment.start : MainAxisAlignment.end,
                                           children: [
-                                            // NEW: Share Range Shortcut Button
+                                            // Share Range Shortcut Button
                                             TextButton.icon(
                                               icon: const Icon(Icons.share_rounded, color: Color(0xFFD4AF37), size: 18),
                                               label: Text(widget.lang == 'ar' ? 'مشاركة' : 'Share', style: GoogleFonts.elMessiri(color: const Color(0xFFD4AF37), fontWeight: FontWeight.bold)),
@@ -1125,7 +1264,7 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                               },
                                             ),
                                             const SizedBox(width: 12),
-                                            // EXISTING: Tafseer Button
+                                            // Tafseer Button
                                             TextButton.icon(
                                               icon: const Icon(Icons.menu_book_rounded, color: Color(0xFFD4AF37), size: 18),
                                               label: Text(widget.lang == 'ar' ? 'التفسير' : (widget.lang == 'fr' ? 'Tafsir' : 'Tafseer'), style: GoogleFonts.elMessiri(color: const Color(0xFFD4AF37), fontWeight: FontWeight.bold)),
@@ -1139,7 +1278,6 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                   ),
                                 );
                               }),
-
                             // Add the "Next/Previous" footer ONLY if in Whole Book mode (0)
                             if (widget.viewMode == 0)
                               _buildBookNavigation(isDarkMode),
