@@ -268,16 +268,16 @@ class NotificationService {
     );
 
     await _notifications.zonedSchedule(
-      prayerName.hashCode,
-      'Time for $prayerName',
-      'It\'s time to pray $prayerName',
-      scheduledTime,
-      details,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-      androidAllowWhileIdle: true, // Allow notification even if device is in Doze mode
-    );
+  prayerName.hashCode,
+  'Time for $prayerName',
+  'It\'s time to pray $prayerName',
+  scheduledTime,
+  details,
+  androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+  uiLocalNotificationDateInterpretation:
+      UILocalNotificationDateInterpretation.absoluteTime,
+  matchDateTimeComponents: DateTimeComponents.time,
+);
   }
 
   /// Cancel all notifications

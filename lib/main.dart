@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+// ✅ ADDED
 import 'l10n/app_localizations.dart';
 import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
@@ -9,10 +11,14 @@ import 'services/adhan_service.dart';
 import 'services/theme_service.dart';
 import 'widgets/prayer_notification_popup.dart';
 import 'app_theme.dart';
+import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // ✅ ADDED: Initialize Firebase before anything else
+  //await Firebase.initializeApp();
+
   // Initialize services
   await NotificationService.initialize();
   await AdhanService.initialize();
@@ -51,7 +57,6 @@ class _IslamicAppState extends State<IslamicApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Tell notification service if app is in foreground
     if (state == AppLifecycleState.resumed) {
       NotificationService.setAppInForeground(true);
     } else {
@@ -95,10 +100,35 @@ class _IslamicAppState extends State<IslamicApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
+  /// Build theme with Google Fonts applied
+  ThemeData _buildTheme(ThemeData baseTheme, String fontKey) {
+    final fontFamily = _getGoogleFontFamily(fontKey);
+    final newTextTheme = baseTheme.textTheme.apply(
+      fontFamily: fontFamily,
+    );
+    return baseTheme.copyWith(textTheme: newTextTheme);
+  }
+
+  String _getGoogleFontFamily(String fontKey) {
+    switch (fontKey) {
+      case 'amiri': return GoogleFonts.amiri().fontFamily ?? 'Amiri';
+      case 'elMessiri': return GoogleFonts.elMessiri().fontFamily ?? 'El Messiri';
+      case 'arefRuqaa': return GoogleFonts.arefRuqaa().fontFamily ?? 'Aref Ruqaa';
+      case 'cairo': return GoogleFonts.cairo().fontFamily ?? 'Cairo';
+      case 'tajawal': return GoogleFonts.tajawal().fontFamily ?? 'Tajawal';
+      default: return GoogleFonts.amiri().fontFamily ?? 'Amiri';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: _themeService,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: _themeService),
+        ChangeNotifierProvider(
+          create: (_) => AuthService()..initialize(),
+        ),
+      ],
       child: Consumer<ThemeService>(
         builder: (context, themeService, _) {
           return MaterialApp(
@@ -116,8 +146,8 @@ class _IslamicAppState extends State<IslamicApp> with WidgetsBindingObserver {
               Locale('fr'),
             ],
             locale: Locale(_locale),
-            theme: AppTheme.lightTheme,
-            darkTheme: AppTheme.darkTheme,
+            theme: _buildTheme(AppTheme.lightTheme, themeService.fontFamily),
+            darkTheme: _buildTheme(AppTheme.darkTheme, themeService.fontFamily),
             themeMode: _mapThemeMode(themeService.themeMode),
             builder: (context, child) {
               return MediaQuery(
@@ -127,7 +157,6 @@ class _IslamicAppState extends State<IslamicApp> with WidgetsBindingObserver {
                 child: Stack(
                   children: [
                     child!,
-                    // Prayer notification popup overlay
                     if (_currentNotification != null)
                       Positioned(
                         top: 0,
@@ -148,12 +177,9 @@ class _IslamicAppState extends State<IslamicApp> with WidgetsBindingObserver {
 
   ThemeMode _mapThemeMode(AppThemeMode serviceMode) {
     switch (serviceMode) {
-      case AppThemeMode.light:
-        return ThemeMode.light;
-      case AppThemeMode.dark:
-        return ThemeMode.dark;
-      case AppThemeMode.system:
-        return ThemeMode.system;
+      case AppThemeMode.light: return ThemeMode.light;
+      case AppThemeMode.dark: return ThemeMode.dark;
+      case AppThemeMode.system: return ThemeMode.system;
     }
   }
 }

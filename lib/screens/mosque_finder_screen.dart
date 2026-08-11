@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
 import '../widgets/islamic_pattern_background.dart';
 import '../app_theme.dart';
 import '../services/theme_service.dart';
-import '../l10n/app_localizations.dart';
-import 'package:geolocator/geolocator.dart';
 import '../services/overpass_service.dart';
 import 'mosque_map_screen.dart';
 
-// Extract constants
 class _MosqueFinderConstants {
   static const Color primaryGold = Color(0xFFD4AF37);
   static const double cardBorderRadius = 20;
@@ -33,7 +30,7 @@ class _MosqueFinderScreenState extends State<MosqueFinderScreen> {
   List<Mosque> _nearbyMosques = [];
   String? _errorMessage;
   double? _currentLatitude;
-double? _currentLongitude;
+  double? _currentLongitude;
 
   @override
   void initState() {
@@ -42,78 +39,67 @@ double? _currentLongitude;
   }
 
   Future<void> _initializeMosqueFinder() async {
-  try {
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        throw Exception("Location services are disabled");
+      }
 
-    if (!await Geolocator.isLocationServiceEnabled()) {
-      throw Exception("Location services are disabled");
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        throw Exception("Location permission denied");
+      }
+
+      final position = await Geolocator.getCurrentPosition();
+
+      _currentLatitude = position.latitude;
+      _currentLongitude = position.longitude;
+
+      final mosques = await OverpassService.getNearbyMosques(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+        _nearbyMosques = mosques.map((m) {
+          return Mosque(
+            name: m.name,
+            latitude: m.latitude,
+            longitude: m.longitude,
+            distance: Geolocator.distanceBetween(
+                  position.latitude,
+                  position.longitude,
+                  m.latitude,
+                  m.longitude,
+                ) /
+                1000,
+            direction: "",
+            prayerTime: "--:--",
+          );
+        }).toList();
+      });
+
+      _nearbyMosques.sort((a, b) => a.distance.compareTo(b.distance));
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+      });
     }
-
-    LocationPermission permission =
-        await Geolocator.checkPermission();
-
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      throw Exception("Location permission denied");
-    }
-
-    final position =
-        await Geolocator.getCurrentPosition();
-
-        _currentLatitude = position.latitude;
-_currentLongitude = position.longitude;
-
-        final mosques = await OverpassService.getNearbyMosques(
-  position.latitude,
-  position.longitude,
-);
-
-    print(position.latitude);
-    print(position.longitude);
-
-    if (!mounted) return;
-
-    setState(() {
-  _isLoading = false;
-
-  _nearbyMosques = mosques.map((m) {
-  return Mosque(
-    name: m.name,
-    latitude: m.latitude,
-    longitude: m.longitude,
-    distance: Geolocator.distanceBetween(
-      position.latitude,
-      position.longitude,
-      m.latitude,
-      m.longitude,
-    ) /
-    1000,
-    direction: "",
-    prayerTime: "--:--",
-  );
-}).toList();
-});
-
-  _nearbyMosques.sort(
-  (a, b) => a.distance.compareTo(b.distance),
-);
-
-  } catch (e) {
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = false;
-      _errorMessage = e.toString();
-    });
   }
-}
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     return Consumer<ThemeService>(
@@ -123,7 +109,6 @@ _currentLongitude = position.longitude;
             child: SafeArea(
               child: Column(
                 children: [
-                  // Header
                   Padding(
                     padding: const EdgeInsets.all(20),
                     child: Row(
@@ -140,10 +125,10 @@ _currentLongitude = position.longitude;
                           child: Text(
                             isArabic ? 'أقرب مسجد' : 'Nearest Mosque',
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.amiri(
-                              color: Theme.of(context).colorScheme.secondary,
+                            style: themeService.getTextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.secondary,
                             ),
                           ),
                         ),
@@ -151,9 +136,8 @@ _currentLongitude = position.longitude;
                       ],
                     ),
                   ),
-                  // Content
                   Expanded(
-                    child: _buildContent(context, isArabic),
+                    child: _buildContent(context, isArabic, themeService),
                   ),
                 ],
               ),
@@ -164,7 +148,8 @@ _currentLongitude = position.longitude;
     );
   }
 
-  Widget _buildContent(BuildContext context, bool isArabic) {
+  Widget _buildContent(
+      BuildContext context, bool isArabic, ThemeService themeService) {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(
@@ -186,7 +171,10 @@ _currentLongitude = position.longitude;
             const SizedBox(height: 16),
             Text(
               _errorMessage!,
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: themeService.getTextStyle(
+                fontSize: 16,
+                color: Colors.white,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -196,7 +184,10 @@ _currentLongitude = position.longitude;
                 _initializeMosqueFinder();
               },
               icon: const Icon(Icons.refresh),
-              label: Text(isArabic ? 'حاول مجددًا' : 'Retry'),
+              label: Text(
+                isArabic ? 'حاول مجددًا' : 'Retry',
+                style: themeService.getTextStyle(fontSize: 14),
+              ),
             ),
           ],
         ),
@@ -207,7 +198,10 @@ _currentLongitude = position.longitude;
       return Center(
         child: Text(
           isArabic ? 'لم يتم العثور على مساجد قريبة' : 'No nearby mosques found',
-          style: Theme.of(context).textTheme.bodyLarge,
+          style: themeService.getTextStyle(
+            fontSize: 16,
+            color: Colors.white70,
+          ),
         ),
       );
     }
@@ -222,6 +216,7 @@ _currentLongitude = position.longitude;
           isArabic: isArabic,
           userLat: _currentLatitude!,
           userLng: _currentLongitude!,
+          themeService: themeService,
         );
       },
     );
@@ -233,160 +228,149 @@ class _MosqueCard extends StatefulWidget {
   final bool isArabic;
   final double userLat;
   final double userLng;
+  final ThemeService themeService;
 
   const _MosqueCard({
     required this.mosque,
     required this.isArabic,
     required this.userLat,
     required this.userLng,
+    required this.themeService,
   });
 
   @override
   State<_MosqueCard> createState() => _MosqueCardState();
 }
 
-class _MosqueCardState extends State<_MosqueCard>
-    with SingleTickerProviderStateMixin {
+class _MosqueCardState extends State<_MosqueCard> {
   bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Focus(
-        onKey: (node, event) {
-          // Add keyboard support (Enter to interact)
-          return KeyEventResult.ignored;
-        },
-        child: MouseRegion(
-          onEnter: (_) => setState(() => _isHovered = true),
-          onExit: (_) => setState(() => _isHovered = false),
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            onTap: () {
-                print("USER: ${widget.userLat}, ${widget.userLng}");
-  print("MOSQUE: ${widget.mosque.latitude}, ${widget.mosque.longitude}");
-
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => MosqueMapScreen(
-        userLat: widget.userLat,
-        userLng: widget.userLng,
-        mosqueLat: widget.mosque.latitude,
-        mosqueLng: widget.mosque.longitude,
-        mosqueName: widget.mosque.name,
-      ),
-    ),
-  );
-},
-            child: AnimatedScale(
-              scale: _isHovered
-                  ? _MosqueFinderConstants.hoverScale
-                  : 1.0,
-              duration: _MosqueFinderConstants.hoverDuration,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(
-                  _MosqueFinderConstants.cardBorderRadius,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MosqueMapScreen(
+                  userLat: widget.userLat,
+                  userLng: widget.userLng,
+                  mosqueLat: widget.mosque.latitude,
+                  mosqueLng: widget.mosque.longitude,
+                  mosqueName: widget.mosque.name,
                 ),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: AnimatedContainer(
-                    duration: _MosqueFinderConstants.containerDuration,
-                    decoration: BoxDecoration(
-                      color: _isHovered
-                          ? Theme.of(context)
-                              .colorScheme
-                              .surface
-                              .withValues(alpha: 0.85)
-                          : Theme.of(context)
-                              .scaffoldBackgroundColor
-                              .withValues(alpha: 0.65),
-                      borderRadius: BorderRadius.circular(
-                        _MosqueFinderConstants.cardBorderRadius,
-                      ),
-                      border: Border.all(
-                        color: _MosqueFinderConstants.primaryGold.withValues(
-                          alpha: _isHovered ? 0.8 : 0.2,
-                        ),
-                        width: _isHovered ? 2 : 1,
-                      ),
+              ),
+            );
+          },
+          child: AnimatedScale(
+            scale: _isHovered ? _MosqueFinderConstants.hoverScale : 1.0,
+            duration: _MosqueFinderConstants.hoverDuration,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(
+                _MosqueFinderConstants.cardBorderRadius,
+              ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: AnimatedContainer(
+                  duration: _MosqueFinderConstants.containerDuration,
+                  decoration: BoxDecoration(
+                    color: _isHovered
+                        ? Theme.of(context)
+                            .colorScheme
+                            .surface
+                            .withValues(alpha: 0.85)
+                        : Theme.of(context)
+                            .scaffoldBackgroundColor
+                            .withValues(alpha: 0.65),
+                    borderRadius: BorderRadius.circular(
+                      _MosqueFinderConstants.cardBorderRadius,
                     ),
-                    padding: const EdgeInsets.all(
-                      _MosqueFinderConstants.cardPadding,
+                    border: Border.all(
+                      color: _MosqueFinderConstants.primaryGold.withValues(
+                        alpha: _isHovered ? 0.8 : 0.2,
+                      ),
+                      width: _isHovered ? 2 : 1,
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _MosqueFinderConstants.primaryGold
-                                .withValues(alpha: _isHovered ? 0.9 : 0.2),
-                          ),
-                          child: Icon(
-                            Icons.mosque_rounded,
-                            color: _isHovered
-                                ? Theme.of(context).scaffoldBackgroundColor
-                                : _MosqueFinderConstants.primaryGold,
-                            size: _MosqueFinderConstants.iconSize,
-                            semanticLabel: widget.isArabic
-                                ? 'مسجد'
-                                : 'Mosque',
-                          ),
+                  ),
+                  padding: const EdgeInsets.all(
+                    _MosqueFinderConstants.cardPadding,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _MosqueFinderConstants.primaryGold
+                              .withValues(alpha: _isHovered ? 0.9 : 0.2),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.mosque.name,
-                                style: GoogleFonts.elMessiri(
-                                  color: _isHovered
-                                      ? AppTheme.getOnBackgroundColor(context)
-                                      : _MosqueFinderConstants.primaryGold,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${widget.mosque.distance.toStringAsFixed(2)} km away • ${widget.mosque.direction}',
-                                style: GoogleFonts.elMessiri(
-                                  color: AppTheme.getOnBackgroundColor(context)
-                                      .withValues(
-                                          alpha: _isHovered ? 0.8 : 0.6),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
+                        child: Icon(
+                          Icons.mosque_rounded,
+                          color: _isHovered
+                              ? Theme.of(context).scaffoldBackgroundColor
+                              : _MosqueFinderConstants.primaryGold,
+                          size: _MosqueFinderConstants.iconSize,
+                          semanticLabel:
+                              widget.isArabic ? 'مسجد' : 'Mosque',
                         ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.mosque.prayerTime,
-                              style: GoogleFonts.elMessiri(
-                                color: _MosqueFinderConstants.primaryGold,
-                                fontSize: 14,
+                              widget.mosque.name,
+                              style: widget.themeService.getTextStyle(
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
+                                color: _isHovered
+                                    ? AppTheme.getOnBackgroundColor(context)
+                                    : _MosqueFinderConstants.primaryGold,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              widget.isArabic ? 'وقت الصلاة' : 'Prayer Time',
-                              style: GoogleFonts.elMessiri(
+                              '${widget.mosque.distance.toStringAsFixed(2)} km away',
+                              style: widget.themeService.getTextStyle(
+                                fontSize: 12,
                                 color: AppTheme.getOnBackgroundColor(context)
-                                    .withValues(alpha: 0.5),
-                                fontSize: 10,
+                                    .withValues(
+                                        alpha: _isHovered ? 0.8 : 0.6),
                               ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            widget.mosque.prayerTime,
+                            style: widget.themeService.getTextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: _MosqueFinderConstants.primaryGold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.isArabic ? 'وقت الصلاة' : 'Prayer Time',
+                            style: widget.themeService.getTextStyle(
+                              fontSize: 10,
+                              color: AppTheme.getOnBackgroundColor(context)
+                                  .withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),

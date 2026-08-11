@@ -1,6 +1,7 @@
 import 'app_localizations.dart';
 
 class EnUS extends AppLocalizations {
+  // Basic app strings
   @override
   String get appTitle => 'Prayer Times';
   @override
@@ -19,12 +20,6 @@ class EnUS extends AppLocalizations {
   String get fetchingPrayerTimes => 'Fetching prayer times...';
   @override
   String get prayerTimes => 'Prayer Times';
-  @override
-  String get azkarTitle => 'Azkar';
-  @override
-  String get quranTitle => 'Holy Quran';
-  @override
-  String get titleAr => 'Supplications';
   @override
   String get settings => 'Settings';
   @override
@@ -60,12 +55,6 @@ class EnUS extends AppLocalizations {
   @override
   String get nasserQattami => 'Nasser Al-Qattami';
   @override
-  String get mohamedQassas => 'Mohamed Qassas';
-  @override
-  String get moRefaat => 'Mohamed Refaat';
-  @override
-  String get nasTobar => 'Nasraldin Tobar';
-  @override
   String get aliMala => 'Ali Al-Mala';
   @override
   String get abdelbassetAbdelsamad => 'Abdulbasit Abdulsamad';
@@ -77,21 +66,30 @@ class EnUS extends AppLocalizations {
   String get close => 'Close';
   @override
   String get prayerNotification => 'Time for prayer';
-
+  @override
+  String get mohamedQassas => 'Mohamed Qassas';
+  @override
+  String get moRefaat => 'Mohamed Refaat';
+  @override
+  String get nasTobar => 'Nasraldin Tobar';
   @override
   String get quran => 'Holy Quran';
   @override
   String get quranSection => 'Quran Section';
   @override
   String get selectSurah => 'Select Surah';
-  
   @override
   String get stop => 'Stop';
   @override
   String get errorLoadingPrayerTimes => 'Error loading prayer times. Please try again.';
   @override
   String get retry => 'Retry';
+  @override
+  String get notifications => 'Notifications';
+  @override
+  String get enableNotifications => 'Enable Notifications';
   
+  // Five prayers
   @override
   String get fajr => 'Fajr';
   @override
@@ -103,6 +101,13 @@ class EnUS extends AppLocalizations {
   @override
   String get isha => 'Isha';
 
+  // Screen titles and descriptions
+  @override
+  String get azkarTitle => 'Azkar';
+  @override
+  String get quranTitle => 'Holy Quran';
+  @override
+  String get titleAr => 'Supplications';
   @override
   String get prayerTimesDesc => 'Accurate prayer times for your country and region';
   @override
@@ -110,10 +115,11 @@ class EnUS extends AppLocalizations {
   @override
   String get quranDesc => 'Read the Holy Quran with easy navigation between Surahs';
   @override
-  String get duaaTitle => 'Supplications'; 
+  String get duaaTitle => 'Supplications';
   @override
   String get duaaDesc => 'Selected supplications for healing, success, and protection';
 
+  // Good Deeds & Islamic Goals
   @override
   String get goodDeedsTitle => 'Good Deeds';
   @override
@@ -123,17 +129,39 @@ class EnUS extends AppLocalizations {
   @override
   String get islamicGoalsDesc => 'Set personal targets for reading Quran, memorization, and prayer streaks';
 
+  // Quick access cards
+  @override
+  String get qiblaTitle => 'Qiblah Finder';
+  @override
+  String get qiblaDesc => 'Find Qiblah direction and nearby mosques';
+  @override
+  String get goalsTitle => 'Goals & Deeds';
+  @override
+  String get goalsDesc => 'Track your Islamic goals and good deeds';
+  @override
+  String get quizTitle => 'Quizzes';
+  @override
+  String get quizDesc => 'Test your Islamic knowledge';
+  @override
+  String get prophetBioTitle => 'Prophet Biographies';
+  @override
+  String get prophetBioDesc => 'Stories of Prophets & Quranic Mentions';
+  @override
+  String get hadithsTitle => 'Prophet\'s Hadiths';
+  @override
+  String get hadithsDesc => 'Authentic sayings and teachings of Prophet Muhammad';
+
+  // Feature screens
   @override
   String get qiblahFinderTitle => 'Qiblah Direction';
   @override
   String get qiblahFinderDesc => 'Find the direction to Makkah';
-
   @override
   String get nearestMosqueTitle => 'Nearby Mosques';
   @override
   String get nearestMosqueDesc => 'Find mosques near you';
 
-  // === SCREENS TRANSLATIONS ===
+  // Good Deeds screen
   @override
   String get cancelBtn => 'Cancel';
   @override
@@ -173,6 +201,7 @@ class EnUS extends AppLocalizations {
   @override
   String get catOther => 'Other';
   
+  // Islamic Goals screen
   @override
   String get addGoalTitle => 'Add Islamic Goal';
   @override
@@ -216,25 +245,7 @@ class EnUS extends AppLocalizations {
   @override
   String get updateBtn => 'Update';
 
-  // === QUICK ACCESS NAMES (for home screen cards) ===
-  @override
-  String get qiblaTitle => 'Qiblah Finder';
-  @override
-  String get qiblaDesc => 'Find Qiblah direction and nearby mosques';
-  @override
-  String get goalsTitle => 'Goals & Deeds';
-  @override
-  String get goalsDesc => 'Track your Islamic goals and good deeds';
-  @override
-  String get quizTitle => 'Quizzes';
-  @override
-  String get quizDesc => 'Test your Islamic knowledge';
-  @override
-  String get prophetBioTitle => 'Prophet Biographies';
-  @override
-  String get prophetBioDesc => 'Stories of Prophets & Quranic Mentions';
-
-  // === BOOKMARK TRANSLATIONS ===
+  // Bookmarks
   @override
   String get bookmarkPage => 'Bookmark Page';
   @override
@@ -242,7 +253,7 @@ class EnUS extends AppLocalizations {
   @override
   String get pageBookmarked => 'Page bookmarked';
 
-   // === RAMADAN TRANSLATIONS ===
+  // Ramadan
   @override
   String get ramadan => 'Ramadan';
   @override
@@ -252,7 +263,35 @@ class EnUS extends AppLocalizations {
   @override
   String get ramadanNotAvailable => 'Not available yet - Ramadan hasn\'t started';
 
-  // === HIJRI CALENDAR ===
+  // Authentication
+  @override
+  String get login => 'Login';
+  @override
+  String get signup => 'Sign Up';
+  @override
+  String get email => 'Email';
+  @override
+  String get username => 'Username';
+  @override
+  String get emailOrUsername => 'Email or Username';
+  @override
+  String get password => 'Password';
+  @override
+  String get confirmPassword => 'Confirm Password';
+  @override
+  String get selectBirthday => 'Select Birthday';
+  @override
+  String get genderMale => 'Male';
+  @override
+  String get genderFemale => 'Female';
+  @override
+  String get fillAllFields => 'Please fill all fields';
+  @override
+  String get loginFailed => 'Login failed';
+  @override
+  String get signupFailed => 'Signup failed';
+
+  // Hijri Calendar
   @override
   String get hijriCalendarTitle => 'Hijri Calendar';
 }

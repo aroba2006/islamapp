@@ -1,6 +1,7 @@
 import 'app_localizations.dart';
 
 class ArAR extends AppLocalizations {
+  // Basic app strings
   @override
   String get appTitle => 'أوقات الصلاة';
   @override
@@ -19,12 +20,6 @@ class ArAR extends AppLocalizations {
   String get fetchingPrayerTimes => 'جاري جلب أوقات الصلاة...';
   @override
   String get prayerTimes => 'أوقات الصلاة';
-  @override
-  String get azkarTitle => 'الأذكار';
-  @override
-  String get quranTitle => 'القرآن الكريم';
-  @override
-  String get titleAr => 'الأدعية';
   @override
   String get settings => 'الإعدادات';
   @override
@@ -62,12 +57,6 @@ class ArAR extends AppLocalizations {
   @override
   String get aliMala => 'علي الملا';
   @override
-  String get mohamedQassas => 'محمد مروان قصاص';
-  @override
-  String get moRefaat => 'محمد رفعت';
-  @override
-  String get nasTobar => 'نصر الدين طوبار';
-  @override
   String get abdelbassetAbdelsamad => 'عبد الباسط عبد الصمد';
   @override
   String get saoudShubayt => 'سعود الشبيت';
@@ -77,6 +66,12 @@ class ArAR extends AppLocalizations {
   String get close => 'إغلاق';
   @override
   String get prayerNotification => 'حان وقت الصلاة';
+  @override
+  String get mohamedQassas => 'محمد مروان قصاص';
+  @override
+  String get moRefaat => 'محمد رفعت';
+  @override
+  String get nasTobar => 'نصر الدين طوبار';
   @override
   String get quran => 'القرآن الكريم';
   @override
@@ -89,7 +84,12 @@ class ArAR extends AppLocalizations {
   String get errorLoadingPrayerTimes => 'خطأ في تحميل أوقات الصلاة';
   @override
   String get retry => 'إعادة محاولة';
+  @override
+  String get notifications => 'الإشعارات';
+  @override
+  String get enableNotifications => 'تفعيل الإشعارات';
   
+  // Five prayers
   @override
   String get fajr => 'الفجر';
   @override
@@ -101,6 +101,13 @@ class ArAR extends AppLocalizations {
   @override
   String get isha => 'العشاء';
 
+  // Screen titles and descriptions
+  @override
+  String get azkarTitle => 'الأذكار';
+  @override
+  String get quranTitle => 'القرآن الكريم';
+  @override
+  String get titleAr => 'الأدعية';
   @override
   String get prayerTimesDesc => 'أوقات الصلاة الدقيقة لبلدك ومنطقتك';
   @override
@@ -112,6 +119,7 @@ class ArAR extends AppLocalizations {
   @override
   String get duaaDesc => 'أدعية مختارة للشفاء والتوفيق والرزق والحماية';
 
+  // Good Deeds & Islamic Goals
   @override
   String get goodDeedsTitle => 'الأعمال الصالحة';
   @override
@@ -121,17 +129,39 @@ class ArAR extends AppLocalizations {
   @override
   String get islamicGoalsDesc => 'حدد أهدافًا شخصية لقراءة القرآن والحفظ والصلاة';
 
+  // Quick access cards
+  @override
+  String get qiblaTitle => 'اتجاه القبلة';
+  @override
+  String get qiblaDesc => 'جد اتجاه القبلة والمساجد القريبة';
+  @override
+  String get goalsTitle => 'الأهداف والأعمال';
+  @override
+  String get goalsDesc => 'تتبع أهدافك الإسلامية والأعمال الصالحة';
+  @override
+  String get quizTitle => 'الاختبارات';
+  @override
+  String get quizDesc => 'اختبر معلوماتك الإسلامية';
+  @override
+  String get prophetBioTitle => 'سيرة الأنبياء';
+  @override
+  String get prophetBioDesc => 'قصص الأنبياء والآيات القرآنية';
+  @override
+  String get hadithsTitle => 'أحاديث النبي';
+  @override
+  String get hadithsDesc => 'أقوال وتعاليم النبي محمد صلى الله عليه وسلم الصحيحة';
+
+  // Feature screens
   @override
   String get qiblahFinderTitle => 'اتجاه القبلة';
   @override
   String get qiblahFinderDesc => 'جد اتجاه القبلة بدقة';
-
   @override
   String get nearestMosqueTitle => 'المساجد القريبة';
   @override
   String get nearestMosqueDesc => 'جد المساجد القريبة منك';
 
-  // === SCREENS TRANSLATIONS ===
+  // Good Deeds screen
   @override
   String get cancelBtn => 'إلغاء';
   @override
@@ -171,6 +201,7 @@ class ArAR extends AppLocalizations {
   @override
   String get catOther => 'أخرى';
   
+  // Islamic Goals screen
   @override
   String get addGoalTitle => 'أضف هدفاً إسلامياً';
   @override
@@ -214,25 +245,7 @@ class ArAR extends AppLocalizations {
   @override
   String get updateBtn => 'تحديث';
 
-  // === QUICK ACCESS NAMES (for home screen cards) ===
-  @override
-  String get qiblaTitle => 'اتجاه القبلة';
-  @override
-  String get qiblaDesc => 'جد اتجاه القبلة والمساجد القريبة';
-  @override
-  String get goalsTitle => 'الأهداف والأعمال';
-  @override
-  String get goalsDesc => 'تتبع أهدافك الإسلامية والأعمال الصالحة';
-  @override
-  String get quizTitle => 'الاختبارات';
-  @override
-  String get quizDesc => 'اختبر معلوماتك الإسلامية';
-  @override
-  String get prophetBioTitle => 'سيرة الأنبياء';
-  @override
-  String get prophetBioDesc => 'قصص الأنبياء والآيات القرآنية';
-
-  // === BOOKMARK TRANSLATIONS ===
+  // Bookmarks
   @override
   String get bookmarkPage => 'حفظ الصفحة';
   @override
@@ -240,8 +253,35 @@ class ArAR extends AppLocalizations {
   @override
   String get pageBookmarked => 'تم حفظ الصفحة';
 
+  // Authentication
+  @override
+  String get login => 'تسجيل الدخول';
+  @override
+  String get signup => 'إنشاء حساب';
+  @override
+  String get email => 'البريد الإلكتروني';
+  @override
+  String get username => 'اسم المستخدم';
+  @override
+  String get emailOrUsername => 'البريد الإلكتروني أو اسم المستخدم';
+  @override
+  String get password => 'كلمة المرور';
+  @override
+  String get confirmPassword => 'تأكيد كلمة المرور';
+  @override
+  String get selectBirthday => 'تاريخ الميلاد';
+  @override
+  String get genderMale => 'ذكر';
+  @override
+  String get genderFemale => 'أنثى';
+  @override
+  String get fillAllFields => 'يرجى ملء جميع الحقول';
+  @override
+  String get loginFailed => 'فشل تسجيل الدخول';
+  @override
+  String get signupFailed => 'فشل إنشاء الحساب';
 
-   // === RAMADAN TRANSLATIONS ===
+  // Ramadan
   @override
   String get ramadan => 'رمضان';
   @override
@@ -251,7 +291,7 @@ class ArAR extends AppLocalizations {
   @override
   String get ramadanNotAvailable => 'غير متاح حالياً - رمضان لم يبدأ بعد';
 
-  // === HIJRI CALENDAR ===
+  // Hijri Calendar
   @override
   String get hijriCalendarTitle => 'التقويم الهجري';
 }

@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'dart:ui'; 
+import 'dart:ui';
+import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:audioplayers/audioplayers.dart';
-import '../data/quran_data.dart';        
-import '../data/tafseer_data.dart';      
+import '../data/quran_data.dart';
+import '../data/tafseer_data.dart';
 import '../l10n/app_localizations.dart';
 import '../services/quran_reciter_service.dart';
 import '../widgets/islamic_pattern_background.dart';
 import 'package:flutter/gestures.dart';
 import '../screens/mushaf_viewer_screen.dart';
-import '../app_theme.dart';
 import '../models/quran_page_model.dart';
 import '../utils/share_image_generator.dart';
+import '../services/theme_service.dart';
 
 // Helper Map for French Surah Translations
 final Map<int, String> surahNamesFr = {
@@ -79,7 +80,7 @@ final Map<int, String> surahNamesEnTrans = {
   100: "The Courser", 101: "The Calamity", 102: "The Rivalry",
   103: "The Declining Day", 104: "The Traducer", 105: "The Elephant",
   106: "Quraysh", 107: "The Small Kindnesses", 108: "The Abundance", 109: "The Disbelievers",
-  110: "The Divine Support", 111: "The Palm Fiber", 112: "The Sincerity", 
+  110: "The Divine Support", 111: "The Palm Fiber", 112: "The Sincerity",
   113: "The Daybreak", 114: "The Mankind"
 };
 
@@ -97,100 +98,89 @@ class _QuranScreenState extends State<QuranScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   final List<Map<String, dynamic>> _searchResults = [];
-  bool _isSearching = false;  // ✅ ADD THIS
-  
+  bool _isSearching = false;
+
   // 0: Whole Quran (Continuous), 1: Whole Surah, 2: Verse by Verse
-  int _viewMode = 0; 
+  int _viewMode = 0;
 
-        String _removeDiacritics(String text) {
-    // 1. FIRST: Convert ALL Alif types (Hamza, Madda, Wasla) to standard Alif
-    // This ensures "ٱل" becomes "ال" immediately.
+  String _removeDiacritics(String text) {
     String cleaned = text.replaceAll(RegExp(r'[أإآٱ]'), 'ا');
-
-    // 2. SECOND: Remove Harakat (Fatha, Kasra, Damma, Sukoon, and Tanween)
-    // This removes the small symbols on top/bottom of letters.
     cleaned = cleaned.replaceAll(RegExp(r'[\u064B-\u065F\u0670]'), '');
-
-    // 3. Normalize Ta Marbuta (ة) to Ha (ه) 
     cleaned = cleaned.replaceAll('ة', 'ه');
-    
     return cleaned;
   }
 
-  void _performSearch(String query) async {  // ✅ CHANGE: async
-  setState(() {
-    _searchQuery = query;
-    _searchResults.clear();
-    _isSearching = true;  // ✅ ADD
-  });
-
-  if (query.trim().isEmpty) {
-    setState(() => _isSearching = false);  // ✅ ADD
-    return;
-  }
-
-  // ✅ RUN IN BACKGROUND
-  final results = await Future.microtask(() => _executeSearch(query));
-
-  if (mounted) {
+  void _performSearch(String query) async {
     setState(() {
-      _searchResults.addAll(results);
-      _isSearching = false;  // ✅ ADD
+      _searchQuery = query;
+      _searchResults.clear();
+      _isSearching = true;
     });
+
+    if (query.trim().isEmpty) {
+      setState(() => _isSearching = false);
+      return;
+    }
+
+    final results = await Future.microtask(() => _executeSearch(query));
+
+    if (mounted) {
+      setState(() {
+        _searchResults.addAll(results);
+        _isSearching = false;
+      });
+    }
   }
-}
 
-// ✅ NEW METHOD - Add after _performSearch
-List<Map<String, dynamic>> _executeSearch(String query) {
-  final cleanQuery = _removeDiacritics(query.toLowerCase().trim());
-  final results = <Map<String, dynamic>>[];
+  List<Map<String, dynamic>> _executeSearch(String query) {
+    final cleanQuery = _removeDiacritics(query.toLowerCase().trim());
+    final results = <Map<String, dynamic>>[];
 
-  for (var juz in QuranData.parts) {
-    for (var surah in juz.surahs) {
-      int startNumber = surah.startingVerseNumber;
+    for (var juz in QuranData.parts) {
+      for (var surah in juz.surahs) {
+        int startNumber = surah.startingVerseNumber;
 
-      final cleanSurahNameAr = _removeDiacritics(surah.nameAr);
+        final cleanSurahNameAr = _removeDiacritics(surah.nameAr);
+        final surahNameEn = surah.nameEn.toLowerCase();
+        final surahNameFr = (surahNamesFr[surah.id] ?? '').toLowerCase();
+        final surahNameEnTrans = (surahNamesEnTrans[surah.id] ?? '').toLowerCase();
 
-      final surahNameEn = surah.nameEn.toLowerCase();
-      final surahNameFr = (surahNamesFr[surah.id] ?? '').toLowerCase();
-      final surahNameEnTrans = (surahNamesEnTrans[surah.id] ?? '').toLowerCase();
-      
-      bool surahNameMatches = cleanSurahNameAr.contains(cleanQuery) || 
-                             surahNameEn.contains(cleanQuery) || 
-                             surahNameFr.contains(cleanQuery) || 
-                             surahNameEnTrans.contains(cleanQuery);
+        bool surahNameMatches = cleanSurahNameAr.contains(cleanQuery) ||
+                               surahNameEn.contains(cleanQuery) ||
+                               surahNameFr.contains(cleanQuery) ||
+                               surahNameEnTrans.contains(cleanQuery);
 
-      List<Map<String, dynamic>> matchedVersesForSurah = [];
+        List<Map<String, dynamic>> matchedVersesForSurah = [];
 
-      for (int i = 0; i < surah.versesAr.length; i++) {
-        final cleanVerseAr = _removeDiacritics(surah.versesAr[i]);
-        final verseEn = i < surah.versesEn.length ? surah.versesEn[i].toLowerCase() : '';
+        for (int i = 0; i < surah.versesAr.length; i++) {
+          final cleanVerseAr = _removeDiacritics(surah.versesAr[i]);
+          final verseEn = i < surah.versesEn.length ? surah.versesEn[i].toLowerCase() : '';
 
-        if (surahNameMatches || cleanVerseAr.contains(cleanQuery) || verseEn.contains(cleanQuery)) {
-          final trueVerseNumber = i + startNumber;
-          final pageNumber = QuranPageMetadata.getPageForVerse(surah.id, trueVerseNumber);
-          
-          matchedVersesForSurah.add({
-            'verseIndex': i,
-            'trueVerseNumber': trueVerseNumber, 
-            'verseAr': surah.versesAr[i],
-            'verseEn': i < surah.versesEn.length ? surah.versesEn[i] : '',
-            'pageNumber': pageNumber,
+          if (surahNameMatches || cleanVerseAr.contains(cleanQuery) || verseEn.contains(cleanQuery)) {
+            final trueVerseNumber = i + startNumber;
+            final pageNumber = QuranPageMetadata.getPageForVerse(surah.id, trueVerseNumber);
+
+            matchedVersesForSurah.add({
+              'verseIndex': i,
+              'trueVerseNumber': trueVerseNumber,
+              'verseAr': surah.versesAr[i],
+              'verseEn': i < surah.versesEn.length ? surah.versesEn[i] : '',
+              'pageNumber': pageNumber,
+            });
+          }
+        }
+
+        if (matchedVersesForSurah.isNotEmpty) {
+          results.add({
+            'surah': surah,
+            'startVerseNumber': startNumber,
+            'verses': matchedVersesForSurah,
           });
         }
       }
-
-      if (matchedVersesForSurah.isNotEmpty) {
-        results.add({
-          'surah': surah,
-          'startVerseNumber': startNumber,
-          'verses': matchedVersesForSurah,
-        });
-      }
     }
+    return results;
   }
-  return results;
-}
 
   @override
   void dispose() {
@@ -198,10 +188,10 @@ List<Map<String, dynamic>> _executeSearch(String query) {
     super.dispose();
   }
 
-  Widget _buildToggleSegment(int modeValue, String titleAr, String titleEn, String titleFr, bool isArabic, String lang, bool isDarkMode) {
+  Widget _buildToggleSegment(int modeValue, String titleAr, String titleEn, String titleFr, bool isArabic, String lang, bool isDarkMode, ThemeService themeService) {
     final isSelected = _viewMode == modeValue;
     String displayTitle = isArabic ? titleAr : (lang == 'fr' ? titleFr : titleEn);
-    
+
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => _viewMode = modeValue),
@@ -214,10 +204,10 @@ List<Map<String, dynamic>> _executeSearch(String query) {
           child: Text(
             displayTitle,
             textAlign: TextAlign.center,
-            style: GoogleFonts.elMessiri(
-              color: isSelected ? (isDarkMode ? const Color(0xFF0B3D2E) : Colors.white) : (isDarkMode ? Colors.white70 : Colors.black87),
+            style: themeService.getTextStyle(
+              fontSize: 14,
               fontWeight: FontWeight.bold,
-              fontSize: 14
+              color: isSelected ? (isDarkMode ? const Color(0xFF0B3D2E) : Colors.white) : (isDarkMode ? Colors.white70 : Colors.black87),
             ),
           ),
         ),
@@ -232,184 +222,192 @@ List<Map<String, dynamic>> _executeSearch(String query) {
     final isArabic = lang == 'ar';
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDarkMode ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFF5F5F5),
-      body: IslamicPatternBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24),
-                      onPressed: () => Navigator.pop(context),
+    return Consumer<ThemeService>(
+      builder: (context, themeService, _) {
+        return Scaffold(
+          backgroundColor: isDarkMode ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFF5F5F5),
+          body: IslamicPatternBackground(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        Expanded(
+                          child: Text(
+                            l10n.quranTitle,
+                            textAlign: TextAlign.center,
+                            style: themeService.getTextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFFD4AF37),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 48),
+                      ],
                     ),
-                    Expanded(
-                      child: Text(
-                        l10n.quranTitle, 
-                        textAlign: TextAlign.center,
-                        style: isArabic 
-                            ? GoogleFonts.amiri(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold)
-                            : GoogleFonts.arefRuqaa(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: _performSearch,
+                          style: themeService.getTextStyle(
+                            fontSize: 16,
+                            color: isDarkMode ? Colors.white : Colors.black87,
+                          ),
+                          textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+                          decoration: InputDecoration(
+                            hintText: isArabic
+                                ? 'ابحث عن سورة، آية أو كلمة...'
+                                : (lang == 'fr' ? 'Rechercher une sourate, verset...' : 'Search for a surah, verse...'),
+                            hintStyle: themeService.getTextStyle(
+                              fontSize: 14,
+                              color: isDarkMode ? Colors.white.withValues(alpha: 0.6) : Colors.black54,
+                            ),
+                            prefixIcon: const Icon(Icons.search, color: Color(0xFFD4AF37)),
+                            filled: true,
+                            fillColor: isDarkMode ? const Color(0xFF0B3D2E).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.8),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: Icon(Icons.clear, color: isDarkMode ? Colors.white54 : Colors.black45),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      _performSearch('');
+                                    },
+                                  )
+                                : null,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: const Color(0xFFD4AF37).withValues(alpha: 0.3))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: const Color(0xFFD4AF37).withValues(alpha: 0.3))),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFD4AF37), width: 2)),
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 48),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: _performSearch,
-                      style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
-                      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
-                      decoration: InputDecoration(
-                        hintText: isArabic 
-                            ? 'ابحث عن سورة، آية أو كلمة...' 
-                            : (lang == 'fr' ? 'Rechercher une sourate, verset...' : 'Search for a surah, verse...'),
-                        hintStyle: TextStyle(color: isDarkMode ? Colors.white.withValues(alpha: 0.6) : Colors.black54),
-                        prefixIcon: const Icon(Icons.search, color: Color(0xFFD4AF37)),
-                        filled: true,
-                        fillColor: isDarkMode ? const Color(0xFF0B3D2E).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.8),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: Icon(Icons.clear, color: isDarkMode ? Colors.white54 : Colors.black45),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  _performSearch('');
-                                },
-                              )
-                            : null,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: const Color(0xFFD4AF37).withValues(alpha: 0.3))),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: const Color(0xFFD4AF37).withValues(alpha: 0.3))),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFD4AF37), width: 2)),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? Colors.black.withValues(alpha: 0.2) : const Color(0xFFD4AF37).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          _buildToggleSegment(0, 'المصحف كامل', 'Whole Book', 'Coran Entier', isArabic, lang, isDarkMode, themeService),
+                          _buildToggleSegment(1, 'سورة كاملة', 'Whole Surah', 'Sourate Entière', isArabic, lang, isDarkMode, themeService),
+                          _buildToggleSegment(2, 'آية بآية', 'Verse by Verse', 'Verset par Verset', isArabic, lang, isDarkMode, themeService),
+                        ],
                       ),
                     ),
                   ),
-                ),
-              ),
-              // 3-WAY VIEW MODE TOGGLE
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? Colors.black.withValues(alpha: 0.2) : const Color(0xFFD4AF37).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1200),
+                        child: _searchQuery.isNotEmpty
+                            ? (_isSearching
+                                ? _buildSearchLoadingState(context, isDarkMode, themeService)
+                                : _buildSearchResults(context, lang, isDarkMode, themeService))
+                            : (_viewMode == 0
+                                ? _buildWholeQuranCover(context, lang, isDarkMode, themeService)
+                                : _buildPartsGrid(context, lang, isDarkMode, themeService)),
+                      ),
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      _buildToggleSegment(0, 'المصحف كامل', 'Whole Book', 'Coran Entier', isArabic, lang, isDarkMode),
-                      _buildToggleSegment(1, 'سورة كاملة', 'Whole Surah', 'Sourate Entière', isArabic, lang, isDarkMode),
-                      _buildToggleSegment(2, 'آية بآية', 'Verse by Verse', 'Verset par Verset', isArabic, lang, isDarkMode),
-                    ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildWholeQuranCover(BuildContext context, String lang, bool isDarkMode, ThemeService themeService) {
+    return Center(
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  const MushafViewerScreen(initialPage: 1),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+                  SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(1, 0),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  ),
+            ),
+          );
+        },
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.8,
+            height: MediaQuery.of(context).size.height * 0.5,
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF0B3D2E).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFD4AF37), width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                  offset: const Offset(0, 10),
+                )
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.menu_book_rounded, size: 80, color: Color(0xFFD4AF37)),
+                const SizedBox(height: 24),
+                Text(
+                  lang == 'ar' ? 'إقرأ المصحف كاملاً' : (lang == 'fr' ? 'Lire le Coran Entier' : 'Read the Entire Quran'),
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.amiri(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? Colors.white : Colors.black87,
                   ),
                 ),
-              ),
-              Expanded(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1200),
-                    child: _searchQuery.isNotEmpty
-    ? (_isSearching  // ✅ ADD THIS CHECK
-        ? _buildSearchLoadingState(context, isDarkMode)  // ✅ ADD
-        : _buildSearchResults(context, lang, isDarkMode))
-    : (_viewMode == 0 
-        ? _buildWholeQuranCover(context, lang, isDarkMode) 
-        : _buildPartsGrid(context, lang, isDarkMode)),
+                const SizedBox(height: 16),
+                Text(
+                  lang == 'ar' ? 'تصفح مستمر لجميع السور' : (lang == 'fr' ? 'Lecture continue' : 'Continuous reading'),
+                  style: themeService.getTextStyle(
+                    fontSize: 18,
+                    color: const Color(0xFFD4AF37),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // NEW: Large Cover Button for Whole Quran Mode
-  // NEW: Large Cover Button for Whole Quran Mode
-Widget _buildWholeQuranCover(BuildContext context, String lang, bool isDarkMode) {
-  return Center(
-    child: GestureDetector(
-      onTap: () {
-        // Navigate to Mushaf viewer - starts at page 1
-        Navigator.push(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => 
-              const MushafViewerScreen(initialPage: 1),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-              SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1, 0),
-                  end: Offset.zero,
-                ).animate(animation),
-                child: child,
-              ),
-          ),
-        );
-      },
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.8,
-          height: MediaQuery.of(context).size.height * 0.5,
-          decoration: BoxDecoration(
-            color: isDarkMode ? const Color(0xFF0B3D2E).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFD4AF37), width: 3),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
-                blurRadius: 20,
-                spreadRadius: 5,
-                offset: const Offset(0, 10),
-              )
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.menu_book_rounded, size: 80, color: Color(0xFFD4AF37)),
-              const SizedBox(height: 24),
-              Text(
-                lang == 'ar' ? 'إقرأ المصحف كاملاً' : (lang == 'fr' ? 'Lire le Coran Entier' : 'Read the Entire Quran'),
-                textAlign: TextAlign.center,
-                style: GoogleFonts.amiri(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: isDarkMode ? Colors.white : Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                lang == 'ar' ? 'تصفح مستمر لجميع السور' : (lang == 'fr' ? 'Lecture continue' : 'Continuous reading'),
-                style: GoogleFonts.elMessiri(
-                  fontSize: 18,
-                  color: const Color(0xFFD4AF37),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-  Widget _buildPartsGrid(BuildContext context, String lang, bool isDarkMode) {
+  Widget _buildPartsGrid(BuildContext context, String lang, bool isDarkMode, ThemeService themeService) {
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 220, crossAxisSpacing: 20, mainAxisSpacing: 20, mainAxisExtent: 180, 
+        maxCrossAxisExtent: 220, crossAxisSpacing: 20, mainAxisSpacing: 20, mainAxisExtent: 180,
       ),
       itemCount: QuranData.parts.length,
       itemBuilder: (context, index) {
@@ -417,39 +415,42 @@ Widget _buildWholeQuranCover(BuildContext context, String lang, bool isDarkMode)
         return _JuzGlassCard(
           part: part, lang: lang, isDarkMode: isDarkMode,
           onTap: () => _navigateToPartSurahs(context, part, lang),
+          themeService: themeService,
         );
       },
     );
   }
 
-  // ✅ NEW METHOD - Add before _buildSearchResults
-Widget _buildSearchLoadingState(BuildContext context, bool isDarkMode) {
-  return Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'جاري البحث...',
-          style: GoogleFonts.elMessiri(
-            color: isDarkMode ? Colors.white70 : Colors.black54,
-            fontSize: 16,
+  Widget _buildSearchLoadingState(BuildContext context, bool isDarkMode, ThemeService themeService) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
           ),
-        ),
-      ],
-    ),
-  );
-}
-  
-      Widget _buildSearchResults(BuildContext context, String lang, bool isDarkMode) {
+          const SizedBox(height: 16),
+          Text(
+            'جاري البحث...',
+            style: themeService.getTextStyle(
+              fontSize: 16,
+              color: isDarkMode ? Colors.white70 : Colors.black54,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchResults(BuildContext context, String lang, bool isDarkMode, ThemeService themeService) {
     if (_searchResults.isEmpty) {
       return Center(
         child: Text(
           lang == 'ar' ? 'لم يتم العثور على نتائج' : (lang == 'fr' ? 'Aucun résultat trouvé' : 'No results found'),
-          style: GoogleFonts.elMessiri(color: isDarkMode ? Colors.white70 : Colors.black54, fontSize: 18),
+          style: themeService.getTextStyle(
+            fontSize: 18,
+            color: isDarkMode ? Colors.white70 : Colors.black54,
+          ),
         ),
       );
     }
@@ -467,20 +468,19 @@ Widget _buildSearchLoadingState(BuildContext context, bool isDarkMode) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // =========== CLICKABLE SURAH HEADER ===========
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 16, 8, 12),
               child: GestureDetector(
-                // 🟢 CHANGED: Tap the title to navigate based on the CURRENT MODE
                 onTap: () {
                   Navigator.push(
-                    context, 
+                    context,
                     MaterialPageRoute(
                       builder: (context) => SurahReaderScreen(
-                        surah: surah, 
-                        lang: lang, 
-                        startVerseNumber: surah.startingVerseNumber, 
-                        viewMode: _viewMode, // Respects the user's toggle at the top!
+                        surah: surah,
+                        lang: lang,
+                        startVerseNumber: surah.startingVerseNumber,
+                        viewMode: _viewMode,
+                        themeService: themeService,
                       ),
                     ),
                   );
@@ -490,8 +490,12 @@ Widget _buildSearchLoadingState(BuildContext context, bool isDarkMode) {
                     const Icon(Icons.menu_book_rounded, color: Color(0xFFD4AF37), size: 20),
                     const SizedBox(width: 8),
                     Text(
-                      surahHeaderTitle, 
-                      style: GoogleFonts.elMessiri(color: const Color(0xFFD4AF37), fontSize: 22, fontWeight: FontWeight.bold)
+                      surahHeaderTitle,
+                      style: themeService.getTextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFFD4AF37),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     const Icon(Icons.chevron_right_rounded, color: Color(0xFFD4AF37), size: 20),
@@ -499,31 +503,28 @@ Widget _buildSearchLoadingState(BuildContext context, bool isDarkMode) {
                 ),
               ),
             ),
-            // ===============================================
-
-            // Individual Verse Cards (These keep the exact verse navigation)
             ...verses.map((verse) {
               final verseIndex = verse['verseIndex'] as int;
               final pageNumber = verse['pageNumber'] as int?;
-              
+
               return _SearchResultGlassCard(
                 searchResult: {
-                  'surah': surah, 
-                  'trueVerseNumber': verse['trueVerseNumber'], 
-                  'verseAr': verse['verseAr'], 
+                  'surah': surah,
+                  'trueVerseNumber': verse['trueVerseNumber'],
+                  'verseAr': verse['verseAr'],
                   'verseEn': verse['verseEn'],
                   'pageNumber': pageNumber,
-                }, 
-                lang: lang, 
+                },
+                lang: lang,
                 isDarkMode: isDarkMode,
                 onTapSurah: () {
-                  // Kept this logic so clicking a specific verse still forces Verse-by-Verse
                   Navigator.push(context, MaterialPageRoute(builder: (context) => SurahReaderScreen(
-                    surah: surah, 
-                    lang: lang, 
-                    highlightedVerseIndex: verseIndex, 
-                    startVerseNumber: startVerseNumber, 
-                    viewMode: 2, 
+                    surah: surah,
+                    lang: lang,
+                    highlightedVerseIndex: verseIndex,
+                    startVerseNumber: startVerseNumber,
+                    viewMode: 2,
+                    themeService: themeService,
                   )));
                 },
                 onTapMushaf: () {
@@ -533,6 +534,7 @@ Widget _buildSearchLoadingState(BuildContext context, bool isDarkMode) {
                     )));
                   }
                 },
+                themeService: themeService,
               );
             }),
             const Padding(padding: EdgeInsets.symmetric(vertical: 8.0), child: Divider(color: Colors.white10, thickness: 1)),
@@ -555,15 +557,15 @@ Widget _buildSearchLoadingState(BuildContext context, bool isDarkMode) {
 class PartSurahsScreen extends StatefulWidget {
   final QuranJuz part;
   final String lang;
-  final int viewMode; 
-  
+  final int viewMode;
+
   const PartSurahsScreen({
-    super.key, 
-    required this.part, 
+    super.key,
+    required this.part,
     required this.lang,
     required this.viewMode,
   });
-  
+
   @override
   State<PartSurahsScreen> createState() => _PartSurahsScreenState();
 }
@@ -573,50 +575,63 @@ class _PartSurahsScreenState extends State<PartSurahsScreen> {
   Widget build(BuildContext context) {
     final isArabic = widget.lang == 'ar';
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
-    return Scaffold(
-      backgroundColor: isDarkMode ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFF5F5F5),
-      body: IslamicPatternBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-                child: Row(
-                  children: [
-                    IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24), onPressed: () => Navigator.pop(context)),
-                    Expanded(child: Text(isArabic ? widget.part.titleAr : widget.part.titleEn, textAlign: TextAlign.center, style: isArabic ? GoogleFonts.amiri(color: const Color(0xFFD4AF37), fontSize: 28, fontWeight: FontWeight.bold) : GoogleFonts.arefRuqaa(color: const Color(0xFFD4AF37), fontSize: 28, fontWeight: FontWeight.bold))),
-                    const SizedBox(width: 48),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1200),
-                    child: GridView.builder(
-                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
-                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 220, crossAxisSpacing: 16, mainAxisSpacing: 16, mainAxisExtent: 180, 
-                      ),
-                      itemCount: widget.part.surahs.length,
-                      itemBuilder: (context, index) {
-                        return _SurahGlassCard(
-                          surah: widget.part.surahs[index], 
-                          lang: widget.lang, 
-                          part: widget.part, 
-                          isDarkMode: isDarkMode,
-                          viewMode: widget.viewMode,
-                        );
-                      },
+
+    return Consumer<ThemeService>(
+      builder: (context, themeService, _) {
+        return Scaffold(
+          backgroundColor: isDarkMode ? Theme.of(context).scaffoldBackgroundColor : const Color(0xFFF5F5F5),
+          body: IslamicPatternBackground(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                    child: Row(
+                      children: [
+                        IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24), onPressed: () => Navigator.pop(context)),
+                        Expanded(child: Text(
+                          isArabic ? widget.part.titleAr : widget.part.titleEn,
+                          textAlign: TextAlign.center,
+                          style: themeService.getTextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFFD4AF37),
+                          ),
+                        )),
+                        const SizedBox(width: 48),
+                      ],
                     ),
                   ),
-                ),
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1200),
+                        child: GridView.builder(
+                          padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
+                          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 220, crossAxisSpacing: 16, mainAxisSpacing: 16, mainAxisExtent: 180,
+                          ),
+                          itemCount: widget.part.surahs.length,
+                          itemBuilder: (context, index) {
+                            return _SurahGlassCard(
+                              surah: widget.part.surahs[index],
+                              lang: widget.lang,
+                              part: widget.part,
+                              isDarkMode: isDarkMode,
+                              viewMode: widget.viewMode,
+                              themeService: themeService,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -626,16 +641,18 @@ class _SurahGlassCard extends StatefulWidget {
   final String lang;
   final QuranJuz part;
   final bool isDarkMode;
-  final int viewMode; 
-  
+  final int viewMode;
+  final ThemeService themeService;
+
   const _SurahGlassCard({
-    required this.surah, 
-    required this.lang, 
-    required this.part, 
+    required this.surah,
+    required this.lang,
+    required this.part,
     required this.isDarkMode,
     required this.viewMode,
+    required this.themeService,
   });
-  
+
   @override
   State<_SurahGlassCard> createState() => _SurahGlassCardState();
 }
@@ -656,13 +673,14 @@ class _SurahGlassCardState extends State<_SurahGlassCard> {
         onTapCancel: () => setState(() => _scale = 1.0),
         onTap: () {
           Navigator.push(
-            context, 
+            context,
             MaterialPageRoute(
               builder: (context) => SurahReaderScreen(
-                surah: widget.surah, 
-                lang: widget.lang, 
-                startVerseNumber: widget.surah.startingVerseNumber, 
-                viewMode: widget.viewMode, 
+                surah: widget.surah,
+                lang: widget.lang,
+                startVerseNumber: widget.surah.startingVerseNumber,
+                viewMode: widget.viewMode,
+                themeService: widget.themeService,
               ),
             ),
           );
@@ -676,14 +694,14 @@ class _SurahGlassCardState extends State<_SurahGlassCard> {
               filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(12), 
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _isHovered 
-                      ? (widget.isDarkMode ? const Color(0xFF144D32).withValues(alpha: 0.8) : Colors.white) 
-                      : (widget.isDarkMode ? const Color(0xFF0B3D2E).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.8)), 
-                  borderRadius: BorderRadius.circular(20), 
+                  color: _isHovered
+                      ? (widget.isDarkMode ? const Color(0xFF144D32).withValues(alpha: 0.8) : Colors.white)
+                      : (widget.isDarkMode ? const Color(0xFF0B3D2E).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.8)),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: _isHovered ? const Color(0xFFD4AF37).withValues(alpha: 0.8) : const Color(0xFFD4AF37).withValues(alpha: 0.3), 
+                    color: _isHovered ? const Color(0xFFD4AF37).withValues(alpha: 0.8) : const Color(0xFFD4AF37).withValues(alpha: 0.3),
                     width: _isHovered ? 2 : 1
                   ),
                   boxShadow: !widget.isDarkMode ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))] : [],
@@ -699,11 +717,28 @@ class _SurahGlassCardState extends State<_SurahGlassCard> {
                     const SizedBox(height: 12),
                     FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Text(widget.surah.nameAr, textAlign: TextAlign.center, style: GoogleFonts.amiri(color: _isHovered ? (widget.isDarkMode ? Colors.white : Colors.black87) : const Color(0xFFD4AF37), fontSize: 24, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        widget.surah.nameAr,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.amiri(
+                          color: _isHovered ? (widget.isDarkMode ? Colors.white : Colors.black87) : const Color(0xFFD4AF37),
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Flexible(
-                      child: Text(widget.surah.nameEn, textAlign: TextAlign.center, overflow: TextOverflow.ellipsis, maxLines: 2, style: GoogleFonts.elMessiri(color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.7) : Colors.black54, fontSize: 13)),
+                      child: Text(
+                        widget.surah.nameEn,
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
+                        style: widget.themeService.getTextStyle(
+                          fontSize: 13,
+                          color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.7) : Colors.black54,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -724,15 +759,17 @@ class SurahReaderScreen extends StatefulWidget {
   final String lang;
   final int highlightedVerseIndex;
   final int startVerseNumber;
-  final int viewMode; 
+  final int viewMode;
+  final ThemeService themeService;
 
   const SurahReaderScreen({
-    super.key, 
-    required this.surah, 
-    required this.lang, 
+    super.key,
+    required this.surah,
+    required this.lang,
     this.highlightedVerseIndex = -1,
     this.startVerseNumber = 1,
-    this.viewMode = 1, 
+    this.viewMode = 1,
+    required this.themeService,
   });
 
   @override
@@ -748,10 +785,10 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
   bool _isLoading = false;
   String? _errorMessage;
   final Map<int, GlobalKey> _verseKeys = {};
-    final TextEditingController _surahSearchController = TextEditingController();
+  final TextEditingController _surahSearchController = TextEditingController();
   String _surahSearchQuery = '';
-  
-  int? _tappedVerseIndex; 
+
+  int? _tappedVerseIndex;
   late List<TapGestureRecognizer> _tapRecognizers;
 
   @override
@@ -759,10 +796,9 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
     super.initState();
     _scrollController = ScrollController();
     _selectedReciter = QuranReciterService.reciters.first;
-    
-    // Tap highlight mechanism
+
     _tapRecognizers = List.generate(
-      widget.surah.versesAr.length, 
+      widget.surah.versesAr.length,
       (index) => TapGestureRecognizer()..onTap = () {
         setState(() => _tappedVerseIndex = index);
         _showTafseerSheet(context, index).whenComplete(() {
@@ -782,7 +818,7 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
   }
 
   void _scrollToVerse(int index) {
-    if (widget.viewMode != 2) return; // Only scroll in list view
+    if (widget.viewMode != 2) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final targetContext = _verseKeys[index]?.currentContext;
@@ -828,7 +864,11 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
       isScrollControlled: true,
       builder: (context) {
         return _TafseerBottomSheet(
-          surah: widget.surah, verseIndex: verseIndex, lang: widget.lang, trueVerseNumber: verseIndex + widget.startVerseNumber,
+          surah: widget.surah,
+          verseIndex: verseIndex,
+          lang: widget.lang,
+          trueVerseNumber: verseIndex + widget.startVerseNumber,
+          themeService: widget.themeService,
         );
       },
     );
@@ -841,9 +881,8 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
     QuranReciterService.stopAudio();
     super.dispose();
   }
-  
-  // Navigation for "Whole Book" Mode
-  Widget _buildBookNavigation(bool isDarkMode) {
+
+  Widget _buildBookNavigation(bool isDarkMode, ThemeService themeService) {
     final prev = _getAdjacentSurah(false);
     final next = _getAdjacentSurah(true);
 
@@ -855,7 +894,10 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
           if (prev != null)
             ElevatedButton.icon(
               icon: const Icon(Icons.arrow_back_ios_rounded, size: 16),
-              label: Text(widget.lang == 'ar' ? 'السابق' : 'Previous', style: GoogleFonts.elMessiri(fontWeight: FontWeight.bold)),
+              label: Text(
+                widget.lang == 'ar' ? 'السابق' : 'Previous',
+                style: themeService.getTextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFD4AF37).withValues(alpha: 0.2),
                 foregroundColor: const Color(0xFFD4AF37),
@@ -866,7 +908,11 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
               onPressed: () {
                 QuranReciterService.stopAudio();
                 Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SurahReaderScreen(
-                  surah: prev['surah'], lang: widget.lang, startVerseNumber: prev['surah'].startingVerseNumber, viewMode: widget.viewMode,
+                  surah: prev['surah'],
+                  lang: widget.lang,
+                  startVerseNumber: prev['surah'].startingVerseNumber,
+                  viewMode: widget.viewMode,
+                  themeService: themeService,
                 )));
               },
             )
@@ -884,13 +930,20 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
               onPressed: () {
                 QuranReciterService.stopAudio();
                 Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SurahReaderScreen(
-                  surah: next['surah'], lang: widget.lang, startVerseNumber: next['surah'].startingVerseNumber, viewMode: widget.viewMode,
+                  surah: next['surah'],
+                  lang: widget.lang,
+                  startVerseNumber: next['surah'].startingVerseNumber,
+                  viewMode: widget.viewMode,
+                  themeService: themeService,
                 )));
               },
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(widget.lang == 'ar' ? 'التالي' : 'Next', style: GoogleFonts.elMessiri(fontWeight: FontWeight.bold)),
+                  Text(
+                    widget.lang == 'ar' ? 'التالي' : 'Next',
+                    style: themeService.getTextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(width: 8),
                   const Icon(Icons.arrow_forward_ios_rounded, size: 16),
                 ],
@@ -910,7 +963,7 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
       for (var s in juz.surahs) {
         if (foundCurrent && getNext) return {'juz': juz, 'surah': s};
         if (s.id == widget.surah.id && s.startingVerseNumber == widget.startVerseNumber) {
-          if (!getNext) return prev; 
+          if (!getNext) return prev;
           foundCurrent = true;
         }
         prev = {'juz': juz, 'surah': s};
@@ -919,80 +972,14 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
     return null;
   }
 
-  
-
-  Widget _buildWholeBookSection(BuildContext context, AppLocalizations l10n) {
-  return GestureDetector(
-    onTap: () {
-      // Navigate to Mushaf viewer - starts at page 1
-      Navigator.push(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => 
-            const MushafViewerScreen(initialPage: 1),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-            SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(1, 0),
-                end: Offset.zero,
-              ).animate(animation),
-              child: child,
-            ),
-        ),
-      );
-    },
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.auto_stories_rounded,
-            size: 48,
-            color: Theme.of(context).colorScheme.secondary,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Read the Entire Quran',
-            style: GoogleFonts.elMessiri(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.getOnBackgroundColor(context),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Browse all 604 pages in Mushaf format',
-            style: GoogleFonts.elMessiri(
-              fontSize: 14,
-              color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.6),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-    bool _matchesSearch(int index) {
+  bool _matchesSearch(int index) {
     if (_surahSearchQuery.trim().isEmpty) return true;
-    
-    // ✅ FIXED: Apply _removeDiacritics to the user's search query too!
+
     final query = _removeDiacritics(_surahSearchQuery.trim().toLowerCase());
-    
-    // Check Arabic text (remove diacritics for better search)
     final cleanAr = _removeDiacritics(widget.surah.versesAr[index]).toLowerCase();
 
     if (cleanAr.contains(query)) return true;
 
-    // Check English/French translation
     if (widget.lang == 'fr' && index < widget.surah.versesFr.length) {
       if (widget.surah.versesFr[index].toLowerCase().contains(query)) return true;
     } else if (index < widget.surah.versesEn.length) {
@@ -1001,69 +988,61 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
     return false;
   }
 
-    String _removeDiacritics(String text) {
-    // 1. FIRST: Convert ALL Alif types (Hamza, Madda, Wasla) to standard Alif
+  String _removeDiacritics(String text) {
     String cleaned = text.replaceAll(RegExp(r'[أإآٱ]'), 'ا');
-
-    // 2. SECOND: Remove Harakat (Fatha, Kasra, Damma, Sukoon, and Tanween)
     cleaned = cleaned.replaceAll(RegExp(r'[\u064B-\u065F\u0670]'), '');
-
-    // 3. Normalize Ta Marbuta (ة) to Ha (ه) 
     cleaned = cleaned.replaceAll('ة', 'ه');
-    
     return cleaned;
   }
 
-    Widget _buildPageView(bool isDarkMode, {String searchQuery = ''}) {
+  Widget _buildPageView(bool isDarkMode, ThemeService themeService, {String searchQuery = ''}) {
     List<InlineSpan> spans = [];
     final isSearching = searchQuery.trim().isNotEmpty;
     final cleanQuery = _removeDiacritics(searchQuery.trim().toLowerCase());
-    
+
     for (int i = 0; i < widget.surah.versesAr.length; i++) {
       final verseNum = i + widget.startVerseNumber;
       final isSearchedHighlight = _isVerseHighlighted(i);
       final isTappedHighlight = _tappedVerseIndex == i;
-      
-      // Check if this specific verse contains the search text
+
       final cleanVerse = _removeDiacritics(widget.surah.versesAr[i]).toLowerCase();
       final verseMatches = isSearching && cleanVerse.contains(cleanQuery);
-      
-      // Highlight the text in gold if it matches the search
+
       Color verseColor;
       if (isSearchedHighlight || isTappedHighlight) {
         verseColor = const Color(0xFFD4AF37);
       } else if (verseMatches) {
-        verseColor = const Color(0xFFD4AF37); // Gold for search matches too
+        verseColor = const Color(0xFFD4AF37);
       } else {
         verseColor = isDarkMode ? Colors.white : Colors.black87;
       }
-      
+
       spans.add(
         TextSpan(
           text: '${widget.surah.versesAr[i]} ',
           style: GoogleFonts.amiri(
             fontSize: 28,
             color: verseColor,
-            backgroundColor: verseMatches 
-                ? const Color(0xFFD4AF37).withValues(alpha: 0.3) // Highlight background for matches
+            backgroundColor: verseMatches
+                ? const Color(0xFFD4AF37).withValues(alpha: 0.3)
                 : (isTappedHighlight ? const Color(0xFFD4AF37).withValues(alpha: 0.25) : Colors.transparent),
-            height: 2.2, 
+            height: 2.2,
             fontWeight: (isSearchedHighlight || isTappedHighlight || verseMatches) ? FontWeight.bold : FontWeight.normal,
           ),
           recognizer: _tapRecognizers[i],
         ),
       );
-      
+
       spans.add(
         TextSpan(
           text: ' ﴿$verseNum﴾ ',
           style: TextStyle(
             fontSize: 22,
             color: isTappedHighlight || verseMatches ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.7),
-            backgroundColor: verseMatches 
-                ? const Color(0xFFD4AF37).withValues(alpha: 0.3) 
+            backgroundColor: verseMatches
+                ? const Color(0xFFD4AF37).withValues(alpha: 0.3)
                 : (isTappedHighlight ? const Color(0xFFD4AF37).withValues(alpha: 0.25) : Colors.transparent),
-            fontFamily: 'Amiri', 
+            fontFamily: 'Amiri',
           ),
         ),
       );
@@ -1090,12 +1069,16 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final themeService = widget.themeService;
 
     String appBarTitle;
     if (widget.lang == 'ar') {
       appBarTitle = 'سورة ${widget.surah.nameAr}';
-    } else if (widget.lang == 'fr') appBarTitle = '${widget.surah.nameEn} (${surahNamesFr[widget.surah.id] ?? ''})';
-    else appBarTitle = '${widget.surah.nameEn} (${surahNamesEnTrans[widget.surah.id] ?? ''})';
+    } else if (widget.lang == 'fr') {
+      appBarTitle = '${widget.surah.nameEn} (${surahNamesFr[widget.surah.id] ?? ''})';
+    } else {
+      appBarTitle = '${widget.surah.nameEn} (${surahNamesEnTrans[widget.surah.id] ?? ''})';
+    }
 
     return PopScope(
       canPop: true,
@@ -1111,21 +1094,25 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                   child: Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24), 
+                        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24),
                         onPressed: () { QuranReciterService.stopAudio(); Navigator.pop(context); }
                       ),
                       Expanded(
                         child: Text(
-                          appBarTitle, 
-                          textAlign: TextAlign.center, 
-                          style: widget.lang == 'ar' ? GoogleFonts.amiri(color: const Color(0xFFD4AF37), fontSize: 26, fontWeight: FontWeight.bold) : GoogleFonts.arefRuqaa(color: const Color(0xFFD4AF37), fontSize: 22, fontWeight: FontWeight.bold)
+                          appBarTitle,
+                          textAlign: TextAlign.center,
+                          style: themeService.getTextStyle(
+                            fontSize: widget.lang == 'ar' ? 26 : 22,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFFD4AF37),
+                          ),
                         )
                       ),
-                      const SizedBox(width: 48), // Spacer to balance the back button
+                      const SizedBox(width: 48),
                     ],
                   ),
                 ),
-                                Expanded(
+                Expanded(
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 1000),
@@ -1134,8 +1121,6 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                         child: Column(
                           children: [
-                            // ============= ADDED SEARCH BAR =============
-                            // Only show search bar if we aren't in Whole Book Mode (0)
                             if (widget.viewMode != 0) ...[
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 16.0),
@@ -1146,13 +1131,19 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                     child: TextField(
                                       controller: _surahSearchController,
                                       onChanged: (val) => setState(() => _surahSearchQuery = val),
-                                      style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
+                                      style: themeService.getTextStyle(
+                                        fontSize: 16,
+                                        color: isDarkMode ? Colors.white : Colors.black87,
+                                      ),
                                       textDirection: widget.lang == 'ar' ? TextDirection.rtl : TextDirection.ltr,
                                       decoration: InputDecoration(
-                                        hintText: widget.lang == 'ar' 
-                                            ? 'ابحث داخل السورة...' 
+                                        hintText: widget.lang == 'ar'
+                                            ? 'ابحث داخل السورة...'
                                             : (widget.lang == 'fr' ? 'Rechercher dans la sourate...' : 'Search within Surah...'),
-                                        hintStyle: TextStyle(color: isDarkMode ? Colors.white.withValues(alpha: 0.6) : Colors.black54),
+                                        hintStyle: themeService.getTextStyle(
+                                          fontSize: 14,
+                                          color: isDarkMode ? Colors.white.withValues(alpha: 0.6) : Colors.black54,
+                                        ),
                                         prefixIcon: const Icon(Icons.search, color: Color(0xFFD4AF37)),
                                         filled: true,
                                         fillColor: isDarkMode ? const Color(0xFF0B3D2E).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.8),
@@ -1174,27 +1165,21 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                 ),
                               ),
                             ],
-                            // =============================================
-
                             if (widget.surah.id != 1 && widget.surah.id != 9 && widget.startVerseNumber == 1)
                               Padding(
-                                padding: const EdgeInsets.only(top: 8.0, bottom: 8.0), 
+                                padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
                                 child: Text('بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ', style: GoogleFonts.amiri(fontSize: 32, color: const Color(0xFFD4AF37), fontWeight: FontWeight.bold))
                               ),
                             if (widget.surah.id != 1 && widget.surah.id != 9 && widget.startVerseNumber == 1)
                               Divider(color: const Color(0xFFD4AF37).withValues(alpha: 0.5), indent: 80, endIndent: 80, thickness: 1.5),
-                            
+
                             const SizedBox(height: 16),
-                            
-                            // Book Mode (0) OR Surah Mode (1) Use Page View
+
                             if (widget.viewMode == 0 || widget.viewMode == 1)
-                              // ✅ PASS THE SEARCH QUERY HERE
-                              _buildPageView(isDarkMode, searchQuery: _surahSearchQuery)
+                              _buildPageView(isDarkMode, themeService, searchQuery: _surahSearchQuery)
                             else
                               ...List.generate(widget.surah.versesAr.length, (index) {
-                                // ============ FILTER LOGIC ============
                                 if (!_matchesSearch(index)) return const SizedBox.shrink();
-                                // ======================================
 
                                 final isHighlighted = _isVerseHighlighted(index);
                                 final isTapped = _tappedVerseIndex == index;
@@ -1202,7 +1187,9 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                 String translatedVerse = '';
                                 if (widget.lang == 'fr' && index < widget.surah.versesFr.length) {
                                   translatedVerse = widget.surah.versesFr[index];
-                                } else if (index < widget.surah.versesEn.length) translatedVerse = widget.surah.versesEn[index];
+                                } else if (index < widget.surah.versesEn.length) {
+                                  translatedVerse = widget.surah.versesEn[index];
+                                }
 
                                 return GestureDetector(
                                   onTap: () {
@@ -1215,8 +1202,8 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                     key: verseKey,
                                     margin: const EdgeInsets.only(bottom: 16),
                                     decoration: BoxDecoration(
-                                      color: isHighlighted || isTapped ? (isDarkMode ? const Color(0xFF1B5E3F).withValues(alpha: 0.7) : Colors.white) : (isDarkMode ? const Color(0xFF0B3D2E).withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.8)), 
-                                      borderRadius: BorderRadius.circular(16), 
+                                      color: isHighlighted || isTapped ? (isDarkMode ? const Color(0xFF1B5E3F).withValues(alpha: 0.7) : Colors.white) : (isDarkMode ? const Color(0xFF0B3D2E).withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.8)),
+                                      borderRadius: BorderRadius.circular(16),
                                       border: Border.all(color: isHighlighted || isTapped ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.15), width: isHighlighted || isTapped ? 2 : 1),
                                       boxShadow: !isDarkMode ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))] : [],
                                     ),
@@ -1229,45 +1216,72 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Container(
-                                              width: 40, height: 40, alignment: Alignment.center, 
-                                              decoration: BoxDecoration(color: const Color(0xFFD4AF37).withValues(alpha: 0.1), shape: BoxShape.circle, border: Border.all(color: const Color(0xFFD4AF37), width: 1.5)), 
+                                              width: 40, height: 40, alignment: Alignment.center,
+                                              decoration: BoxDecoration(color: const Color(0xFFD4AF37).withValues(alpha: 0.1), shape: BoxShape.circle, border: Border.all(color: const Color(0xFFD4AF37), width: 1.5)),
                                               child: Text('${index + widget.startVerseNumber}', style: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold, fontSize: 16))
                                             ),
                                             const SizedBox(width: 20),
                                             Expanded(
                                               child: Text(
-                                                widget.surah.versesAr[index], textDirection: TextDirection.rtl, 
+                                                widget.surah.versesAr[index], textDirection: TextDirection.rtl,
                                                 style: GoogleFonts.amiri(fontSize: 28, color: isHighlighted || isTapped ? const Color(0xFFD4AF37) : (isDarkMode ? Colors.white : Colors.black87), height: 2.0, fontWeight: isHighlighted || isTapped ? FontWeight.bold : FontWeight.normal)
                                               )
                                             ),
                                           ],
                                         ),
                                         const SizedBox(height: 16),
-                                        if (translatedVerse.isNotEmpty) Text(translatedVerse, textDirection: TextDirection.ltr, style: GoogleFonts.elMessiri(fontSize: 16, color: isHighlighted || isTapped ? (isDarkMode ? Colors.white : Colors.black87) : (isDarkMode ? Colors.white.withValues(alpha: 0.75) : Colors.black54), height: 1.6, fontStyle: FontStyle.italic)),
-                                        
+                                        if (translatedVerse.isNotEmpty)
+                                          Text(
+                                            translatedVerse,
+                                            textDirection: TextDirection.ltr,
+                                            style: themeService.getTextStyle(
+                                              fontSize: 16,
+                                              color: isHighlighted || isTapped ? (isDarkMode ? Colors.white : Colors.black87) : (isDarkMode ? Colors.white.withValues(alpha: 0.75) : Colors.black54),
+                                              height: 1.6,
+                                              fontStyle: FontStyle.italic,
+                                            ),
+                                          ),
+
                                         const SizedBox(height: 12),
                                         Divider(color: const Color(0xFFD4AF37).withValues(alpha: 0.2)),
-                                        
+
                                         Row(
                                           mainAxisAlignment: widget.lang == 'ar' ? MainAxisAlignment.start : MainAxisAlignment.end,
                                           children: [
-                                            // Share Range Shortcut Button
                                             TextButton.icon(
                                               icon: const Icon(Icons.share_rounded, color: Color(0xFFD4AF37), size: 18),
-                                              label: Text(widget.lang == 'ar' ? 'مشاركة' : 'Share', style: GoogleFonts.elMessiri(color: const Color(0xFFD4AF37), fontWeight: FontWeight.bold)),
+                                              label: Text(
+                                                widget.lang == 'ar' ? 'مشاركة' : 'Share',
+                                                style: themeService.getTextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: const Color(0xFFD4AF37),
+                                                ),
+                                              ),
                                               style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), backgroundColor: const Color(0xFFD4AF37).withValues(alpha: 0.1), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
                                               onPressed: () {
                                                 showDialog(
                                                   context: context,
-                                                  builder: (ctx) => _ShareVerseDialog(surah: widget.surah, initialVerseIndex: index, lang: widget.lang),
+                                                  builder: (ctx) => _ShareVerseDialog(
+                                                    surah: widget.surah,
+                                                    initialVerseIndex: index,
+                                                    lang: widget.lang,
+                                                    themeService: themeService,
+                                                  ),
                                                 );
                                               },
                                             ),
                                             const SizedBox(width: 12),
-                                            // Tafseer Button
                                             TextButton.icon(
                                               icon: const Icon(Icons.menu_book_rounded, color: Color(0xFFD4AF37), size: 18),
-                                              label: Text(widget.lang == 'ar' ? 'التفسير' : (widget.lang == 'fr' ? 'Tafsir' : 'Tafseer'), style: GoogleFonts.elMessiri(color: const Color(0xFFD4AF37), fontWeight: FontWeight.bold)),
+                                              label: Text(
+                                                widget.lang == 'ar' ? 'التفسير' : (widget.lang == 'fr' ? 'Tafsir' : 'Tafseer'),
+                                                style: themeService.getTextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: const Color(0xFFD4AF37),
+                                                ),
+                                              ),
                                               style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), backgroundColor: const Color(0xFFD4AF37).withValues(alpha: 0.1), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
                                               onPressed: () => _showTafseerSheet(context, index),
                                             ),
@@ -1278,9 +1292,8 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                   ),
                                 );
                               }),
-                            // Add the "Next/Previous" footer ONLY if in Whole Book mode (0)
                             if (widget.viewMode == 0)
-                              _buildBookNavigation(isDarkMode),
+                              _buildBookNavigation(isDarkMode, themeService),
                           ],
                         ),
                       ),
@@ -1300,17 +1313,39 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                             decoration: BoxDecoration(color: isDarkMode ? Colors.black.withValues(alpha: 0.2) : const Color(0xFFD4AF37).withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.5))),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<QuranReciter>(
-                                dropdownColor: isDarkMode ? const Color(0xFF0B3D2E) : Colors.white, value: _selectedReciter, isExpanded: true, icon: const Icon(Icons.arrow_drop_down, color: Color(0xFFD4AF37)),
-                                items: QuranReciterService.reciters.map((reciter) { 
-                                  return DropdownMenuItem(value: reciter, child: Text(widget.lang == 'ar' ? reciter.nameAr : reciter.nameEn, style: GoogleFonts.elMessiri(color: isDarkMode ? const Color(0xFFD4AF37) : Colors.black87, fontSize: 16))); 
+                                dropdownColor: isDarkMode ? const Color(0xFF0B3D2E) : Colors.white,
+                                value: _selectedReciter,
+                                isExpanded: true,
+                                icon: const Icon(Icons.arrow_drop_down, color: Color(0xFFD4AF37)),
+                                items: QuranReciterService.reciters.map((reciter) {
+                                  return DropdownMenuItem(
+                                    value: reciter,
+                                    child: Text(
+                                      widget.lang == 'ar' ? reciter.nameAr : reciter.nameEn,
+                                      style: themeService.getTextStyle(
+                                        fontSize: 16,
+                                        color: isDarkMode ? const Color(0xFFD4AF37) : Colors.black87,
+                                      ),
+                                    ),
+                                  );
                                 }).toList(),
-                                onChanged: (reciter) { if (reciter != null && _playerState == PlayerState.playing) { QuranReciterService.stopAudio(); } setState(() => _selectedReciter = reciter); },
+                                onChanged: (reciter) {
+                                  if (reciter != null && _playerState == PlayerState.playing) {
+                                    QuranReciterService.stopAudio();
+                                  }
+                                  setState(() => _selectedReciter = reciter);
+                                },
                               ),
                             ),
                           ),
                           const SizedBox(height: 16),
-                          if (_errorMessage != null) 
-                            Container(padding: const EdgeInsets.all(8), margin: const EdgeInsets.only(bottom: 12), decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.red, width: 1)), child: Text(_errorMessage!, style: const TextStyle(color: Colors.white70, fontSize: 12))),
+                          if (_errorMessage != null)
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.red, width: 1)),
+                              child: Text(_errorMessage!, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                            ),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -1324,7 +1359,7 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                               ),
                               const SizedBox(width: 20),
                               GestureDetector(
-                                onTap: () => QuranReciterService.stopAudio(), 
+                                onTap: () => QuranReciterService.stopAudio(),
                                 child: Container(width: 50, height: 50, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: const Color(0xFFD4AF37), width: 2)), child: const Icon(Icons.stop_rounded, color: Color(0xFFD4AF37), size: 26))
                               ),
                             ],
@@ -1334,16 +1369,16 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                             Column(
                               children: [
                                 SliderTheme(
-                                  data: SliderThemeData(activeTrackColor: const Color(0xFFD4AF37), inactiveTrackColor: isDarkMode ? Colors.white.withValues(alpha: 0.2) : Colors.black12, thumbColor: const Color(0xFFD4AF37), overlayColor: const Color(0xFFD4AF37).withValues(alpha: 0.3), trackHeight: 4), 
+                                  data: SliderThemeData(activeTrackColor: const Color(0xFFD4AF37), inactiveTrackColor: isDarkMode ? Colors.white.withValues(alpha: 0.2) : Colors.black12, thumbColor: const Color(0xFFD4AF37), overlayColor: const Color(0xFFD4AF37).withValues(alpha: 0.3), trackHeight: 4),
                                   child: Slider(value: _position.inSeconds.toDouble(), max: _duration.inSeconds.toDouble(), onChanged: (value) => QuranReciterService.seek(Duration(seconds: value.toInt())))
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12), 
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(_formatDuration(_position), style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54, fontSize: 13)), 
-                                      Text(_formatDuration(_duration), style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54, fontSize: 13))
+                                      Text(_formatDuration(_position), style: themeService.getTextStyle(fontSize: 13, color: isDarkMode ? Colors.white70 : Colors.black54)),
+                                      Text(_formatDuration(_duration), style: themeService.getTextStyle(fontSize: 13, color: isDarkMode ? Colors.white70 : Colors.black54))
                                     ]
                                   )
                                 ),
@@ -1368,12 +1403,14 @@ class _TafseerBottomSheet extends StatelessWidget {
   final int verseIndex;
   final String lang;
   final int trueVerseNumber;
+  final ThemeService themeService;
 
   const _TafseerBottomSheet({
     required this.surah,
     required this.verseIndex,
     required this.lang,
     required this.trueVerseNumber,
+    required this.themeService,
   });
 
   @override
@@ -1383,7 +1420,7 @@ class _TafseerBottomSheet extends StatelessWidget {
     final tafseerVerse = TafseerData.getTafseerForVerse(surah.id, trueVerseNumber);
     final arabicText = tafseerVerse?.tafseerAr ?? '';
     final englishText = tafseerVerse?.tafseerEn ?? '';
-    const frenchText = ''; 
+    const frenchText = '';
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -1401,11 +1438,10 @@ class _TafseerBottomSheet extends StatelessWidget {
               decoration: BoxDecoration(color: isDarkMode ? Colors.white38 : Colors.black26, borderRadius: BorderRadius.circular(10)),
             ),
           ),
-          
-          // NEW: Header with Share Button
+
           Row(
             children: [
-              const SizedBox(width: 40), // Balance spacer
+              const SizedBox(width: 40),
               Expanded(
                 child: Text(
                   lang == 'ar' ? 'تفسير الآية $trueVerseNumber' : (lang == 'fr' ? 'Tafsir du verset $trueVerseNumber' : 'Tafseer of Verse $trueVerseNumber'),
@@ -1417,10 +1453,15 @@ class _TafseerBottomSheet extends StatelessWidget {
                 icon: const Icon(Icons.share_rounded, color: Color(0xFFD4AF37)),
                 tooltip: lang == 'ar' ? 'مشاركة' : 'Share',
                 onPressed: () {
-                  Navigator.pop(context); // Close the tafseer sheet first
+                  Navigator.pop(context);
                   showDialog(
                     context: context,
-                    builder: (ctx) => _ShareVerseDialog(surah: surah, initialVerseIndex: verseIndex, lang: lang),
+                    builder: (ctx) => _ShareVerseDialog(
+                      surah: surah,
+                      initialVerseIndex: verseIndex,
+                      lang: lang,
+                      themeService: themeService,
+                    ),
                   );
                 },
               ),
@@ -1441,18 +1482,21 @@ class _TafseerBottomSheet extends StatelessWidget {
                     const SizedBox(height: 24),
                   ],
                   if (englishText.isNotEmpty) ...[
-                    Text('English Translation:', style: GoogleFonts.elMessiri(color: const Color(0xFFD4AF37), fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text('English Translation:', style: themeService.getTextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFFD4AF37))),
                     const SizedBox(height: 8),
-                    Text(englishText, textDirection: TextDirection.ltr, style: GoogleFonts.elMessiri(fontSize: 16, color: isDarkMode ? Colors.white70 : Colors.black87, height: 1.6)),
+                    Text(englishText, textDirection: TextDirection.ltr, style: themeService.getTextStyle(fontSize: 16, color: isDarkMode ? Colors.white70 : Colors.black87, height: 1.6)),
                     const SizedBox(height: 24),
                   ],
                   if (frenchText.isNotEmpty) ...[
-                    Text('Traduction Française:', style: GoogleFonts.elMessiri(color: const Color(0xFFD4AF37), fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text('Traduction Française:', style: themeService.getTextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFFD4AF37))),
                     const SizedBox(height: 8),
-                    Text(frenchText, textDirection: TextDirection.ltr, style: GoogleFonts.elMessiri(fontSize: 16, color: isDarkMode ? Colors.white70 : Colors.black87, height: 1.6)),
+                    Text(frenchText, textDirection: TextDirection.ltr, style: themeService.getTextStyle(fontSize: 16, color: isDarkMode ? Colors.white70 : Colors.black87, height: 1.6)),
                   ],
                   if (arabicText.isEmpty && englishText.isEmpty && frenchText.isEmpty)
-                    Center(child: Padding(padding: const EdgeInsets.only(top: 40.0), child: Text(lang == 'ar' ? 'التفسير غير متوفر حالياً' : 'Tafseer is currently unavailable', style: GoogleFonts.elMessiri(color: isDarkMode ? Colors.white54 : Colors.black54, fontSize: 18)))),
+                    Center(child: Padding(padding: const EdgeInsets.only(top: 40.0), child: Text(
+                      lang == 'ar' ? 'التفسير غير متوفر حالياً' : 'Tafseer is currently unavailable',
+                      style: themeService.getTextStyle(fontSize: 18, color: isDarkMode ? Colors.white54 : Colors.black54),
+                    ))),
                 ],
               ),
             ),
@@ -1469,15 +1513,17 @@ class _SearchResultGlassCard extends StatefulWidget {
   final bool isDarkMode;
   final VoidCallback onTapSurah;
   final VoidCallback onTapMushaf;
-  
+  final ThemeService themeService;
+
   const _SearchResultGlassCard({
-    required this.searchResult, 
-    required this.lang, 
-    required this.isDarkMode, 
+    required this.searchResult,
+    required this.lang,
+    required this.isDarkMode,
     required this.onTapSurah,
     required this.onTapMushaf,
+    required this.themeService,
   });
-  
+
   @override
   State<_SearchResultGlassCard> createState() => _SearchResultGlassCardState();
 }
@@ -1493,8 +1539,8 @@ class _SearchResultGlassCardState extends State<_SearchResultGlassCard> {
     final verseAr = widget.searchResult['verseAr'] as String;
     final pageNumber = widget.searchResult['pageNumber'] as int?;
 
-    String cardLabel = widget.lang == 'ar' 
-        ? 'الآية $verseNum' 
+    String cardLabel = widget.lang == 'ar'
+        ? 'الآية $verseNum'
         : 'Verse $verseNum';
 
     return MouseRegion(
@@ -1514,12 +1560,12 @@ class _SearchResultGlassCardState extends State<_SearchResultGlassCard> {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: _isHovered 
+                  color: _isHovered
                       ? (widget.isDarkMode ? const Color(0xFF144D32).withValues(alpha: 0.8) : Colors.white)
-                      : (widget.isDarkMode ? const Color(0xFF1B5E3F).withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.8)), 
-                  borderRadius: BorderRadius.circular(16), 
+                      : (widget.isDarkMode ? const Color(0xFF1B5E3F).withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.8)),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: _isHovered ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.4), 
+                    color: _isHovered ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.4),
                     width: _isHovered ? 2 : 1
                   ),
                   boxShadow: !widget.isDarkMode ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))] : [],
@@ -1527,16 +1573,15 @@ class _SearchResultGlassCardState extends State<_SearchResultGlassCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header with verse number and page
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          cardLabel, 
-                          style: GoogleFonts.elMessiri(
-                            color: const Color(0xFFD4AF37), 
-                            fontSize: 16, 
+                          cardLabel,
+                          style: widget.themeService.getTextStyle(
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
+                            color: const Color(0xFFD4AF37),
                           ),
                         ),
                         if (pageNumber != null)
@@ -1548,32 +1593,30 @@ class _SearchResultGlassCardState extends State<_SearchResultGlassCard> {
                             ),
                             child: Text(
                               '${widget.lang == 'ar' ? 'ص' : 'P'} $pageNumber',
-                              style: GoogleFonts.elMessiri(
-                                color: const Color(0xFFD4AF37),
+                              style: widget.themeService.getTextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
+                                color: const Color(0xFFD4AF37),
                               ),
                             ),
                           ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    
-                    // Verse Text
+
                     Text(
-                      verseAr, 
-                      maxLines: 2, 
-                      overflow: TextOverflow.ellipsis, 
-                      textDirection: TextDirection.rtl, 
+                      verseAr,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textDirection: TextDirection.rtl,
                       style: GoogleFonts.amiri(
-                        color: widget.isDarkMode ? Colors.white : Colors.black87, 
-                        fontSize: 18, 
+                        color: widget.isDarkMode ? Colors.white : Colors.black87,
+                        fontSize: 18,
                         height: 1.6,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    
-                    // Navigation Buttons
+
                     Row(
                       children: [
                         Expanded(
@@ -1596,10 +1639,10 @@ class _SearchResultGlassCardState extends State<_SearchResultGlassCard> {
                                   const SizedBox(width: 6),
                                   Text(
                                     widget.lang == 'ar' ? 'السورة' : 'Surah',
-                                    style: GoogleFonts.elMessiri(
-                                      color: const Color(0xFFD4AF37),
-                                      fontWeight: FontWeight.bold,
+                                    style: widget.themeService.getTextStyle(
                                       fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFFD4AF37),
                                     ),
                                   ),
                                 ],
@@ -1629,10 +1672,10 @@ class _SearchResultGlassCardState extends State<_SearchResultGlassCard> {
                                     const SizedBox(width: 6),
                                     Text(
                                       widget.lang == 'ar' ? 'المصحف' : 'Mushaf',
-                                      style: GoogleFonts.elMessiri(
-                                        color: const Color(0xFFD4AF37),
-                                        fontWeight: FontWeight.bold,
+                                      style: widget.themeService.getTextStyle(
                                         fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFFD4AF37),
                                       ),
                                     ),
                                   ],
@@ -1658,7 +1701,16 @@ class _JuzGlassCard extends StatefulWidget {
   final String lang;
   final bool isDarkMode;
   final VoidCallback onTap;
-  const _JuzGlassCard({required this.part, required this.lang, required this.isDarkMode, required this.onTap});
+  final ThemeService themeService;
+
+  const _JuzGlassCard({
+    required this.part,
+    required this.lang,
+    required this.isDarkMode,
+    required this.onTap,
+    required this.themeService,
+  });
+
   @override
   State<_JuzGlassCard> createState() => _JuzGlassCardState();
 }
@@ -1688,12 +1740,12 @@ class _JuzGlassCardState extends State<_JuzGlassCard> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 decoration: BoxDecoration(
-                  color: _isHovered 
-                      ? (widget.isDarkMode ? const Color(0xFF144D32).withValues(alpha: 0.8) : Colors.white) 
-                      : (widget.isDarkMode ? const Color(0xFF0B3D2E).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.8)), 
-                  borderRadius: BorderRadius.circular(20), 
+                  color: _isHovered
+                      ? (widget.isDarkMode ? const Color(0xFF144D32).withValues(alpha: 0.8) : Colors.white)
+                      : (widget.isDarkMode ? const Color(0xFF0B3D2E).withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.8)),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: _isHovered ? const Color(0xFFD4AF37).withValues(alpha: 0.8) : const Color(0xFFD4AF37).withValues(alpha: 0.3), 
+                    color: _isHovered ? const Color(0xFFD4AF37).withValues(alpha: 0.8) : const Color(0xFFD4AF37).withValues(alpha: 0.3),
                     width: _isHovered ? 2 : 1
                   ),
                   boxShadow: !widget.isDarkMode ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))] : [],
@@ -1702,10 +1754,33 @@ class _JuzGlassCardState extends State<_JuzGlassCard> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('الجزء', style: GoogleFonts.amiri(color: _isHovered ? (widget.isDarkMode ? Colors.white : Colors.black87) : const Color(0xFFD4AF37), fontSize: 20)),
-                      Text('${widget.part.id}', style: TextStyle(color: _isHovered ? const Color(0xFFD4AF37) : (widget.isDarkMode ? Colors.white : Colors.black87), fontSize: 42, fontWeight: FontWeight.bold)),
+                      Text(
+                        'الجزء',
+                        style: GoogleFonts.amiri(
+                          color: _isHovered ? (widget.isDarkMode ? Colors.white : Colors.black87) : const Color(0xFFD4AF37),
+                          fontSize: 20,
+                        ),
+                      ),
+                      Text(
+                        '${widget.part.id}',
+                        style: TextStyle(
+                          color: _isHovered ? const Color(0xFFD4AF37) : (widget.isDarkMode ? Colors.white : Colors.black87),
+                          fontSize: 42,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      Flexible(child: Text(widget.lang == 'ar' ? widget.part.titleAr : widget.part.titleEn, textAlign: TextAlign.center, overflow: TextOverflow.ellipsis, style: GoogleFonts.elMessiri(color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.8) : Colors.black54, fontSize: 14))),
+                      Flexible(
+                        child: Text(
+                          widget.lang == 'ar' ? widget.part.titleAr : widget.part.titleEn,
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                          style: widget.themeService.getTextStyle(
+                            fontSize: 14,
+                            color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.8) : Colors.black54,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1723,10 +1798,12 @@ class _JuzGlassCardState extends State<_JuzGlassCard> {
 // ==========================================
 class FullMushafReaderScreen extends StatefulWidget {
   final String lang;
+  final ThemeService themeService;
 
   const FullMushafReaderScreen({
     super.key,
     required this.lang,
+    required this.themeService,
   });
 
   @override
@@ -1741,8 +1818,7 @@ class _FullMushafReaderScreenState extends State<FullMushafReaderScreen> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    
-    // Flatten all Juzs into a single continuous list of Surah chunks
+
     for (var juz in QuranData.parts) {
       _allSurahChunks.addAll(juz.surahs);
     }
@@ -1765,27 +1841,29 @@ class _FullMushafReaderScreenState extends State<FullMushafReaderScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // Header
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24), 
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24),
                       onPressed: () => Navigator.pop(context)
                     ),
                     Expanded(
                       child: Text(
-                        isArabic ? 'المصحف الشريف' : 'The Holy Quran', 
-                        textAlign: TextAlign.center, 
-                        style: isArabic ? GoogleFonts.amiri(color: const Color(0xFFD4AF37), fontSize: 26, fontWeight: FontWeight.bold) : GoogleFonts.arefRuqaa(color: const Color(0xFFD4AF37), fontSize: 22, fontWeight: FontWeight.bold)
+                        isArabic ? 'المصحف الشريف' : 'The Holy Quran',
+                        textAlign: TextAlign.center,
+                        style: widget.themeService.getTextStyle(
+                          fontSize: isArabic ? 26 : 22,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFFD4AF37),
+                        ),
                       )
                     ),
-                    const SizedBox(width: 48), 
+                    const SizedBox(width: 48),
                   ],
                 ),
               ),
-              // Continuous List of all Surahs
               Expanded(
                 child: Center(
                   child: ConstrainedBox(
@@ -1799,6 +1877,7 @@ class _FullMushafReaderScreenState extends State<FullMushafReaderScreen> {
                           surahChunk: _allSurahChunks[index],
                           lang: widget.lang,
                           isDarkMode: isDarkMode,
+                          themeService: widget.themeService,
                         );
                       },
                     ),
@@ -1813,16 +1892,17 @@ class _FullMushafReaderScreenState extends State<FullMushafReaderScreen> {
   }
 }
 
-// Memory-safe block that handles the Tap Recognizers for each continuous Surah
 class _MushafChunkBlock extends StatefulWidget {
   final QuranSurah surahChunk;
   final String lang;
   final bool isDarkMode;
+  final ThemeService themeService;
 
   const _MushafChunkBlock({
     required this.surahChunk,
     required this.lang,
     required this.isDarkMode,
+    required this.themeService,
   });
 
   @override
@@ -1837,7 +1917,7 @@ class _MushafChunkBlockState extends State<_MushafChunkBlock> {
   void initState() {
     super.initState();
     _tapRecognizers = List.generate(
-      widget.surahChunk.versesAr.length, 
+      widget.surahChunk.versesAr.length,
       (index) => TapGestureRecognizer()..onTap = () {
         setState(() => _tappedVerseIndex = index);
         _showTafseerSheet(context, index).whenComplete(() {
@@ -1858,6 +1938,7 @@ class _MushafChunkBlockState extends State<_MushafChunkBlock> {
           verseIndex: verseIndex,
           lang: widget.lang,
           trueVerseNumber: verseIndex + widget.surahChunk.startingVerseNumber,
+          themeService: widget.themeService,
         );
       },
     );
@@ -1874,11 +1955,11 @@ class _MushafChunkBlockState extends State<_MushafChunkBlock> {
   @override
   Widget build(BuildContext context) {
     List<InlineSpan> spans = [];
-    
+
     for (int i = 0; i < widget.surahChunk.versesAr.length; i++) {
       final verseNum = i + widget.surahChunk.startingVerseNumber;
       final isTappedHighlight = _tappedVerseIndex == i;
-      
+
       spans.add(
         TextSpan(
           text: '${widget.surahChunk.versesAr[i]} ',
@@ -1886,12 +1967,12 @@ class _MushafChunkBlockState extends State<_MushafChunkBlock> {
             fontSize: 28,
             color: widget.isDarkMode ? Colors.white : Colors.black87,
             backgroundColor: isTappedHighlight ? const Color(0xFFD4AF37).withValues(alpha: 0.3) : Colors.transparent,
-            height: 2.2, 
+            height: 2.2,
           ),
           recognizer: _tapRecognizers[i],
         ),
       );
-      
+
       spans.add(
         TextSpan(
           text: ' ﴿$verseNum﴾ ',
@@ -1899,7 +1980,7 @@ class _MushafChunkBlockState extends State<_MushafChunkBlock> {
             fontSize: 22,
             color: isTappedHighlight ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.7),
             backgroundColor: isTappedHighlight ? const Color(0xFFD4AF37).withValues(alpha: 0.3) : Colors.transparent,
-            fontFamily: 'Amiri', 
+            fontFamily: 'Amiri',
           ),
         ),
       );
@@ -1907,7 +1988,6 @@ class _MushafChunkBlockState extends State<_MushafChunkBlock> {
 
     return Column(
       children: [
-        // Show Surah Name & Basmalah only at the true start of a Surah (Verse 1)
         if (widget.surahChunk.startingVerseNumber == 1) ...[
           const SizedBox(height: 24),
           Container(
@@ -1925,12 +2005,11 @@ class _MushafChunkBlockState extends State<_MushafChunkBlock> {
           const SizedBox(height: 16),
           if (widget.surahChunk.id != 1 && widget.surahChunk.id != 9)
             Padding(
-              padding: const EdgeInsets.only(bottom: 16.0), 
+              padding: const EdgeInsets.only(bottom: 16.0),
               child: Text('بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ', style: GoogleFonts.amiri(fontSize: 32, color: const Color(0xFFD4AF37), fontWeight: FontWeight.bold))
             ),
         ],
 
-        // The continuous text block for this chunk
         Container(
           width: double.infinity,
           margin: const EdgeInsets.only(bottom: 16),
@@ -1954,17 +2033,19 @@ class _MushafChunkBlockState extends State<_MushafChunkBlock> {
 }
 
 // ==========================================
-// NEW: RANGE SELECTION SHARE DIALOG
+// RANGE SELECTION SHARE DIALOG
 // ==========================================
 class _ShareVerseDialog extends StatefulWidget {
   final QuranSurah surah;
   final int initialVerseIndex;
   final String lang;
+  final ThemeService themeService;
 
   const _ShareVerseDialog({
     required this.surah,
     required this.initialVerseIndex,
     required this.lang,
+    required this.themeService,
   });
 
   @override
@@ -1985,15 +2066,14 @@ class _ShareVerseDialogState extends State<_ShareVerseDialog> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
-    // Combine the text based on the selected range
+
     String combinedAr = '';
     String combinedTrans = '';
-    
+
     for (int i = startIdx; i <= endIdx; i++) {
       int trueVerseNum = i + widget.surah.startingVerseNumber;
       combinedAr += '${widget.surah.versesAr[i]} ﴿$trueVerseNum﴾ ';
-      
+
       if (widget.lang == 'fr' && i < widget.surah.versesFr.length) {
         combinedTrans += '${widget.surah.versesFr[i]} ';
       } else if (i < widget.surah.versesEn.length) {
@@ -2020,24 +2100,35 @@ class _ShareVerseDialogState extends State<_ShareVerseDialog> {
             ),
             const Divider(color: Color(0xFFD4AF37)),
             const SizedBox(height: 16),
-            
-            // Range Selectors
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Column(
                   children: [
-                    Text(widget.lang == 'ar' ? 'من آية' : 'From Verse', style: GoogleFonts.elMessiri(color: isDarkMode ? Colors.white70 : Colors.black87)),
+                    Text(
+                      widget.lang == 'ar' ? 'من آية' : 'From Verse',
+                      style: widget.themeService.getTextStyle(
+                        fontSize: 14,
+                        color: isDarkMode ? Colors.white70 : Colors.black87,
+                      ),
+                    ),
                     DropdownButton<int>(
                       dropdownColor: isDarkMode ? const Color(0xFF144D32) : Colors.white,
                       value: startIdx,
                       items: List.generate(widget.surah.versesAr.length, (i) {
-                        return DropdownMenuItem(value: i, child: Text('${i + widget.surah.startingVerseNumber}', style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)));
+                        return DropdownMenuItem(
+                          value: i,
+                          child: Text(
+                            '${i + widget.surah.startingVerseNumber}',
+                            style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
+                          ),
+                        );
                       }),
                       onChanged: (val) {
                         setState(() {
                           startIdx = val!;
-                          if (endIdx < startIdx) endIdx = startIdx; // Ensure end isn't before start
+                          if (endIdx < startIdx) endIdx = startIdx;
                         });
                       },
                     ),
@@ -2046,23 +2137,34 @@ class _ShareVerseDialogState extends State<_ShareVerseDialog> {
                 Icon(Icons.arrow_forward_rounded, color: const Color(0xFFD4AF37).withValues(alpha: 0.5)),
                 Column(
                   children: [
-                    Text(widget.lang == 'ar' ? 'إلى آية' : 'To Verse', style: GoogleFonts.elMessiri(color: isDarkMode ? Colors.white70 : Colors.black87)),
+                    Text(
+                      widget.lang == 'ar' ? 'إلى آية' : 'To Verse',
+                      style: widget.themeService.getTextStyle(
+                        fontSize: 14,
+                        color: isDarkMode ? Colors.white70 : Colors.black87,
+                      ),
+                    ),
                     DropdownButton<int>(
                       dropdownColor: isDarkMode ? const Color(0xFF144D32) : Colors.white,
                       value: endIdx,
                       items: List.generate(widget.surah.versesAr.length, (i) {
-                        return DropdownMenuItem(value: i, child: Text('${i + widget.surah.startingVerseNumber}', style: TextStyle(color: isDarkMode ? Colors.white : Colors.black)));
-                      }).where((item) => item.value! >= startIdx).toList(), // Only show valid end verses
+                        return DropdownMenuItem(
+                          value: i,
+                          child: Text(
+                            '${i + widget.surah.startingVerseNumber}',
+                            style: TextStyle(color: isDarkMode ? Colors.white : Colors.black),
+                          ),
+                        );
+                      }).where((item) => item.value! >= startIdx).toList(),
                       onChanged: (val) => setState(() => endIdx = val!),
                     ),
                   ],
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
-            // Preview Warning
+
             if (endIdx - startIdx > 5)
               Container(
                 padding: const EdgeInsets.all(8),
@@ -2072,12 +2174,14 @@ class _ShareVerseDialogState extends State<_ShareVerseDialog> {
                   children: [
                     const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(widget.lang == 'ar' ? 'تحديد آيات كثيرة قد يؤدي إلى تصغير النص في الصورة.' : 'Selecting many verses may make the text very small in the image.', style: const TextStyle(fontSize: 12, color: Colors.orange))),
+                    Expanded(child: Text(
+                      widget.lang == 'ar' ? 'تحديد آيات كثيرة قد يؤدي إلى تصغير النص في الصورة.' : 'Selecting many verses may make the text very small in the image.',
+                      style: const TextStyle(fontSize: 12, color: Colors.orange),
+                    )),
                   ],
                 ),
               ),
 
-            // Share Button
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFD4AF37),
@@ -2086,9 +2190,15 @@ class _ShareVerseDialogState extends State<_ShareVerseDialog> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               icon: const Icon(Icons.share_rounded),
-              label: Text(widget.lang == 'ar' ? 'مشاركة كصورة' : 'Share as Image', style: GoogleFonts.elMessiri(fontSize: 18, fontWeight: FontWeight.bold)),
+              label: Text(
+                widget.lang == 'ar' ? 'مشاركة كصورة' : 'Share as Image',
+                style: widget.themeService.getTextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               onPressed: () {
-                Navigator.pop(context); // Close dialog
+                Navigator.pop(context);
                 ShareImageGenerator.generateAndShareImageWithWidget(
                   title: combinedAr,
                   subtitle: combinedTrans,

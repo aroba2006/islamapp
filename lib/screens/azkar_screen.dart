@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../widgets/islamic_pattern_background.dart';
 import '../l10n/app_localizations.dart'; 
 import '../utils/share_image_generator.dart';
-// If not already imported
-
+import '../services/theme_service.dart';
 
 class _AzkarCategory {
   final String titleAr;
@@ -332,7 +331,6 @@ const List<_AzkarCategory> _categories = [
   ),
 ];
 
-
 // ── SCREENS ─────────────────────────────────────────────────────
 
 class AzkarScreen extends StatefulWidget {
@@ -363,86 +361,91 @@ class _AzkarScreenState extends State<AzkarScreen>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final lang = Localizations.localeOf(context).languageCode;
-    final isArabic = lang == 'ar';
+    return Consumer<ThemeService>(
+      builder: (context, themeService, _) {
+        final l10n = AppLocalizations.of(context);
+        final lang = Localizations.localeOf(context).languageCode;
 
-    return Scaffold(
-      body: IslamicPatternBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    Expanded(
-                      child: Text(
-                        l10n.azkarTitle, 
-                        textAlign: TextAlign.center,
-                        style: isArabic 
-                            ? GoogleFonts.amiri(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold)
-                            : GoogleFonts.arefRuqaa(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(width: 48),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1200),
-                    child: FadeTransition(
-                      opacity: _fadeCtrl,
-                      child: GridView.builder(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
-                        itemCount: _categories.length,
-                        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 300,
-                          crossAxisSpacing: 16, 
-                          mainAxisSpacing: 16,
-                          mainAxisExtent: 160,
+        return Scaffold(
+          body: IslamicPatternBackground(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24),
+                          onPressed: () => Navigator.pop(context),
                         ),
-                        itemBuilder: (context, index) {
-                          final cat = _categories[index];
-                          return TweenAnimationBuilder<double>(
-                            duration: Duration(milliseconds: 250 + (index * 80).clamp(0, 400)),
-                            tween: Tween(begin: 0, end: 1),
-                            curve: Curves.easeOutCubic,
-                            builder: (context, value, child) => Opacity(
-                              opacity: value,
-                              child: Transform.translate(offset: Offset(0, 20 * (1 - value)), child: child),
+                        Expanded(
+                          child: Text(
+                            l10n.azkarTitle, 
+                            textAlign: TextAlign.center,
+                            style: themeService.getTextStyle(
+                              color: const Color(0xFFD4AF37),
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
                             ),
-                            child: _CategoryGlassCard(
-                              category: cat,
-                              lang: lang,
-                              onTap: () => Navigator.push(
-                                context,
-                                PageRouteBuilder(
-                                  transitionDuration: const Duration(milliseconds: 400),
-                                  pageBuilder: (_, animation, __) => _AzkarDetailScreen(category: cat, lang: lang),
-                                  transitionsBuilder: (_, animation, __, child) {
-                                    return FadeTransition(opacity: animation, child: child);
-                                  },
+                          ),
+                        ),
+                        const SizedBox(width: 48),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1200),
+                        child: FadeTransition(
+                          opacity: _fadeCtrl,
+                          child: GridView.builder(
+                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                            itemCount: _categories.length,
+                            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 300,
+                              crossAxisSpacing: 16, 
+                              mainAxisSpacing: 16,
+                              mainAxisExtent: 160,
+                            ),
+                            itemBuilder: (context, index) {
+                              final cat = _categories[index];
+                              return TweenAnimationBuilder<double>(
+                                duration: Duration(milliseconds: 250 + (index * 80).clamp(0, 400)),
+                                tween: Tween(begin: 0, end: 1),
+                                curve: Curves.easeOutCubic,
+                                builder: (context, value, child) => Opacity(
+                                  opacity: value,
+                                  child: Transform.translate(offset: Offset(0, 20 * (1 - value)), child: child),
                                 ),
-                              ),
-                            ),
-                          );
-                        },
+                                child: _CategoryGlassCard(
+                                  category: cat,
+                                  lang: lang,
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    PageRouteBuilder(
+                                      transitionDuration: const Duration(milliseconds: 400),
+                                      pageBuilder: (_, animation, __) => _AzkarDetailScreen(category: cat, lang: lang),
+                                      transitionsBuilder: (_, animation, __, child) {
+                                        return FadeTransition(opacity: animation, child: child);
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -467,80 +470,88 @@ class _CategoryGlassCardState extends State<_CategoryGlassCard> {
     final cat = widget.category;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _scale = 0.96),
-        onTapUp: (_) => setState(() => _scale = 1.0),
-        onTapCancel: () => setState(() => _scale = 1.0),
-        onTap: widget.onTap,
-        child: AnimatedScale(
-          scale: _isHovered ? 1.04 : _scale,
-          duration: const Duration(milliseconds: 150),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                decoration: BoxDecoration(
-                  color: _isHovered 
-                      ? (isDarkMode 
-                          ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.8) 
-                          : Colors.white.withValues(alpha: 0.9))
-                      : (isDarkMode 
-                          ? Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.6) 
-                          : Colors.white.withValues(alpha: 0.65)),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: _isHovered 
-                        ? const Color(0xFFD4AF37).withValues(alpha: 0.8)
-                        : const Color(0xFFD4AF37).withValues(alpha: 0.3),
-                    width: _isHovered ? 2 : 1,
-                  ),
-                ),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(cat.emoji, style: const TextStyle(fontSize: 32)),
-                    const SizedBox(height: 8),
-                    Flexible(
-                      child: Text(
-                        widget.lang == 'ar' ? cat.titleAr : (widget.lang == 'fr' ? cat.titleFr : cat.titleEn),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.elMessiri(
-                          color: _isHovered 
-                              ? (isDarkMode ? Colors.white : const Color(0xFFD4AF37)) 
-                              : const Color(0xFFD4AF37),
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+    return Consumer<ThemeService>(
+      builder: (context, themeService, _) {
+        return MouseRegion(
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTapDown: (_) => setState(() => _scale = 0.96),
+            onTapUp: (_) => setState(() => _scale = 1.0),
+            onTapCancel: () => setState(() => _scale = 1.0),
+            onTap: widget.onTap,
+            child: AnimatedScale(
+              scale: _isHovered ? 1.04 : _scale,
+              duration: const Duration(milliseconds: 150),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    decoration: BoxDecoration(
+                      color: _isHovered 
+                          ? (isDarkMode 
+                              ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.8) 
+                              : Colors.white.withValues(alpha: 0.9))
+                          : (isDarkMode 
+                              ? Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.6) 
+                              : Colors.white.withValues(alpha: 0.65)),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: _isHovered 
+                            ? const Color(0xFFD4AF37).withValues(alpha: 0.8)
+                            : const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                        width: _isHovered ? 2 : 1,
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(cat.emoji, style: const TextStyle(fontSize: 32)),
+                        const SizedBox(height: 8),
+                        Flexible(
+                          child: Text(
+                            widget.lang == 'ar' ? cat.titleAr : (widget.lang == 'fr' ? cat.titleFr : cat.titleEn),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: themeService.getTextStyle(
+                              color: _isHovered 
+                                  ? (isDarkMode ? Colors.white : const Color(0xFFD4AF37)) 
+                                  : const Color(0xFFD4AF37),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${cat.items.length} ${widget.lang == 'ar' ? 'أذكار' : '...' }',
+                            style: themeService.getTextStyle(
+                              color: const Color(0xFFD4AF37),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${cat.items.length} ${widget.lang == 'ar' ? 'أذكار' : '...' }',
-                        style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -583,143 +594,156 @@ class _AzkarDetailScreenState extends State<_AzkarDetailScreen> {
     final isArabic = widget.lang == 'ar';
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      body: IslamicPatternBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 20, 0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 22),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(cat.emoji, style: const TextStyle(fontSize: 24)),
-                          Text(
-                            isArabic ? cat.titleAr : (widget.lang == 'fr' ? cat.titleFr : cat.titleEn),
-                            style: isArabic
-                                ? GoogleFonts.amiri(color: const Color(0xFFD4AF37), fontSize: 26, fontWeight: FontWeight.bold)
-                                : GoogleFonts.arefRuqaa(color: const Color(0xFFD4AF37), fontSize: 26, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: isDarkMode ? Colors.black.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
-                      ),
-                      child: IconButton(
-                        icon: Icon(
-                          _showTransliteration ? Icons.translate : Icons.translate_outlined,
-                          color: _showTransliteration ? const Color(0xFFD4AF37) : (isDarkMode ? Colors.white54 : Colors.black54),
-                          size: 22,
-                        ),
-                        onPressed: () => setState(() => _showTransliteration = !_showTransliteration),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Consumer<ThemeService>(
+      builder: (context, themeService, _) {
+        return Scaffold(
+          body: IslamicPatternBackground(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 20, 0),
+                    child: Row(
                       children: [
-                        Text(
-                          '${_counts.where((c) => c > 0).length} / ${cat.items.length}',
-                          style: GoogleFonts.elMessiri(
-                            color: isDarkMode ? Colors.white.withValues(alpha: 0.7) : Colors.black87, 
-                            fontSize: 14
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 22),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(cat.emoji, style: const TextStyle(fontSize: 24)),
+                              Text(
+                                isArabic ? cat.titleAr : (widget.lang == 'fr' ? cat.titleFr : cat.titleEn),
+                                style: themeService.getTextStyle(
+                                  color: const Color(0xFFD4AF37),
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        if (_allDone)
-                          Text(
-                            isArabic ? '✓ اكتمل' : (widget.lang == 'fr' ? '✓ Terminé' : '✓ Done'),
-                            style: GoogleFonts.elMessiri(color: const Color(0xFFD4AF37), fontSize: 14, fontWeight: FontWeight.bold),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: isDarkMode ? Colors.black.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.5),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
                           ),
+                          child: IconButton(
+                            icon: Icon(
+                              _showTransliteration ? Icons.translate : Icons.translate_outlined,
+                              color: _showTransliteration ? const Color(0xFFD4AF37) : (isDarkMode ? Colors.white54 : Colors.black54),
+                              size: 22,
+                            ),
+                            onPressed: () => setState(() => _showTransliteration = !_showTransliteration),
+                          ),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: cat.items.isEmpty ? 0 : _counts.asMap().entries.where((e) => e.value >= cat.items[e.key].count).length / cat.items.length,
-                        backgroundColor: isDarkMode ? Colors.black.withValues(alpha: 0.4) : Colors.black12,
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
-                        minHeight: 6,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${_counts.where((c) => c > 0).length} / ${cat.items.length}',
+                              style: themeService.getTextStyle(
+                                color: isDarkMode ? Colors.white.withValues(alpha: 0.7) : Colors.black87, 
+                                fontSize: 14,
+                              ),
+                            ),
+                            if (_allDone)
+                              Text(
+                                isArabic ? '✓ اكتمل' : (widget.lang == 'fr' ? '✓ Terminé' : '✓ Done'),
+                                style: themeService.getTextStyle(
+                                  color: const Color(0xFFD4AF37),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: cat.items.isEmpty ? 0 : _counts.asMap().entries.where((e) => e.value >= cat.items[e.key].count).length / cat.items.length,
+                            backgroundColor: isDarkMode ? Colors.black.withValues(alpha: 0.4) : Colors.black12,
+                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
+                            minHeight: 6,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 800),
+                        child: ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+                          itemCount: cat.items.length,
+                          itemBuilder: (context, index) {
+                            final zikr = cat.items[index];
+                            final progress = _counts[index];
+                            final isDone = progress >= zikr.count;
+
+                            return TweenAnimationBuilder<double>(
+                              duration: Duration(milliseconds: 200 + (index * 60).clamp(0, 500)),
+                              tween: Tween(begin: 0, end: 1),
+                              curve: Curves.easeOutCubic,
+                              builder: (context, value, child) => Opacity(
+                                opacity: value,
+                                child: Transform.translate(offset: Offset(0, (1 - value) * 16), child: child),
+                              ),
+                              child: _ZikrGlassCard(
+                                zikr: zikr,
+                                progress: progress,
+                                isDone: isDone,
+                                showTransliteration: _showTransliteration,
+                                lang: widget.lang,
+                                onTap: () => _increment(index),
+                                onReset: () => _reset(index),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              
-              Expanded(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    child: ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-                      itemCount: cat.items.length,
-                      itemBuilder: (context, index) {
-                        final zikr = cat.items[index];
-                        final progress = _counts[index];
-                        final isDone = progress >= zikr.count;
+                  ),
 
-                        return TweenAnimationBuilder<double>(
-                          duration: Duration(milliseconds: 200 + (index * 60).clamp(0, 500)),
-                          tween: Tween(begin: 0, end: 1),
-                          curve: Curves.easeOutCubic,
-                          builder: (context, value, child) => Opacity(
-                            opacity: value,
-                            child: Transform.translate(offset: Offset(0, (1 - value) * 16), child: child),
-                          ),
-                          child: _ZikrGlassCard(
-                            zikr: zikr,
-                            progress: progress,
-                            isDone: isDone,
-                            showTransliteration: _showTransliteration,
-                            lang: widget.lang,
-                            onTap: () => _increment(index),
-                            onReset: () => _reset(index),
-                          ),
-                        );
-                      },
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                    child: TextButton.icon(
+                      onPressed: _resetAll,
+                      icon: Icon(Icons.refresh_rounded, color: isDarkMode ? Colors.white54 : Colors.black54, size: 20),
+                      label: Text(
+                        isArabic ? 'إعادة ضبط الكل' : (widget.lang == 'fr' ? 'Tout réinitialiser' : 'Reset All'),
+                        style: themeService.getTextStyle(
+                          color: isDarkMode ? Colors.white54 : Colors.black54,
+                          fontSize: 16,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                child: TextButton.icon(
-                  onPressed: _resetAll,
-                  icon: Icon(Icons.refresh_rounded, color: isDarkMode ? Colors.white54 : Colors.black54, size: 20),
-                  label: Text(
-                    isArabic ? 'إعادة ضبط الكل' : (widget.lang == 'fr' ? 'Tout réinitialiser' : 'Reset All'),
-                    style: GoogleFonts.elMessiri(color: isDarkMode ? Colors.white54 : Colors.black54, fontSize: 16),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
-// ── NEW FROSTED GLASS ZIKR CARD (THEME AWARE) ──────────────────
+// ── FROSTED GLASS ZIKR CARD (THEME AWARE) ──────────────────
 class _ZikrGlassCard extends StatefulWidget {
   final _ZikrItem zikr;
   final int progress;
@@ -749,232 +773,227 @@ class _ZikrGlassCardState extends State<_ZikrGlassCard> {
   double _scale = 1.0;
 
   Future<void> _shareAsImage() async {
-  setState(() => _isSharing = true);
-  
-  try {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    setState(() => _isSharing = true);
     
-    String translationText;
-    if (widget.lang == 'fr') {
-      translationText = widget.zikr.translationFr;
-    } else {
-      translationText = widget.zikr.translation;
-    }
+    try {
+      final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+      
+      String translationText;
+      if (widget.lang == 'fr') {
+        translationText = widget.zikr.translationFr;
+      } else {
+        translationText = widget.zikr.translation;
+      }
 
-    await ShareImageGenerator.generateAndShareImageWithWidget(
-      title: widget.zikr.arabic,
-      subtitle: translationText,
-      isDarkMode: isDarkMode,
-      lang: widget.lang,
-      context: context,
-    );
+      await ShareImageGenerator.generateAndShareImageWithWidget(
+        title: widget.zikr.arabic,
+        subtitle: translationText,
+        isDarkMode: isDarkMode,
+        lang: widget.lang,
+        context: context,
+      );
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(widget.lang == 'ar' ? 'تم إنشاء الصورة' : 'Image created'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(widget.lang == 'ar' ? 'خطأ: $e' : 'Error: $e'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-  } finally {
-    if (mounted) {
-      setState(() => _isSharing = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.lang == 'ar' ? 'تم إنشاء الصورة' : 'Image created'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.lang == 'ar' ? 'خطأ: $e' : 'Error: $e'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSharing = false);
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _scale = 0.98),
-        onTapUp: (_) => setState(() => _scale = 1.0),
-        onTapCancel: () => setState(() => _scale = 1.0),
-        onTap: widget.onTap,
-        child: AnimatedScale(
-          scale: _isHovered ? 1.02 : _scale,
-          duration: const Duration(milliseconds: 150),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: widget.isDone 
-                        ? (isDarkMode ? const Color(0xFF1B5E3F).withValues(alpha: 0.85) : const Color(0xFFE8F5E9).withValues(alpha: 0.9))
-                        : (isDarkMode ? Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.75)),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: widget.isDone 
-                          ? const Color(0xFFD4AF37).withValues(alpha: 0.8)
-                          : const Color(0xFFD4AF37).withValues(alpha: 0.3),
-                      width: widget.isDone ? 2 : 1,
-                    ),
-                    boxShadow: widget.isDone
-                        ? [BoxShadow(color: const Color(0xFFD4AF37).withValues(alpha: 0.15), blurRadius: 12, spreadRadius: 2)]
-                        : [],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        widget.zikr.arabic,
-                        textAlign: TextAlign.right,
-                        textDirection: TextDirection.rtl,
-                        style: GoogleFonts.amiri(
+    return Consumer<ThemeService>(
+      builder: (context, themeService, _) {
+        return MouseRegion(
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTapDown: (_) => setState(() => _scale = 0.98),
+            onTapUp: (_) => setState(() => _scale = 1.0),
+            onTapCancel: () => setState(() => _scale = 1.0),
+            onTap: widget.onTap,
+            child: AnimatedScale(
+              scale: _isHovered ? 1.02 : _scale,
+              duration: const Duration(milliseconds: 150),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: widget.isDone 
+                            ? (isDarkMode ? const Color(0xFF1B5E3F).withValues(alpha: 0.85) : const Color(0xFFE8F5E9).withValues(alpha: 0.9))
+                            : (isDarkMode ? Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.75)),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
                           color: widget.isDone 
-                              ? (isDarkMode ? const Color(0xFFD4AF37) : const Color(0xFF1B5E3F)) 
-                              : (isDarkMode ? Colors.white : Colors.black87),
-                          fontSize: 24,
-                          height: 2.0,
-                          fontWeight: FontWeight.bold,
+                              ? const Color(0xFFD4AF37).withValues(alpha: 0.8)
+                              : const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                          width: widget.isDone ? 2 : 1,
                         ),
+                        boxShadow: widget.isDone
+                            ? [BoxShadow(color: const Color(0xFFD4AF37).withValues(alpha: 0.15), blurRadius: 12, spreadRadius: 2)]
+                            : [],
                       ),
-                      if (widget.showTransliteration) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          widget.zikr.transliteration,
-                          style: GoogleFonts.elMessiri(
-                            color: isDarkMode ? const Color(0xFFD4AF37).withValues(alpha: 0.8) : const Color(0xFFB8860B),
-                            fontSize: 14,
-                            fontStyle: FontStyle.italic,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 10),
-                      Text(
-                        widget.lang == 'fr' ? widget.zikr.translationFr : widget.zikr.translation,
-                        style: GoogleFonts.elMessiri(
-                          color: isDarkMode ? Colors.white.withValues(alpha: 0.65) : Colors.black54,
-                          fontSize: 15,
-                          height: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Row(
-                            children: [
-                              GestureDetector(
-                                onTap: widget.progress > 0 ? widget.onReset : null,
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.refresh_rounded,
-                                      size: 18,
-                                      color: widget.progress > 0 
-                                          ? (isDarkMode ? Colors.white54 : Colors.black45) 
-                                          : Colors.transparent,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      widget.lang == 'ar' ? 'إعادة' : (widget.lang == 'fr' ? 'Réinit.' : 'Reset'),
-                                      style: GoogleFonts.elMessiri(
-                                        color: widget.progress > 0 
-                                            ? (isDarkMode ? Colors.white54 : Colors.black45) 
-                                            : Colors.transparent,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                          Text(
+                            widget.zikr.arabic,
+                            textAlign: TextAlign.right,
+                            textDirection: TextDirection.rtl,
+                            style: themeService.getTextStyle(
+                              color: widget.isDone 
+                                  ? (isDarkMode ? const Color(0xFFD4AF37) : const Color(0xFF1B5E3F)) 
+                                  : (isDarkMode ? Colors.white : Colors.black87),
+                              fontSize: 24,
+                              height: 2.0,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (widget.showTransliteration) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              widget.zikr.transliteration,
+                              style: themeService.getTextStyle(
+                                color: isDarkMode ? const Color(0xFFD4AF37).withValues(alpha: 0.8) : const Color(0xFFB8860B),
+                                fontSize: 14,
+                                fontStyle: FontStyle.italic,
+                                height: 1.5,
                               ),
-                              // NEW SHARE BUTTON FOR ZEKR
-                              const SizedBox(width: 20),
-                              GestureDetector(
-                                onTap: () {
-                                  ShareImageGenerator.generateAndShareImageWithWidget(
-                                    title: widget.zikr.arabic,
-                                    subtitle: widget.lang == 'fr' ? widget.zikr.translationFr : widget.zikr.translation,
-                                    isDarkMode: isDarkMode,
-                                    lang: widget.lang,
-                                    context: context,
-                                  );
-                                },
+                            ),
+                          ],
+                          const SizedBox(height: 10),
+                          Text(
+                            widget.lang == 'fr' ? widget.zikr.translationFr : widget.zikr.translation,
+                            style: themeService.getTextStyle(
+                              color: isDarkMode ? Colors.white.withValues(alpha: 0.65) : Colors.black54,
+                              fontSize: 15,
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: widget.progress > 0 ? widget.onReset : null,
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.refresh_rounded,
+                                          size: 18,
+                                          color: widget.progress > 0 
+                                              ? (isDarkMode ? Colors.white54 : Colors.black45) 
+                                              : Colors.transparent,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          widget.lang == 'ar' ? 'إعادة' : (widget.lang == 'fr' ? 'Réinit.' : 'Reset'),
+                                          style: themeService.getTextStyle(
+                                            color: widget.progress > 0 
+                                                ? (isDarkMode ? Colors.white54 : Colors.black45) 
+                                                : Colors.transparent,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 20),
+                                  GestureDetector(
+                                    onTap: _shareAsImage,
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.share_rounded, size: 18, color: isDarkMode ? Colors.white54 : Colors.black45),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          widget.lang == 'ar' ? 'مشاركة' : (widget.lang == 'fr' ? 'Partager' : 'Share'),
+                                          style: themeService.getTextStyle(
+                                            color: isDarkMode ? Colors.white54 : Colors.black45,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 250),
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: widget.isDone 
+                                      ? const Color(0xFFD4AF37) 
+                                      : (isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.5)),
+                                  borderRadius: BorderRadius.circular(30),
+                                  border: Border.all(
+                                    color: widget.isDone 
+                                        ? const Color(0xFFD4AF37) 
+                                        : const Color(0xFFD4AF37).withValues(alpha: 0.5)
+                                  ),
+                                ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.share_rounded, size: 18, color: isDarkMode ? Colors.white54 : Colors.black45),
-                                    const SizedBox(width: 6),
                                     Text(
-                                      widget.lang == 'ar' ? 'مشاركة' : (widget.lang == 'fr' ? 'Partager' : 'Share'),
-                                      style: GoogleFonts.elMessiri(
-                                        color: isDarkMode ? Colors.white54 : Colors.black45,
-                                        fontSize: 14,
+                                      '${widget.progress} / ${widget.zikr.count}',
+                                      style: themeService.getTextStyle(
+                                        color: widget.isDone 
+                                            ? (isDarkMode ? Theme.of(context).scaffoldBackgroundColor : Colors.white) 
+                                            : const Color(0xFFD4AF37),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
                                       ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(
+                                      widget.isDone ? Icons.check_circle_rounded : Icons.touch_app_rounded,
+                                      size: 18,
+                                      color: widget.isDone 
+                                          ? (isDarkMode ? Theme.of(context).scaffoldBackgroundColor : Colors.white) 
+                                          : const Color(0xFFD4AF37).withValues(alpha: 0.8),
                                     ),
                                   ],
                                 ),
                               ),
                             ],
                           ),
-                          AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: BoxDecoration(
-        color: widget.isDone 
-            ? const Color(0xFFD4AF37) 
-            : (isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.5)),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: widget.isDone 
-              ? const Color(0xFFD4AF37) 
-              : const Color(0xFFD4AF37).withValues(alpha: 0.5)
-        ),
-      ),
-      child: Row(
-        children: [
-          Text(
-            '${widget.progress} / ${widget.zikr.count}',
-            style: TextStyle(
-              color: widget.isDone 
-                  ? (isDarkMode ? Theme.of(context).scaffoldBackgroundColor : Colors.white) 
-                  : const Color(0xFFD4AF37),
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Icon(
-            widget.isDone ? Icons.check_circle_rounded : Icons.touch_app_rounded,
-            size: 18,
-            color: widget.isDone 
-                ? (isDarkMode ? Theme.of(context).scaffoldBackgroundColor : Colors.white) 
-                : const Color(0xFFD4AF37).withValues(alpha: 0.8),
-          ),
-        ],
-      ),
-    ),
-  ],
-),
-                    ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

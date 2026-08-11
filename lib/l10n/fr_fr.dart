@@ -1,6 +1,7 @@
 import 'app_localizations.dart';
 
 class FrFR extends AppLocalizations {
+  // Basic app strings
   @override
   String get appTitle => 'Horaires de Prière';
   @override
@@ -19,12 +20,6 @@ class FrFR extends AppLocalizations {
   String get fetchingPrayerTimes => 'Récupération des horaires de prière...';
   @override
   String get prayerTimes => 'Horaires de Prière';
-  @override
-  String get azkarTitle => 'Adhkar';
-  @override
-  String get quranTitle => 'Saint Coran';
-  @override
-  String get titleAr => 'Invocations';
   @override
   String get settings => 'Paramètres';
   @override
@@ -60,12 +55,6 @@ class FrFR extends AppLocalizations {
   @override
   String get nasserQattami => 'Nasser Al-Qattami';
   @override
-  String get mohamedQassas => 'Mohamed Qassas';
-  @override
-  String get moRefaat => 'Mohamed Refaat';
-  @override
-  String get nasTobar => 'Nasraldin Tobar';
-  @override
   String get aliMala => 'Ali Al-Mala';
   @override
   String get abdelbassetAbdelsamad => 'Abdulbasit Abdulsamad';
@@ -77,21 +66,30 @@ class FrFR extends AppLocalizations {
   String get close => 'Fermer';
   @override
   String get prayerNotification => 'Il est l\'heure de prier';
-
+  @override
+  String get mohamedQassas => 'Mohamed Qassas';
+  @override
+  String get moRefaat => 'Mohamed Refaat';
+  @override
+  String get nasTobar => 'Nasraldin Tobar';
   @override
   String get quran => 'Saint Coran';
   @override
   String get quranSection => 'Section Coran';
   @override
   String get selectSurah => 'Sélectionnez une Sourate';
-  
   @override
   String get stop => 'Arrêter';
   @override
   String get errorLoadingPrayerTimes => 'Erreur lors du chargement des horaires de prière. Veuillez réessayer.';
   @override
   String get retry => 'Réessayer';
+  @override
+  String get notifications => 'Notifications';
+  @override
+  String get enableNotifications => 'Activer les notifications';
   
+  // Five prayers
   @override
   String get fajr => 'Fajr';
   @override
@@ -103,6 +101,13 @@ class FrFR extends AppLocalizations {
   @override
   String get isha => 'Icha';
 
+  // Screen titles and descriptions
+  @override
+  String get azkarTitle => 'Adhkar';
+  @override
+  String get quranTitle => 'Saint Coran';
+  @override
+  String get titleAr => 'Invocations';
   @override
   String get prayerTimesDesc => 'Horaires de prière précis pour votre pays et région';
   @override
@@ -114,6 +119,7 @@ class FrFR extends AppLocalizations {
   @override
   String get duaaDesc => 'Invocations choisies pour la guérison, la réussite et la protection';
 
+  // Good Deeds & Islamic Goals
   @override
   String get goodDeedsTitle => 'Bonnes Actions';
   @override
@@ -123,17 +129,39 @@ class FrFR extends AppLocalizations {
   @override
   String get islamicGoalsDesc => 'Fixez-vous des objectifs personnels pour la lecture du Coran, la mémorisation et les prières régulières';
 
+  // Quick access cards
+  @override
+  String get qiblaTitle => 'Finder de Qibla';
+  @override
+  String get qiblaDesc => 'Trouvez la direction de la Qibla et les mosquées à proximité';
+  @override
+  String get goalsTitle => 'Objectifs et Actions';
+  @override
+  String get goalsDesc => 'Suivez vos objectifs islamiques et vos bonnes actions';
+  @override
+  String get quizTitle => 'Quiz';
+  @override
+  String get quizDesc => 'Testez vos connaissances islamiques';
+  @override
+  String get prophetBioTitle => 'Biographies des Prophètes';
+  @override
+  String get prophetBioDesc => 'Histoires des Prophètes et références coraniques';
+  @override
+  String get hadithsTitle => 'Hadiths du Prophète';
+  @override
+  String get hadithsDesc => 'Paroles et enseignements authentiques du Prophète Muhammad';
+
+  // Feature screens
   @override
   String get qiblahFinderTitle => 'Direction de la Qibla';
   @override
   String get qiblahFinderDesc => 'Trouvez la direction de La Mecque';
-
   @override
   String get nearestMosqueTitle => 'Mosquées à proximité';
   @override
   String get nearestMosqueDesc => 'Trouvez les mosquées près de vous';
 
-  // === SCREENS TRANSLATIONS ===
+  // Good Deeds screen
   @override
   String get cancelBtn => 'Annuler';
   @override
@@ -173,6 +201,7 @@ class FrFR extends AppLocalizations {
   @override
   String get catOther => 'Autre';
   
+  // Islamic Goals screen
   @override
   String get addGoalTitle => 'Ajouter un objectif islamique';
   @override
@@ -216,25 +245,7 @@ class FrFR extends AppLocalizations {
   @override
   String get updateBtn => 'Mettre à jour';
 
-  // === QUICK ACCESS NAMES (for home screen cards) ===
-  @override
-  String get qiblaTitle => 'Finder de Qibla';
-  @override
-  String get qiblaDesc => 'Trouvez la direction de la Qibla et les mosquées à proximité';
-  @override
-  String get goalsTitle => 'Objectifs et Actions';
-  @override
-  String get goalsDesc => 'Suivez vos objectifs islamiques et vos bonnes actions';
-  @override
-  String get quizTitle => 'Quiz';
-  @override
-  String get quizDesc => 'Testez vos connaissances islamiques';
-  @override
-  String get prophetBioTitle => 'Biographies des Prophètes';
-  @override
-  String get prophetBioDesc => 'Histoires des Prophètes et références coraniques';
-
-  // === BOOKMARK TRANSLATIONS ===
+  // Bookmarks
   @override
   String get bookmarkPage => 'Marquer la page';
   @override
@@ -242,7 +253,7 @@ class FrFR extends AppLocalizations {
   @override
   String get pageBookmarked => 'Page marquée';
 
-  // === RAMADAN TRANSLATIONS ===
+  // Ramadan
   @override
   String get ramadan => 'Ramadan';
   @override
@@ -252,7 +263,35 @@ class FrFR extends AppLocalizations {
   @override
   String get ramadanNotAvailable => 'Pas encore disponible - Ramadan n\'a pas commencé';
 
-  // === HIJRI CALENDAR ===
+  // Authentication
+  @override
+  String get login => 'Connexion';
+  @override
+  String get signup => 'S\'inscrire';
+  @override
+  String get email => 'Email';
+  @override
+  String get username => 'Nom d\'utilisateur';
+  @override
+  String get emailOrUsername => 'Email ou nom d\'utilisateur';
+  @override
+  String get password => 'Mot de passe';
+  @override
+  String get confirmPassword => 'Confirmer le mot de passe';
+  @override
+  String get selectBirthday => 'Sélectionner la date de naissance';
+  @override
+  String get genderMale => 'Homme';
+  @override
+  String get genderFemale => 'Femme';
+  @override
+  String get fillAllFields => 'Veuillez remplir tous les champs';
+  @override
+  String get loginFailed => 'Échec de la connexion';
+  @override
+  String get signupFailed => 'Échec de l\'inscription';
+
+  // Hijri Calendar
   @override
   String get hijriCalendarTitle => 'Calendrier Hégirien';
 }

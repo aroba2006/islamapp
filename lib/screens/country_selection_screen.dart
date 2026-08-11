@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:ui';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import '../data/countries_data.dart';
@@ -14,6 +14,7 @@ import '../app_theme.dart';
 import 'region_selection_screen.dart';
 import 'prayer_times_screen.dart';
 import '../data/geo_translations.dart';
+import '../services/theme_service.dart';
 
 class CountrySelectionScreen extends StatefulWidget {
   const CountrySelectionScreen({super.key});
@@ -79,7 +80,6 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
     );
   }
 
-  // ── AUTO DETECT LOCATION LOGIC (WEB + MOBILE SAFE) ───────────────────────
   Future<void> _detectLocation(String lang) async {
     setState(() => _isDetecting = true);
 
@@ -88,8 +88,6 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
       String detectedCity = 'Unknown';
 
       if (kIsWeb) {
-        // 🌐 WEB FALLBACK: Browsers block reverse-geocoding without API keys.
-        // We use a free IP-based location API for seamless web testing!
         final response = await http.get(Uri.parse('https://get.geojs.io/v1/ip/geo.json'));
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
@@ -99,21 +97,26 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
           throw Exception(lang == 'ar' ? 'فشل تحديد الموقع على المتصفح' : 'Web location failed.');
         }
       } else {
-        // 📱 NATIVE MOBILE LOGIC: Uses physical GPS hardware
         bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-        if (!serviceEnabled) throw Exception(lang == 'ar' ? 'خدمات الموقع معطلة' : 'Location services are disabled.');
+        if (!serviceEnabled) {
+          throw Exception(lang == 'ar' ? 'خدمات الموقع معطلة' : 'Location services are disabled.');
+        }
 
         LocationPermission permission = await Geolocator.checkPermission();
         if (permission == LocationPermission.denied) {
           permission = await Geolocator.requestPermission();
-          if (permission == LocationPermission.denied) throw Exception(lang == 'ar' ? 'تم رفض إذن الموقع' : 'Location permissions denied.');
+          if (permission == LocationPermission.denied) {
+            throw Exception(lang == 'ar' ? 'تم رفض إذن الموقع' : 'Location permissions denied.');
+          }
         }
         
         if (permission == LocationPermission.deniedForever) {
           throw Exception(lang == 'ar' ? 'أذونات الموقع مرفوضة نهائياً' : 'Location permissions are permanently denied.');
         }
 
-        Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+        Position position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        );
         List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
         
         if (placemarks.isEmpty) throw Exception('Location unreadable.');
@@ -123,7 +126,6 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
         detectedCity = place.locality ?? place.administrativeArea ?? 'Unknown';
       }
 
-      // Find matching CountryData from your local list
       CountryData matchedCountry = countries.firstWhere(
         (c) => c.name.toLowerCase() == detectedCountry.toLowerCase(),
         orElse: () => CountryData(name: detectedCountry, flagEmoji: '📍', regions: []),
@@ -131,7 +133,6 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
 
       if (!mounted) return;
 
-      // Teleport straight to Prayer Times!
       Navigator.of(context).push(
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 500),
@@ -143,11 +144,16 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(e.toString().replaceAll('Exception: ', ''), style: GoogleFonts.elMessiri()),
+        content: Text(
+          e.toString().replaceAll('Exception: ', ''),
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
         backgroundColor: Colors.redAccent,
       ));
     } finally {
-      if (mounted) setState(() => _isDetecting = false);
+      if (mounted) {
+        setState(() => _isDetecting = false);
+      }
     }
   }
 
@@ -157,51 +163,55 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
     final lang = Localizations.localeOf(context).languageCode;
     final isArabic = lang == 'ar';
 
-    return Scaffold(
-      body: IslamicPatternBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              FadeTransition(
-                opacity: _headerController,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, -0.15),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(parent: _headerController, curve: Curves.easeOutCubic)),
-                  child: _buildHeader(context, l10n!, isArabic),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: _buildSearchField(context, l10n!, isArabic),
-                        ),
-                        const SizedBox(height: 16),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: _buildAutoDetectButton(lang),
-                        ),
-                        const SizedBox(height: 16),
-                        Expanded(child: _buildCountryList(context, l10n, isArabic)),
-                      ],
+    return Consumer<ThemeService>(
+      builder: (context, themeService, _) {
+        return Scaffold(
+          body: IslamicPatternBackground(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  FadeTransition(
+                    opacity: _headerController,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, -0.15),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(parent: _headerController, curve: Curves.easeOutCubic)),
+                      child: _buildHeader(context, l10n!, isArabic, themeService),
                     ),
                   ),
-                ),
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 800),
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: _buildSearchField(context, l10n, isArabic, themeService),
+                            ),
+                            const SizedBox(height: 16),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: _buildAutoDetectButton(lang, themeService),
+                            ),
+                            const SizedBox(height: 16),
+                            Expanded(child: _buildCountryList(context, l10n, isArabic, themeService)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildHeader(BuildContext context, AppLocalizations l10n, bool isArabic) {
+  Widget _buildHeader(BuildContext context, AppLocalizations l10n, bool isArabic, ThemeService themeService) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
       child: Column(
@@ -217,9 +227,11 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
               Expanded(
                 child: Text(
                   l10n.selectCountry,
-                  style: isArabic 
-                      ? GoogleFonts.amiri(color: Theme.of(context).colorScheme.secondary, fontSize: 32, fontWeight: FontWeight.bold)
-                      : GoogleFonts.arefRuqaa(color: Theme.of(context).colorScheme.secondary, fontSize: 32, fontWeight: FontWeight.bold),
+                  style: themeService.getTextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
                 ),
               ),
             ],
@@ -229,7 +241,7 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
     );
   }
 
-  Widget _buildSearchField(BuildContext context, AppLocalizations l10n, bool isArabic) {
+  Widget _buildSearchField(BuildContext context, AppLocalizations l10n, bool isArabic, ThemeService themeService) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = AppTheme.getOnBackgroundColor(context);
 
@@ -239,10 +251,13 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: TextField(
           controller: _searchController,
-          style: TextStyle(color: textColor),
+          style: themeService.getTextStyle(fontSize: 16, color: textColor),
           decoration: InputDecoration(
             hintText: l10n.searchCountries,
-            hintStyle: TextStyle(color: textColor.withValues(alpha: 0.6)),
+            hintStyle: themeService.getTextStyle(
+              fontSize: 16,
+              color: textColor.withValues(alpha: 0.6),
+            ),
             prefixIcon: Icon(Icons.search, color: Theme.of(context).colorScheme.secondary),
             filled: true,
             fillColor: isDark
@@ -267,13 +282,10 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
     );
   }
 
-  Widget _buildAutoDetectButton(String lang) {
+  Widget _buildAutoDetectButton(String lang, ThemeService themeService) {
     String btnText = 'Auto-Detect Location';
     if (lang == 'ar') btnText = 'تحديد موقعي تلقائياً';
     if (lang == 'fr') btnText = 'Détecter ma position';
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = AppTheme.getOnBackgroundColor(context);
 
     return GestureDetector(
       onTap: _isDetecting ? null : () => _detectLocation(lang),
@@ -301,10 +313,10 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
               _isDetecting 
                   ? (lang == 'ar' ? 'جاري التحديد...' : (lang == 'fr' ? 'Détection...' : 'Detecting...'))
                   : btnText,
-              style: GoogleFonts.elMessiri(
-                color: Theme.of(context).colorScheme.secondary,
+              style: themeService.getTextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.secondary,
               ),
             ),
           ],
@@ -313,14 +325,14 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
     );
   }
 
-  Widget _buildCountryList(BuildContext context, AppLocalizations l10n, bool isArabic) {
+  Widget _buildCountryList(BuildContext context, AppLocalizations l10n, bool isArabic, ThemeService themeService) {
     if (_filtered.isEmpty) {
       return Center(
         child: Text(
           l10n.noCountriesFound,
-          style: GoogleFonts.elMessiri(
-            color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.7),
+          style: themeService.getTextStyle(
             fontSize: 18,
+            color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.7),
           ),
         ),
       );
@@ -334,8 +346,16 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen>
           duration: Duration(milliseconds: 250 + (index * 18).clamp(0, 400)),
           tween: Tween(begin: 0, end: 1),
           curve: Curves.easeOutCubic,
-          builder: (context, value, child) => Opacity(opacity: value, child: Transform.translate(offset: Offset((1 - value) * 24, 0), child: child)),
-          child: _CountryTile(country: country, isArabic: isArabic, onTap: () => _onCountryTap(country)),
+          builder: (context, value, child) => Opacity(
+            opacity: value, 
+            child: Transform.translate(offset: Offset((1 - value) * 24, 0), child: child),
+          ),
+          child: _CountryTile(
+            country: country, 
+            isArabic: isArabic, 
+            onTap: () => _onCountryTap(country),
+            themeService: themeService,
+          ),
         );
       },
     );
@@ -346,8 +366,14 @@ class _CountryTile extends StatefulWidget {
   final CountryData country;
   final bool isArabic;
   final VoidCallback onTap;
+  final ThemeService themeService;
   
-  const _CountryTile({required this.country, required this.isArabic, required this.onTap});
+  const _CountryTile({
+    required this.country, 
+    required this.isArabic, 
+    required this.onTap,
+    required this.themeService,
+  });
 
   @override
   State<_CountryTile> createState() => _CountryTileState();
@@ -401,14 +427,19 @@ class _CountryTileState extends State<_CountryTile> {
                       Expanded(
                         child: Text(
                           GeoTranslations.translate(context, widget.country.name),
-                          style: GoogleFonts.elMessiri(
+                          style: widget.themeService.getTextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
-                            color: isActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.secondary,
+                            color: Theme.of(context).colorScheme.secondary,
                           ),
                         ),
                       ),
-                      Icon(Icons.chevron_right_rounded, color: isActive ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
+                      Icon(
+                        Icons.chevron_right_rounded, 
+                        color: isActive 
+                            ? Theme.of(context).colorScheme.secondary 
+                            : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                      ),
                     ],
                   ),
                 ),

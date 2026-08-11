@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as Math;
+import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
 import 'package:flutter_qiblah/flutter_qiblah.dart';
+import '../services/theme_service.dart';
 
 class QiblahFinderScreen extends StatefulWidget {
   const QiblahFinderScreen({super.key});
@@ -19,39 +21,69 @@ class _QiblahFinderScreenState extends State<QiblahFinderScreen> {
     final l10n = AppLocalizations.of(context);
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(isArabic ? 'اتجاه القبلة' : 'Qiblah Compass'),
-        centerTitle: true,
-      ),
-      body: FutureBuilder(
-        future: _deviceSupport,
-        builder: (_, AsyncSnapshot<bool?> snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error.toString()}"));
-          }
-          if (snapshot.data == true) {
-            return QiblahCompassWidget(isArabic: isArabic);
-          } else {
-            return const Center(
-              child: Text(
-                "Your device does not support the compass sensor.",
-                textAlign: TextAlign.center,
+    return Consumer<ThemeService>(
+      builder: (context, themeService, _) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              isArabic ? 'اتجاه القبلة' : 'Qiblah Compass',
+              style: themeService.getTextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.secondary,
               ),
-            );
-          }
-        },
-      ),
+            ),
+            centerTitle: true,
+            backgroundColor: Colors.transparent,
+            foregroundColor: Theme.of(context).colorScheme.secondary,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          body: FutureBuilder(
+            future: _deviceSupport,
+            builder: (_, AsyncSnapshot<bool?> snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)));
+              }
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text(
+                    "Error: ${snapshot.error.toString()}",
+                    style: themeService.getTextStyle(fontSize: 16, color: Colors.red),
+                  ),
+                );
+              }
+              if (snapshot.data == true) {
+                return QiblahCompassWidget(isArabic: isArabic, themeService: themeService);
+              } else {
+                return Center(
+                  child: Text(
+                    "Your device does not support the compass sensor.",
+                    textAlign: TextAlign.center,
+                    style: themeService.getTextStyle(fontSize: 16, color: Colors.white70),
+                  ),
+                );
+              }
+            },
+          ),
+        );
+      },
     );
   }
 }
 
 class QiblahCompassWidget extends StatelessWidget {
   final bool isArabic;
-  const QiblahCompassWidget({super.key, required this.isArabic});
+  final ThemeService themeService;
+  
+  const QiblahCompassWidget({
+    super.key, 
+    required this.isArabic, 
+    required this.themeService,
+  });
 
   // Custom widget to draw the Kaaba
   Widget _buildKaaba() {
@@ -94,7 +126,12 @@ class QiblahCompassWidget extends StatelessWidget {
 
         final qiblahDirection = snapshot.data;
         if (qiblahDirection == null) {
-          return const Center(child: Text("Waiting for compass data..."));
+          return Center(
+            child: Text(
+              "Waiting for compass data...",
+              style: themeService.getTextStyle(fontSize: 16, color: Colors.white70),
+            ),
+          );
         }
 
         // CORRECT MATH - Only rotate the compass to keep North up
@@ -174,10 +211,10 @@ class QiblahCompassWidget extends StatelessWidget {
                   ),
                   child: Text(
                     'Qiblah: ${qiblahDirection.qiblah.toStringAsFixed(1)}° | Direction: ${qiblahDirection.direction.toStringAsFixed(1)}°',
-                    style: const TextStyle(
-                      color: Color(0xFFD4AF37),
+                    style: themeService.getTextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
+                      color: const Color(0xFFD4AF37),
                     ),
                   ),
                 ),

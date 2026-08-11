@@ -12,6 +12,7 @@ abstract class AppLocalizations {
         EnUS();
   }
 
+  // Basic app strings
   String get appTitle;
   String get selectCountry;
   String get selectRegion;
@@ -53,15 +54,17 @@ abstract class AppLocalizations {
   String get stop;
   String get errorLoadingPrayerTimes;
   String get retry;
+  String get notifications;
+  String get enableNotifications;
   
-  // The 5 prayer getters
+  // The 5 prayers
   String get fajr;
   String get dhuhr;
   String get asr;
   String get maghrib;
   String get isha;
 
-  // === NEW ADDITIONS TO FIX OVERRIDE WARNINGS ===
+  // Screen titles and descriptions
   String get azkarTitle;
   String get quranTitle;
   String get titleAr;
@@ -71,13 +74,31 @@ abstract class AppLocalizations {
   String get duaaTitle;
   String get duaaDesc;
 
-  // === ADD THESE 4 NEW GETTERS FOR YOUR NEW SCREENS ===
+  // Good Deeds & Islamic Goals
   String get goodDeedsTitle;
   String get goodDeedsDesc;
   String get islamicGoalsTitle;
   String get islamicGoalsDesc;
 
-  // === SCREENS TRANSLATIONS ===
+  // Quick access cards
+  String get qiblaTitle;
+  String get qiblaDesc;
+  String get goalsTitle;
+  String get goalsDesc;
+  String get quizTitle;
+  String get quizDesc;
+  String get prophetBioTitle;
+  String get prophetBioDesc;
+  String get hadithsTitle;
+  String get hadithsDesc;
+
+  // Feature screens
+  String get qiblahFinderTitle;
+  String get qiblahFinderDesc;
+  String get nearestMosqueTitle;
+  String get nearestMosqueDesc;
+
+  // Good Deeds screen
   String get cancelBtn;
   String get recordDeedTitle;
   String get deedTitleLabel;
@@ -98,6 +119,7 @@ abstract class AppLocalizations {
   String get catFamily;
   String get catOther;
   
+  // Islamic Goals screen
   String get addGoalTitle;
   String get goalTypeLabel;
   String get goalTypeQuran;
@@ -120,34 +142,33 @@ abstract class AppLocalizations {
   String get progressLabel;
   String get updateBtn;
 
-  String get qiblahFinderTitle;
-  String get qiblahFinderDesc;
+  // Authentication
+  String get login;
+  String get signup;
+  String get email;
+  String get username;
+  String get emailOrUsername;
+  String get password;
+  String get confirmPassword;
+  String get selectBirthday;
+  String get genderMale;
+  String get genderFemale;
+  String get fillAllFields;
+  String get loginFailed;
+  String get signupFailed;
 
-  String get nearestMosqueTitle;
-  String get nearestMosqueDesc;
-
-  // === QUICK ACCESS NAMES (for home screen cards) ===
-  String get qiblaTitle;
-  String get qiblaDesc;
-  String get goalsTitle;
-  String get goalsDesc;
-  String get quizTitle;
-  String get quizDesc;
-  String get prophetBioTitle;
-  String get prophetBioDesc;
-
-  // === BOOKMARK TRANSLATIONS ===
+  // Bookmarks
   String get bookmarkPage;
   String get goToBookmark;
   String get pageBookmarked;
 
-  // === RAMADAN TRANSLATIONS ===
+  // Ramadan
   String get ramadan;
   String get ramadanActiveDesc;
   String get ramadanInactiveDesc;
   String get ramadanNotAvailable;
 
-  // === HIJRI CALENDAR ===
+  // Hijri Calendar
   String get hijriCalendarTitle;
 }
 

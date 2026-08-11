@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:islamy_app/data/quran_data.dart';
-import 'package:islamy_app/data/quran_page_mapping.dart'; 
+import 'package:islamy_app/data/quran_page_mapping.dart';
 import '../data/tafseer_data.dart';
 import '../app_theme.dart';
 import '../l10n/app_localizations.dart';
@@ -28,7 +28,7 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
   late int _currentPage;
   late PageController _pageController;
   int? _bookmarkedPage;
-  
+
   List<dynamic> _pageCoordinates = [];
 
   @override
@@ -40,24 +40,28 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
     _loadPageCoordinates(_currentPage);
   }
 
-  // ==========================================
-  // 🔥 FIX: Added success and error print statements
-  // ==========================================
   Future<void> _loadPageCoordinates(int pageNumber) async {
     try {
-      final String path = 'assets/json/${pageNumber.toString().padLeft(3, '0')}.json'; 
+      final String paddedPage = pageNumber.toString().padLeft(3, '0');
+      final String path = 'assets/json/$paddedPage.json';
+
       final String jsonString = await rootBundle.loadString(path);
-      final List<dynamic> coords = jsonDecode(jsonString);
-      debugPrint("✅ Loaded coordinates for page $pageNumber (${coords.length} verses)");
+      final dynamic decodedData = jsonDecode(jsonString);
+
+      List<dynamic> ayahs = [];
+      if (decodedData is List) {
+        ayahs = decodedData;
+      } else if (decodedData is Map && decodedData.containsKey('ayahs')) {
+        ayahs = decodedData['ayahs'];
+      }
+
       if (mounted) {
         setState(() {
-          _pageCoordinates = coords;
+          _pageCoordinates = ayahs;
         });
       }
     } catch (e) {
-      // 🔥 This will print a RED error in Chrome console if the file is missing!
-      debugPrint("❌ ERROR: Could not load coordinates for page $pageNumber. Missing 003.json?");
-      debugPrint("❌ $e");
+      debugPrint("ERROR loading page $pageNumber: $e");
       if (mounted) {
         setState(() {
           _pageCoordinates = [];
@@ -118,329 +122,159 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
   void _nextPage() => _goToPage(QuranPageMetadata.getNextPage(_currentPage));
   void _previousPage() => _goToPage(QuranPageMetadata.getPreviousPage(_currentPage));
 
-    // ==========================================================
-  // 🎯 FIXED TAP LOGIC: Widened tap detection with 5% upward margin
   // ==========================================================
-    // ==========================================================
-  // 🎯 FINAL FIX: 5% X/Y Margin & Page 3 Debugging
+  // TAP TO SELECT VERSE
   // ==========================================================
-  void _handleTap(TapUpDetails details) {
+  void _handleTap(TapUpDetails details, BoxConstraints constraints) {
     if (_pageCoordinates.isEmpty) return;
 
-    final RenderBox box = context.findRenderObject() as RenderBox;
-    final Offset localPosition = box.globalToLocal(details.globalPosition);
+    // Check if polygon data even exists
+    if (_pageCoordinates.isNotEmpty && _pageCoordinates[0]['polygon'] == null) {
+      debugPrint("❌ JSON file lacks 'polygon' coordinate data.");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tap-to-select requires polygon coordinates in JSON files.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return; // Prevent false selections
+    }
 
-    final double cw = box.size.width;
-    final double ch = box.size.height;
+    final double cw = constraints.maxWidth;
+    final double ch = constraints.maxHeight;
     const double imW = 1000.0;
     const double imH = 1500.0;
 
-    double actualW, actualH, offsetX, offsetY;
+    double actualW, actualH;
     if (cw / ch > imW / imH) {
       actualH = ch;
       actualW = ch * (imW / imH);
-      offsetX = (cw - actualW) / 2;
-      offsetY = 0.0;
     } else {
       actualW = cw;
       actualH = cw * (imH / imW);
-      offsetX = 0.0;
-      offsetY = (ch - actualH) / 2;
     }
 
-    final double tapX = ((localPosition.dx - offsetX) / actualW) * 100;
-    final double tapY = ((localPosition.dy - offsetY) / actualH) * 100;
+    final double imgX = (details.localPosition.dx - (cw - actualW) / 2) / actualW * 100.0;
+    final double imgY = (details.localPosition.dy - (ch - actualH) / 2) / actualH * 100.0;
 
-    for (int i = 0; i < _pageCoordinates.length; i++) {
-      var coord = _pageCoordinates[i];
-      final polygon = coord["polygon"];
-      if (polygon == null) continue;
+    // Ignore taps outside the image
+    if (imgX < 0 || imgX > 100 || imgY < 0 || imgY > 100) return;
 
-      final pts = polygon
+    Map<String, dynamic>? selectedVerse = _getVerseFromCoordinates(imgX, imgY);
+
+    if (selectedVerse != null) {
+      setState(() {
+        _highlightedVerse = selectedVerse;
+      });
+
+      final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => _VerseTafseerSheet(
+          verse: selectedVerse,
+          isArabic: isArabic,
+        ),
+      );
+    }
+  }
+
+  Map<String, dynamic>? _getVerseFromCoordinates(double x, double y) {
+    for (var ayah in _pageCoordinates) {
+      final String? polyStr = ayah['polygon'];
+      if (polyStr == null) continue;
+
+      final List<Offset> points = polyStr
           .toString()
           .trim()
           .split(" ")
           .map((e) => e.split(","))
           .where((e) => e.length == 2)
           .map((e) => Offset(
-                double.parse(e[0]) / 2.30,
-                double.parse(e[1]) / 3.30,
+                double.parse(e[0]),
+                double.parse(e[1]),
               ))
           .toList();
 
-      if (pts.isEmpty) continue;
+      if (points.isEmpty) continue;
 
-      // Calculate bounding box
-      double xMin = 100, xMax = 0, yMin = 100, yMax = 0;
-      for (var p in pts) {
-        if (p.dx < xMin) xMin = p.dx;
-        if (p.dx > xMax) xMax = p.dx;
-        if (p.dy < yMin) yMin = p.dy;
-        if (p.dy > yMax) yMax = p.dy;
+      // Point-in-polygon check (Ray Casting Algorithm)
+      bool inside = false;
+      int j = points.length - 1;
+      for (int i = 0; i < points.length; i++) {
+        final xi = points[i].dx, yi = points[i].dy;
+        final xj = points[j].dx, yj = points[j].dy;
+
+        final bool intersect = ((yi > y) != (yj > y)) &&
+            (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+        j = i;
       }
 
-      // 🟢 GRACE MARGIN: Add 5% to both X and Y so misaligned scans don't break it!
-      if (tapX >= (xMin - 5) && tapX <= (xMax + 5) && tapY >= (yMin - 5) && tapY <= (yMax + 5)) {
-        debugPrint("✅ MATCH FOUND at verse index $i!");
-        
-        setState(() {
-          _highlightedVerse = {
-            ...coord,
-            "page": _currentPage,
-          };
-        });
+      if (inside) {
+        final surahId = ayah['sura'] ?? 0;
+        final ayahNum = ayah['ayah'] ?? 0;
 
-        // 🔥 AUTO-DETECT SURAH/AYAH if JSON has 0 values (incomplete data)
-        int surahId = coord['surahNumber'] ?? 0;
-        int ayahNumber = coord['ayahNumber'] ?? 0;
-
-        if (surahId == 0 || ayahNumber == 0) {
-          debugPrint("⚠️  Found invalid surah/ayah (0,0), auto-detecting from page...");
-          final auto = _autoDetectVerseFromPage(_currentPage, i);
-          surahId = auto['surah'] ?? surahId;
-          ayahNumber = auto['ayah'] ?? ayahNumber;
-          debugPrint("✅ Auto-detected: Surah $surahId, Ayah $ayahNumber");
+        final verseObject = _buildVerseObject(surahId, ayahNum, _currentPage);
+        if (verseObject != null) {
+          verseObject['polygon'] = polyStr; // Add back for painter
         }
-
-        final Map<String, dynamic> verseData = {
-          'verseNumber': ayahNumber,
-          'surahId': surahId,
-          'verseAr': _getVerseText(surahId, ayahNumber),
-          'surahNameAr': _getSurahName(surahId),
-        };
-        
-        _showActionMenu(context, verseData);
-        return;
+        return verseObject;
       }
     }
+    return null;
   }
 
-  String _getVerseText(int surahId, int verseNumber) {
-    if (surahId <= 0 || verseNumber <= 0) {
-      debugPrint("⚠️  Invalid verse lookup: Surah=$surahId, Verse=$verseNumber");
-      return 'عذراً، النص غير متاح حالياً';
-    }
+  Map<String, dynamic>? _buildVerseObject(int surahId, int ayahNumber, int pageNum) {
+    if (surahId < 1 || surahId > 114) return null;
 
     for (var juz in QuranData.parts) {
       for (var surah in juz.surahs) {
         if (surah.id == surahId) {
-          int index = verseNumber - surah.startingVerseNumber;
-          if (index >= 0 && index < surah.versesAr.length) {
-            return surah.versesAr[index];
+          if (ayahNumber >= 1 && ayahNumber <= surah.versesAr.length) {
+            return {
+              'surahId': surahId,
+              'verseNumber': ayahNumber,
+              'verseAr': surah.versesAr[ayahNumber - 1],
+              'verseEn': surah.versesEn[ayahNumber - 1],
+              'surahNameAr': surah.nameAr,
+              'surahNameEn': surah.nameEn,
+              'page': pageNum,
+            };
           }
-          // Fallback: return any verse from this Surah if calculation was off
-          if (surah.versesAr.isNotEmpty) {
-            debugPrint("⚠️  Verse index out of range (calc: $index), returning first verse as fallback");
-            return surah.versesAr[0];
-          }
+          return null;
         }
       }
     }
-    
-    debugPrint("❌ Surah $surahId not found in Quran data");
-    return 'عذراً، السورة غير متاحة';
-  }
-
-  String _getSurahName(int surahId) {
-    if (surahId <= 0) {
-      // Try to determine Surah from current page
-      for (var entry in SURAH_PAGE_MAP.entries) {
-        final surahData = entry.value;
-        final startPage = surahData['startPage'] as int;
-        final endPage = surahData['endPage'] as int;
-        if (_currentPage >= startPage && _currentPage <= endPage) {
-          return surahData['nameAr'] as String? ?? 'سورة';
-        }
-      }
-      return 'سورة';
-    }
-
-    for (var juz in QuranData.parts) {
-      for (var surah in juz.surahs) {
-        if (surah.id == surahId) return surah.nameAr;
-      }
-    }
-    return 'سورة غير معروفة';
-  }
-
-  // 🔥 AUTO-DETECT VERSE when JSON has 0 values
-  // Looks up Surah from page, then calculates Ayah from position
-  Map<String, int> _autoDetectVerseFromPage(int pageNumber, int verseIndexOnPage) {
-    // Find which Surah this page belongs to
-    for (var entry in SURAH_PAGE_MAP.entries) {
-      final surahId = entry.key;
-      final surahData = entry.value;
-      final startPage = surahData['startPage'] as int;
-      final endPage = surahData['endPage'] as int;
-
-      if (pageNumber >= startPage && pageNumber <= endPage) {
-        // Found the Surah! Now calculate which Ayah
-        // Get the starting verse of this Surah
-        int startingVerseNumber = surahData['startingVerse'] as int? ?? 1;
-        
-        // Calculate offset from start of Surah
-        int versesBeforePage = 0;
-        
-        // Count verses on all previous pages of this Surah
-        for (int p = startPage; p < pageNumber; p++) {
-          // Try to load and count verses from that page
-          final versesOnPage = _countVersesOnPage(p);
-          versesBeforePage += versesOnPage;
-        }
-        
-        // The verse number = starting verse + verses before this page + verse index on page
-        int ayahNumber = startingVerseNumber + versesBeforePage + verseIndexOnPage;
-        
-        debugPrint("📍 Auto-detect: Surah=$surahId, Page=$pageNumber, VerseIndex=$verseIndexOnPage → Ayah=$ayahNumber");
-        return {'surah': surahId, 'ayah': ayahNumber};
-      }
-    }
-    
-    return {'surah': 0, 'ayah': 0};
-  }
-
-  // Helper: Count how many verse regions are on a given page
-  int _countVersesOnPage(int pageNumber) {
-    // This is a simplified count - in reality you'd load the JSON for that page
-    // For now, return a default estimate
-    return 5; // Most pages have 5-11 verses, we'll estimate 5
-  }
-
-  void _showActionMenu(BuildContext context, Map<String, dynamic> verse) {
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                verse['verseAr'],
-                textAlign: TextAlign.center,
-                textDirection: TextDirection.rtl,
-                style: GoogleFonts.amiri(fontSize: 18, color: const Color(0xFFD4AF37)),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildActionButton(
-                    icon: Icons.copy_rounded,
-                    label: isArabic ? 'نسخ' : 'Copy',
-                    onTap: () {
-                      Clipboard.setData(ClipboardData(text: verse['verseAr']));
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Copied to clipboard!')),
-                      );
-                    },
-                  ),
-                  _buildActionButton(
-                    icon: Icons.menu_book_rounded,
-                    label: isArabic ? 'تفسير' : 'Tafseer',
-                    onTap: () {
-                      Navigator.pop(context);
-                      _showVerseTafseerSheet(context, verse, isArabic);
-                    },
-                  ),
-                  _buildActionButton(
-                    icon: Icons.share_rounded,
-                    label: isArabic ? 'مشاركة' : 'Share',
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _showVerseTafseerSheet(BuildContext context, Map<String, dynamic> verse, bool isArabic) {
-    return showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _VerseTafseerSheet(
-        verse: verse, 
-        isArabic: isArabic
-      ),
-    );
-  }
-
-  Widget _buildActionButton({required IconData icon, required String label, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFD4AF37).withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFD4AF37)),
-            ),
-            child: Icon(icon, color: const Color(0xFFD4AF37), size: 28),
-          ),
-          const SizedBox(height: 8),
-          Text(label, style: GoogleFonts.elMessiri(color: Colors.white70, fontSize: 12)),
-        ],
-      ),
-    );
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          isArabic ? 'المصحف الشريف' : 'Holy Quran Mushaf',
+          isArabic ? 'المصحف الشريف' : 'The Holy Quran',
           style: GoogleFonts.amiri(
-            fontSize: 24,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.secondary,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(
-              _bookmarkedPage == _currentPage ? Icons.bookmark : Icons.bookmark_add_outlined,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+            icon: const Icon(Icons.bookmark),
+            color: _bookmarkedPage == _currentPage
+                ? Theme.of(context).colorScheme.secondary
+                : null,
             onPressed: _toggleBookmark,
+            tooltip: isArabic ? 'حفظ الصفحة' : 'Bookmark page',
           ),
           IconButton(
-            icon: Icon(Icons.search, color: Theme.of(context).colorScheme.secondary),
-            onPressed: () {
-              showSearch(
-                context: context,
-                delegate: QuranSearchDelegate(
-                  onPageSelected: (pageNumber) {
-                    _goToPage(pageNumber);
-                  },
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.menu_book_rounded, color: Theme.of(context).colorScheme.secondary),
+            icon: const Icon(Icons.menu),
+            tooltip: isArabic ? 'فهرس السور' : 'Surah index',
             onPressed: () {
               showModalBottomSheet(
                 context: context,
@@ -451,13 +285,14 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
             },
           ),
           IconButton(
-            icon: Icon(Icons.format_list_bulleted_rounded, color: Theme.of(context).colorScheme.secondary),
+            icon: const Icon(Icons.search),
+            tooltip: isArabic ? 'البحث' : 'Search',
             onPressed: () {
-              showModalBottomSheet(
+              showSearch(
                 context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (context) => _buildPageVersesSheet(isArabic),
+                delegate: QuranSearchDelegate(
+                  onPageSelected: (page) => _goToPage(page),
+                ),
               );
             },
           ),
@@ -467,25 +302,22 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
         children: [
           _buildPageHeader(context, isArabic),
           Expanded(
-            child: GestureDetector(
-              onTapUp: _handleTap, 
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index + 1;
-                    _pageCoordinates = [];
-                    _highlightedVerse = null;
-                  });
-                  _loadPageCoordinates(index + 1);
-                },
-                itemCount: QuranPageMetadata.totalPages,
-                itemBuilder: (context, index) {
-                  return Center(
-                    child: _buildQuranPage(context, index + 1, isArabic),
-                  );
-                },
-              ),
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentPage = index + 1;
+                  _pageCoordinates = [];
+                  _highlightedVerse = null;
+                });
+                _loadPageCoordinates(index + 1);
+              },
+              itemCount: QuranPageMetadata.totalPages,
+              itemBuilder: (context, index) {
+                return Center(
+                  child: _buildQuranPage(context, index + 1, isArabic),
+                );
+              },
             ),
           ),
           _buildNavigationControls(context, isArabic),
@@ -494,10 +326,7 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
     );
   }
 
-  // ==========================================================
-  // 🔥 DARK THEME LOCATION & SHRUNKEN HIGHLIGHT BOX
-  // ==========================================================
-  Widget _buildQuranPage(BuildContext context, int pageNumber, bool isArabic) {
+      Widget _buildQuranPage(BuildContext context, int pageNumber, bool isArabic) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
@@ -506,56 +335,97 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: InteractiveViewer(
-            minScale: 0.8,
-            maxScale: 3.0,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final double cw = constraints.maxWidth;
-                final double ch = constraints.maxHeight;
-                const double imW = 1000.0;
-                const double imH = 1500.0;
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final double cw = constraints.maxWidth;
+              final double ch = constraints.maxHeight;
+              const double imW = 1000.0;
+              const double imH = 1500.0;
 
-                double actualW, actualH;
-                if (cw / ch > imW / imH) {
-                  actualH = ch;
-                  actualW = ch * (imW / imH);
-                } else {
-                  actualW = cw;
-                  actualH = cw * (imH / imW);
-                }
+              double actualW, actualH;
+              if (cw / ch > imW / imH) {
+                actualH = ch;
+                actualW = ch * (imW / imH);
+              } else {
+                actualW = cw;
+                actualH = cw * (imH / imW);
+              }
 
-                return Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // 1. The Image
-                    Builder(
-                      builder: (context) {
-                        Widget quranImage = Image.asset(
-                          'assets/quran_pages/$pageNumber.png',
-                          width: actualW,
-                          height: actualH,
-                          fit: BoxFit.fill, // Perfectly calculated
-                        );
-                        // 👇 HERE IS THE DARK THEME TOGGLE. Change values to customize!
-                        if (isDarkMode) {
-                          return ColorFiltered(
-                            colorFilter: const ColorFilter.matrix([
-                              -1, 0, 0, 0, 255,
-                              0, -1, 0, 0, 255,
-                              0, 0, -1, 0, 255,
-                              0, 0, 0, 1, 0,
-                            ]),
-                            child: quranImage,
-                          );
-                        }
-                        return quranImage;
-                      },
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  // ✅ 1. The container that holds the tap and zoom
+                  Center(
+                    child: SizedBox(
+                      width: actualW,
+                      height: actualH,
+                      child: GestureDetector(
+                        onTapUp: (details) {
+                          _handleTap(details, constraints);
+                        },
+                        child: InteractiveViewer(
+                          minScale: 0.8,
+                          maxScale: 3.0,
+                          constrained: false,
+                          child: Builder(
+                            builder: (context) {
+                              final String paddedPage = pageNumber.toString().padLeft(3, '0');
+                              Widget quranImage = Image.asset(
+                                'assets/quran_pages/$paddedPage.png',
+                                width: actualW,
+                                height: actualH,
+                                fit: BoxFit.fill,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: actualW,
+                                    height: actualH,
+                                    color: Theme.of(context).scaffoldBackgroundColor,
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.image_not_supported,
+                                          size: 64,
+                                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'Page $pageNumber not found',
+                                          style: GoogleFonts.elMessiri(
+                                            fontSize: 16,
+                                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                              if (isDarkMode) {
+                                return ColorFiltered(
+                                  colorFilter: const ColorFilter.matrix([
+                                    -1, 0, 0, 0, 255,
+                                    0, -1, 0, 0, 255,
+                                    0, 0, -1, 0, 255,
+                                    0, 0, 0, 1, 0,
+                                  ]),
+                                  child: quranImage,
+                                );
+                              }
+                              return quranImage;
+                            },
+                          ),
+                        ),
+                      ),
                     ),
+                  ),
 
-                    // 2. The Highlight Box (with shrink applied)
-                    if (_highlightedVerse != null && _highlightedVerse!['page'] == pageNumber)
-                      Container(
+                  // ✅ 2. Highlight Box (Now matches the exact sized image)
+                  if (_highlightedVerse != null && 
+                      _highlightedVerse!['page'] == pageNumber &&
+                      _highlightedVerse!.containsKey('polygon'))
+                    Center(
+                      child: SizedBox(
                         width: actualW,
                         height: actualH,
                         child: CustomPaint(
@@ -566,10 +436,10 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
                           ),
                         ),
                       ),
-                  ],
-                );
-              },
-            ),
+                    ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -659,9 +529,7 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
             Column(
               children: [
                 Text(
-                  isArabic 
-                    ? 'سورة ${surahData['nameAr']}' 
-                    : 'Surah ${surahData['nameEn']}',
+                  isArabic ? 'سورة ${surahData['nameAr']}' : 'Surah ${surahData['nameEn']}',
                   style: GoogleFonts.amiri(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -671,9 +539,7 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  isArabic
-                    ? surahData['type'] == 'Meccan' ? 'مكية' : 'مدنية'
-                    : surahData['type'],
+                  isArabic ? (surahData['type'] == 'Meccan' ? 'مكية' : 'مدنية') : surahData['type'],
                   style: GoogleFonts.elMessiri(
                     fontSize: 12,
                     color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.6),
@@ -702,136 +568,27 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
     );
   }
 
-  Widget _buildPageVersesSheet(bool isArabic) {
-    final verses = QuranPageMetadata.getVersesForPage(_currentPage);
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.75,
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        children: [
-          Center(
-            child: Container(
-              width: 50,
-              height: 5,
-              margin: const EdgeInsets.only(top: 12, bottom: 12),
-              decoration: BoxDecoration(
-                color: isDarkMode ? Colors.white38 : Colors.black26,
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
-              isArabic ? 'آيات هذه الصفحة' : 'Verses on this page',
-              style: GoogleFonts.amiri(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: verses.isEmpty
-                ? Center(
-                    child: Text(
-                      isArabic ? 'تعذر تحميل آيات هذه الصفحة' : 'Could not load verses for this page',
-                      style: GoogleFonts.elMessiri(color: isDarkMode ? Colors.white54 : Colors.black54),
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                    itemCount: verses.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final verse = verses[index];
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.25),
-                          ),
-                        ),
-                        child: ListTile(
-                          tileColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.04),
-                          onTap: () {
-                            Navigator.pop(context);
-                            _showActionMenu(context, verse);
-                          },
-                          leading: CircleAvatar(
-                            backgroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15),
-                            child: Text(
-                              '${verse['verseNumber']}',
-                              style: GoogleFonts.amiri(
-                                color: Theme.of(context).colorScheme.secondary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          title: Text(
-                            verse['verseAr'],
-                            textDirection: TextDirection.rtl,
-                            textAlign: TextAlign.right,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.amiri(
-                              fontSize: 17,
-                              color: isDarkMode ? Colors.white : Colors.black87,
-                            ),
-                          ),
-                          subtitle: Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
-                            child: Text(
-                              isArabic ? 'سورة ${verse['surahNameAr']}' : 'Surah ${verse['surahNameEn']}',
-                              style: GoogleFonts.elMessiri(
-                                fontSize: 12,
-                                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8),
-                              ),
-                            ),
-                          ),
-                          trailing: IconButton(
-                            icon: Icon(Icons.copy_rounded, size: 20, color: Theme.of(context).colorScheme.secondary),
-                            tooltip: isArabic ? 'نسخ الآية' : 'Copy verse',
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _copyVerseText(context, verse, isArabic);
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildNavigationControls(BuildContext context, bool isArabic) {
     final lang = Localizations.localeOf(context).languageCode;
-    String previousText = 'Previous';
-    String nextText = 'Next';
     String goMarkText = 'Go to Mark';
-    
+    String prevText = 'Previous';
+    String nextText = 'Next';
+
     if (lang == 'ar') {
-      previousText = 'السابق';
-      nextText = 'التالي';
       goMarkText = 'الانتقال للعلامة';
+      prevText = 'السابقة';
+      nextText = 'التالية';
     } else if (lang == 'fr') {
-      previousText = 'Précédent';
-      nextText = 'Suivant';
       goMarkText = 'Aller à la marque';
+      prevText = 'Précédent';
+      nextText = 'Suivant';
     }
 
+    final canPrevious = _currentPage > 1;
+    final canNext = _currentPage < QuranPageMetadata.totalPages;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor.withValues(alpha: 0.5),
         border: Border(
@@ -840,48 +597,60 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
           ),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          ElevatedButton.icon(
-            onPressed: _previousPage,
-            icon: const Icon(Icons.arrow_back_rounded),
-            label: Text(previousText),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
-              foregroundColor: Theme.of(context).colorScheme.secondary,
-            ),
-          ),
-
-          if (_bookmarkedPage != null)
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            // Previous Button
             ElevatedButton.icon(
-              onPressed: () => _goToPage(_bookmarkedPage!),
-              icon: const Icon(Icons.bookmark, size: 18),
-              label: Text(goMarkText),
+              onPressed: canPrevious ? _previousPage : null,
+              icon: const Icon(Icons.arrow_back, size: 16),
+              label: Text(prevText, style: const TextStyle(fontSize: 12)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.secondary,
+                backgroundColor: canPrevious
+                    ? Theme.of(context).colorScheme.secondary
+                    : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                 foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                disabledBackgroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                disabledForegroundColor: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               ),
             ),
 
-          ElevatedButton(
-            onPressed: _nextPage,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
-              foregroundColor: Theme.of(context).colorScheme.secondary,
+            // Bookmark Button (if exists)
+            if (_bookmarkedPage != null)
+              ElevatedButton.icon(
+                onPressed: () => _goToPage(_bookmarkedPage!),
+                icon: const Icon(Icons.bookmark, size: 16),
+                label: Text(goMarkText, style: const TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                ),
+              ),
+
+            // Next Button
+            ElevatedButton.icon(
+              onPressed: canNext ? _nextPage : null,
+              icon: const Icon(Icons.arrow_forward, size: 16),
+              label: Text(nextText, style: const TextStyle(fontSize: 12)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: canNext
+                    ? Theme.of(context).colorScheme.secondary
+                    : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                disabledBackgroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                disabledForegroundColor: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(nextText),
-                const SizedBox(width: 8),
-                const Icon(Icons.arrow_forward_rounded),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -901,7 +670,10 @@ class _VerseTafseerSheet extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: isDarkMode ? const Color(0xFF0B3D2E) : Colors.white, borderRadius: const BorderRadius.vertical(top: Radius.circular(24))),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF0B3D2E) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.75),
       child: Column(children: [
         Center(child: Container(width: 50, height: 5, margin: const EdgeInsets.only(bottom: 20), decoration: BoxDecoration(color: isDarkMode ? Colors.white38 : Colors.black26, borderRadius: BorderRadius.circular(10)))),
@@ -997,7 +769,7 @@ Widget buildWholeBookSection(BuildContext context, AppLocalizations l10n) {
 }
 
 // ==========================================================
-// 🔥 SHRUNKEN HIGHLIGHT PAINTER (Fixes the border problem)
+// HIGHLIGHT PAINTER (Ready for when you get coordinate data)
 // ==========================================================
 class VerseHighlightPainter extends CustomPainter {
   final Map<String, dynamic>? selectedVerse;
@@ -1027,15 +799,15 @@ class VerseHighlightPainter extends CustomPainter {
         .map((e) => e.split(","))
         .where((e) => e.length == 2)
         .map((e) => Offset(
-              double.parse(e[0]) / 2.30 * imageWidth / 100.0,
-              double.parse(e[1]) / 3.30 * imageHeight / 100.0,
+              double.parse(e[0]) * imageWidth / 100.0,
+              double.parse(e[1]) * imageHeight / 100.0,
             ))
         .toList();
 
     if (points.isEmpty) return;
-    
-    // 🔥 SHRINK THE POLYGON BY 5% SO IT DOESN'T TOUCH THE DECORATIVE BORDERS
-    final double scaleFactor = 0.95;
+
+    // SHRINK BY 5% so it's inside the box
+    const double scaleFactor = 0.95;
     final Offset center = Offset(imageWidth / 2, imageHeight / 2);
     final List<Offset> scaledPoints = points.map((p) {
       final double dx = (p.dx - center.dx) * scaleFactor + center.dx;

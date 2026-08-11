@@ -33,6 +33,7 @@ dependencies:
   audio_session: ^0.1.14
   share_plus: ^13.2.0
   equatable: ^2.1.0
+  firebase_auth: ^6.5.7
 
 dev_dependencies:
   flutter_test:

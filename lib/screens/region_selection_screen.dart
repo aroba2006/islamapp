@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../data/countries_data.dart';
 import '../models/country_data.dart';
 import '../widgets/islamic_pattern_background.dart';
+import '../services/theme_service.dart';
 import 'prayer_times_screen.dart';
 import '../data/geo_translations.dart';
 
@@ -78,38 +79,42 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
 
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    return Scaffold(
-      body: IslamicPatternBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              FadeTransition(
-                opacity: _headerController,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, -0.15),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                      parent: _headerController, curve: Curves.easeOutCubic)),
-                  child: _buildHeader(context, isArabic),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1000),
-                    child: _buildRegionGrid(context),
+    return Consumer<ThemeService>(
+      builder: (context, themeService, _) {
+        return Scaffold(
+          body: IslamicPatternBackground(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  FadeTransition(
+                    opacity: _headerController,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, -0.15),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(
+                          parent: _headerController, curve: Curves.easeOutCubic)),
+                      child: _buildHeader(context, isArabic, themeService),
+                    ),
                   ),
-                ),
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1000),
+                        child: _buildRegionGrid(context, themeService),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isArabic) {
+  Widget _buildHeader(BuildContext context, bool isArabic, ThemeService themeService) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
       child: Row(
@@ -122,9 +127,11 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
           Expanded(
             child: Text(
               GeoTranslations.translate(context, widget.country.name),
-              style: isArabic 
-                  ? GoogleFonts.amiri(color: Theme.of(context).colorScheme.secondary, fontSize: 32, fontWeight: FontWeight.bold)
-                  : GoogleFonts.arefRuqaa(color: Theme.of(context).colorScheme.secondary, fontSize: 32, fontWeight: FontWeight.bold),
+              style: themeService.getTextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
             ),
           ),
         ],
@@ -132,7 +139,7 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
     );
   }
 
-  Widget _buildRegionGrid(BuildContext context) {
+  Widget _buildRegionGrid(BuildContext context, ThemeService themeService) {
     final regions = widget.country.regions;
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
@@ -165,6 +172,7 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
                 )),
               );
             },
+            themeService: themeService,
           ),
         );
       },
@@ -176,7 +184,13 @@ class _RegionSelectionScreenState extends State<RegionSelectionScreen>
 class _RegionGlassCard extends StatefulWidget {
   final String label;
   final VoidCallback onTap;
-  const _RegionGlassCard({required this.label, required this.onTap});
+  final ThemeService themeService;
+  
+  const _RegionGlassCard({
+    required this.label, 
+    required this.onTap,
+    required this.themeService,
+  });
 
   @override
   State<_RegionGlassCard> createState() => _RegionGlassCardState();
@@ -229,13 +243,12 @@ class _RegionGlassCardState extends State<_RegionGlassCard> {
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.elMessiri(
-                    // ✅ FIXED: Use proper color based on theme
+                  style: widget.themeService.getTextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
                     color: isActive 
                         ? Theme.of(context).colorScheme.secondary
                         : (isDark ? Theme.of(context).colorScheme.secondary : const Color(0xFF1B5E3F)),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),

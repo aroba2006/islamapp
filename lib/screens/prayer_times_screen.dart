@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:provider/provider.dart';
 import '../models/country_data.dart';
 import '../models/prayer_times.dart';
 import '../services/prayer_times_service.dart';
@@ -12,8 +12,9 @@ import '../widgets/islamic_pattern_background.dart';
 import '../l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/geo_translations.dart';
-import '../app_theme.dart'; // Fixed: Missing import
-import '../utils/adhan_reciter_translations.dart'; // Fixed: Missing import for translations
+import '../app_theme.dart';
+import '../utils/adhan_reciter_translations.dart';
+import '../services/theme_service.dart';
 
 class PrayerTimesScreen extends StatefulWidget {
   final CountryData country;
@@ -194,35 +195,39 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     final l10n = AppLocalizations.of(context);
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    return Scaffold(
-      body: IslamicPatternBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildCustomHeader(context, l10n!, isArabic),
-              Expanded(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 350),
-                      child: _loading
-                          ? _buildLoading(l10n)
-                          : _error != null
-                              ? _buildError(l10n)
-                              : _buildContent(l10n, isArabic),
+    return Consumer<ThemeService>(
+      builder: (context, themeService, _) {
+        return Scaffold(
+          body: IslamicPatternBackground(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  _buildCustomHeader(context, l10n!, isArabic, themeService),
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 800),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 350),
+                          child: _loading
+                              ? _buildLoading(l10n, themeService)
+                              : _error != null
+                                  ? _buildError(l10n, themeService)
+                                  : _buildContent(l10n, isArabic, themeService),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildCustomHeader(BuildContext context, AppLocalizations l10n, bool isArabic) {
+  Widget _buildCustomHeader(BuildContext context, AppLocalizations l10n, bool isArabic, ThemeService themeService) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Row(
@@ -235,9 +240,11 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             child: Text(
               l10n.prayerTimes,
               textAlign: TextAlign.center,
-              style: isArabic 
-                  ? GoogleFonts.amiri(color: Theme.of(context).colorScheme.secondary, fontSize: 32, fontWeight: FontWeight.bold)
-                  : GoogleFonts.arefRuqaa(color: Theme.of(context).colorScheme.secondary, fontSize: 32, fontWeight: FontWeight.bold),
+              style: themeService.getTextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
             ),
           ),
           const SizedBox(width: 48),
@@ -246,7 +253,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     );
   }
 
-  Widget _buildLoading(AppLocalizations l10n) {
+  Widget _buildLoading(AppLocalizations l10n, ThemeService themeService) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -254,13 +261,16 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         const SizedBox(height: 16),
         Text(
           l10n.fetchingPrayerTimes,
-          style: GoogleFonts.elMessiri(color: Theme.of(context).colorScheme.secondary, fontSize: 18),
+          style: themeService.getTextStyle(
+            fontSize: 18,
+            color: Theme.of(context).colorScheme.secondary,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildError(AppLocalizations l10n) {
+  Widget _buildError(AppLocalizations l10n, ThemeService themeService) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -268,7 +278,10 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         const SizedBox(height: 16),
         Text(
           l10n.errorLoadingPrayerTimes,
-          style: GoogleFonts.elMessiri(color: Colors.redAccent, fontSize: 18),
+          style: themeService.getTextStyle(
+            fontSize: 18,
+            color: Colors.redAccent,
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
@@ -285,27 +298,26 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     );
   }
 
-  Widget _buildContent(AppLocalizations l10n, bool isArabic) {
+  Widget _buildContent(AppLocalizations l10n, bool isArabic, ThemeService themeService) {
     if (_times == null) return const SizedBox.shrink();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
       child: Column(
         children: [
-          // Fixed: Uses AppTheme to switch color in light/dark mode
           Text(
             "${GeoTranslations.translate(context, widget.country.name)} - ${GeoTranslations.translate(context, widget.region)}",
-            style: GoogleFonts.elMessiri(
-              color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.9),
+            style: themeService.getTextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
+              color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.9),
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          _buildCountdownCard(l10n, isArabic),
+          _buildCountdownCard(l10n, isArabic, themeService),
           const SizedBox(height: 24),
-          _buildAdhanControlPanel(l10n, isArabic),
+          _buildAdhanControlPanel(l10n, isArabic, themeService),
           const SizedBox(height: 24),
           ..._times!.asOrderedList().asMap().entries.map((e) {
             final index = e.key;
@@ -328,6 +340,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                 isNext: isNext,
                 l10n: l10n,
                 isArabic: isArabic,
+                themeService: themeService,
               ),
             );
           }),
@@ -347,7 +360,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     }
   }
 
-  Widget _buildCountdownCard(AppLocalizations l10n, bool isArabic) {
+  Widget _buildCountdownCard(AppLocalizations l10n, bool isArabic, ThemeService themeService) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ClipRRect(
@@ -357,7 +370,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
-          // Fixed: Theme-aware background
           decoration: BoxDecoration(
             color: isDark 
                 ? const Color(0xFF0B3D2E).withValues(alpha: 0.65)
@@ -369,9 +381,9 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             children: [
               Text(
                 "${l10n.timeUntil} ${_nextPrayerName != null ? _getLocalizedPrayerName(_nextPrayerName!, l10n) : '--'}",
-                style: GoogleFonts.elMessiri(
-                  color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.7), 
-                  fontSize: 18
+                style: themeService.getTextStyle(
+                  fontSize: 18,
+                  color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.7),
                 ),
               ),
               const SizedBox(height: 12),
@@ -391,7 +403,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     );
   }
 
-  Widget _buildAdhanControlPanel(AppLocalizations l10n, bool isArabic) {
+  Widget _buildAdhanControlPanel(AppLocalizations l10n, bool isArabic, ThemeService themeService) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentLang = Localizations.localeOf(context).languageCode;
 
@@ -417,7 +429,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                   const SizedBox(width: 12),
                   Text(
                     l10n.selectAdhanReciter,
-                    style: GoogleFonts.elMessiri(
+                    style: themeService.getTextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.getOnBackgroundColor(context),
@@ -445,12 +457,11 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                       return DropdownMenuItem<String>(
                         value: entry.key,
                         child: Text(
-                          // Fixed: Translating Reciters dynamically
                           AdhanReciterTranslations.getReciterName(entry.key, currentLang), 
-                          style: GoogleFonts.elMessiri(
-                            color: AppTheme.getOnBackgroundColor(context), 
-                            fontSize: 16
-                          )
+                          style: themeService.getTextStyle(
+                            fontSize: 16,
+                            color: AppTheme.getOnBackgroundColor(context),
+                          ),
                         ),
                       );
                     }).toList(),
@@ -501,6 +512,7 @@ class _PrayerRow extends StatefulWidget {
   final bool isNext;
   final AppLocalizations l10n;
   final bool isArabic;
+  final ThemeService themeService;
 
   const _PrayerRow({
     required this.name,
@@ -509,6 +521,7 @@ class _PrayerRow extends StatefulWidget {
     required this.isNext,
     required this.l10n,
     required this.isArabic,
+    required this.themeService,
   });
 
   @override
@@ -521,74 +534,100 @@ class _PrayerRowState extends State<_PrayerRow> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final secondaryColor = Theme.of(context).colorScheme.secondary;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.symmetric(vertical: 8),
+        margin: const EdgeInsets.only(bottom: 12),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               decoration: BoxDecoration(
-                color: widget.isNext 
-                    ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2)
-                    : (_isHovered 
-                        ? (isDark ? const Color(0xFF144D32).withValues(alpha: 0.6) : const Color(0xFFE8F3EE).withValues(alpha: 0.8)) 
-                        : (isDark ? const Color(0xFF0B3D2E).withValues(alpha: 0.5) : const Color(0xFFF0F8F4).withValues(alpha: 0.6))),
+                color: widget.isNext
+                    ? secondaryColor.withValues(alpha: isDark ? 0.25 : 0.2)
+                    : (_isHovered
+                        ? (isDark ? const Color(0xFF144D32).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.9))
+                        : (isDark ? const Color(0xFF0B3D2E).withValues(alpha: 0.45) : Colors.white.withValues(alpha: 0.75))),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: widget.isNext || _isHovered 
-                      ? Theme.of(context).colorScheme.secondary 
-                      : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2),
+                  color: widget.isNext
+                      ? secondaryColor
+                      : (_isHovered ? secondaryColor.withValues(alpha: 0.6) : secondaryColor.withValues(alpha: 0.2)),
                   width: widget.isNext ? 2 : 1,
                 ),
+                boxShadow: widget.isNext
+                    ? [
+                        BoxShadow(
+                          color: secondaryColor.withValues(alpha: 0.2),
+                          blurRadius: 10,
+                          spreadRadius: 1,
+                        )
+                      ]
+                    : [],
               ),
               child: Row(
                 children: [
-                  Icon(
-                    widget.icon,
-                    color: widget.isNext || _isHovered ? Theme.of(context).colorScheme.secondary : AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.7),
-                    size: 26,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      widget.name,
-                      style: GoogleFonts.elMessiri(
-                        fontSize: 20,
-                        fontWeight: widget.isNext ? FontWeight.bold : FontWeight.w500,
-                        color: widget.isNext || _isHovered ? AppTheme.getOnBackgroundColor(context) : AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.7),
-                      ),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: widget.isNext
+                          ? secondaryColor
+                          : secondaryColor.withValues(alpha: 0.15),
+                    ),
+                    child: Icon(
+                      widget.icon,
+                      color: widget.isNext
+                          ? (isDark ? const Color(0xFF0B3D2E) : Colors.white)
+                          : secondaryColor,
+                      size: 22,
                     ),
                   ),
-                  if (widget.isNext)
+                  const SizedBox(width: 16),
+                  Text(
+                    widget.name,
+                    style: widget.themeService.getTextStyle(
+                      fontSize: 18,
+                      fontWeight: widget.isNext ? FontWeight.bold : FontWeight.w600,
+                      color: widget.isNext
+                          ? secondaryColor
+                          : AppTheme.getOnBackgroundColor(context),
+                    ),
+                  ),
+                  if (widget.isNext) ...[
+                    const SizedBox(width: 8),
                     Container(
-                      margin: const EdgeInsets.only(right: 12),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.secondary,
+                        color: secondaryColor.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: secondaryColor.withValues(alpha: 0.5)),
                       ),
                       child: Text(
-                        widget.l10n.next.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 10,
+                        widget.isArabic ? 'القادمة' : 'Next',
+                        style: widget.themeService.getTextStyle(
+                          fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF0B3D2E), // Keep dark text on gold badge
+                          color: secondaryColor,
                         ),
                       ),
                     ),
+                  ],
+                  const Spacer(),
                   Text(
                     widget.time,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: widget.isNext || _isHovered ? Theme.of(context).colorScheme.secondary : AppTheme.getOnBackgroundColor(context),
+                    style: widget.themeService.getTextStyle(
+                      fontSize: 18,
+                      fontWeight: widget.isNext ? FontWeight.bold : FontWeight.w500,
+                      color: widget.isNext
+                          ? secondaryColor
+                          : AppTheme.getOnBackgroundColor(context),
                     ),
                   ),
                 ],

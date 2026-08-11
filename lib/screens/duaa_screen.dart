@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
-import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../data/duaa_data.dart';
 import '../widgets/islamic_pattern_background.dart';
 import '../l10n/app_localizations.dart';
 import '../utils/share_image_generator.dart';
+import '../services/theme_service.dart';
 
 class DuaaScreen extends StatefulWidget {
   const DuaaScreen({super.key});
@@ -16,9 +17,7 @@ class DuaaScreen extends StatefulWidget {
 
 class _DuaaScreenState extends State<DuaaScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  int _selectedCategoryIndex = 0;
 
-  // ==================== COMPLETE FRENCH TRANSLATION MAP ====================
   static const Map<String, String> _frenchTranslations = {
     // ---- CATEGORIES ----
     'Worry & Grief': 'Inquiétude et Chagrin',
@@ -56,98 +55,69 @@ class _DuaaScreenState extends State<DuaaScreen> with SingleTickerProviderStateM
     'Protection Dua': 'Invocation de protection',
     'Dua for Anxiety & Worry': 'Invocation contre l\'anxiété et les soucis',
 
-    // ---- DUAA TEXTS (English) -> French ----
+    // ---- DUAA TEXTS ----
     'There is no deity except You, exalted are You. Indeed, I have been of the wrongdoers.':
         'Il n\'y a de divinité que Toi, gloire à Toi ! J\'ai été parmi les injustes.',
-
     'O Allah, I seek refuge in You from anxiety and sorrow, weakness and laziness, miserliness and cowardice, the burden of debts and from being overpowered by men.':
         'Ô Allah, je cherche refuge auprès de Toi contre l\'anxiété et le chagrin, la faiblesse et la paresse, l\'avarice et la lâcheté, le fardeau des dettes et le joug des hommes.',
-
     'O Allah, I ask You for beneficial knowledge, good provision, and accepted deeds.':
         'Ô Allah, je Te demande une science utile, une subsistance licite et une œuvre agréée.',
-
     'O Allah, I ask You for understanding of the religion and memorization of knowledge.':
         'Ô Allah, je Te demande la compréhension de la religion et la mémorisation du savoir.',
-
     'O Allah, I ask You for beneficial knowledge.':
         'Ô Allah, je Te demande une science utile.',
-
     'O Allah, I ask You for healing and I seek refuge in You from all evil.':
         'Ô Allah, je Te demande la guérison et je cherche refuge auprès de Toi contre tout mal.',
-
     'O Allah, I ask You for healing from this sickness.':
         'Ô Allah, je Te demande la guérison de cette maladie.',
-
     'I seek refuge in the perfect words of Allah from the evil of what He has created.':
         'Je cherche refuge dans les paroles parfaites d\'Allah contre le mal de ce qu\'Il a créé.',
-
     'O Allah, I seek refuge in You from the difficulty of the journey and from changing after returning.':
         'Ô Allah, je cherche refuge auprès de Toi contre les difficultés du voyage et contre le changement après le retour.',
-
     'Allahu Akbar, Allahu Akbar, Allahu Akbar. Subhanalladhi sakhkhara lana hadha wa ma kunna lahu muqrinin.':
         'Allah est le plus grand, Allah est le plus grand, Allah est le plus grand. Gloire à Celui qui a mis ceci à notre service alors que nous n\'étions pas capables.',
-
     'O Allah, I ask You for divine help and guidance.':
         'Ô Allah, je Te demande l\'aide et la guidance divines.',
-
     'O Allah, I ask You to guide me and make my affairs easy for me.':
         'Ô Allah, je Te demande de me guider et de rendre mes affaires faciles pour moi.',
-
     'O Allah, I ask You for the best in this life and the Hereafter.':
         'Ô Allah, je Te demande le bien dans ce monde et dans l\'au-delà.',
-
     'O Allah, I ask You for good character and guidance to the best of deeds.':
         'Ô Allah, je Te demande un bon caractère et la guidance vers les meilleures œuvres.',
-
     'O Allah, have mercy on my parents as they raised me with mercy.':
         'Ô Allah, fais miséricorde à mes parents comme ils m\'ont élevé avec miséricorde.',
-
     'O Allah, I ask You for a righteous spouse and righteous children.':
         'Ô Allah, je Te demande un conjoint pieux et des enfants pieux.',
-
     'O Allah, I ask You for righteous children and offspring.':
         'Ô Allah, je Te demande des enfants pieux et une descendance vertueuse.',
-
     'In Your name, O Allah, I sleep and wake.':
         'En Ton nom, ô Allah, je dors et je me réveille.',
-
     'Praise be to Allah Who gave us life after death and to Him is the resurrection.':
         'Louange à Allah qui nous a rendus à la vie après la mort et c\'est vers Lui que sera la résurrection.',
-
     'O Allah, I seek refuge in You from fear and harm.':
         'Ô Allah, je cherche refuge auprès de Toi contre la peur et le mal.',
-
     'I seek refuge in the perfect words of Allah from all evil and harm.':
         'Je cherche refuge dans les paroles parfaites d\'Allah contre tout mal et tout danger.',
-
     'O Allah, grant me success and do not oppose me. Grant me success through Your mercy, O Most Merciful.':
         'Ô Allah, accorde-moi le succès et ne Te oppose pas à moi. Accorde-moi le succès par Ta miséricorde, ô le plus Miséricordieux.',
-
     'O Allah, I seek Your guidance and ask for Your blessing in this matter.':
         'Ô Allah, je Te demande guidance et bénédiction dans cette affaire.',
-
     'O Allah, I ask You for Your favor and mercy to complete the Quran.':
         'Ô Allah, je Te demande Ta faveur et Ta miséricorde pour achever le Coran.',
-
     'O Allah, bless us in what You have provided and protect us from the punishment of the Fire.':
         'Ô Allah, bénis-nous dans ce que Tu nous as accordé et protège-nous du châtiment du Feu.',
-
     'O Allah, improve my character and guide me to the best of manners.':
         'Ô Allah, améliore mon caractère et guide-moi vers la meilleure éthique.',
-
     'O Allah, forgive my parents and have mercy on them as they raised me with mercy.':
         'Ô Allah, pardonne à mes parents et fais-leur miséricorde comme ils m\'ont élevé avec miséricorde.',
-
     'O Allah, grant me a pious spouse and righteous children.':
         'Ô Allah, accorde-moi un conjoint pieux et des enfants vertueux.',
-
     'O Allah, protect me from fear and anxiety and grant me peace of mind.':
         'Ô Allah, protège-moi de la peur et de l\'anxiété et accorde-moi la tranquillité d\'esprit.',
-
     'I seek refuge in You, O Allah, from all evil and harm.':
         'Je cherche refuge auprès de Toi, ô Allah, contre tout mal et tout danger.',
 
-    // ---- BENEFITS / CONTEXT (English -> French) ----
+    // ---- BENEFITS / CONTEXT ----
     'For severe distress and sorrow': 'Pour les grandes détresses et les chagrins',
     'For seeking beneficial knowledge and understanding': 'Pour demander une science utile et la compréhension',
     'For improving memorization and learning': 'Pour améliorer la mémorisation et l\'apprentissage',
@@ -167,7 +137,6 @@ class _DuaaScreenState extends State<DuaaScreen> with SingleTickerProviderStateM
     'Upon waking up': 'Au réveil',
     'For protection against fear': 'Pour se protéger contre la peur',
     'For general protection from harm': 'Pour une protection générale contre le mal',
-    // --- New missing ones from your screenshots ---
     "Traveler's dua before departure": "Dua du voyageur avant le départ",
     "Prophet's dua for recovery from illness": "Dua du Prophète pour la guérison d'une maladie",
     'O Lord of the people, remove the harm and cure it. You are the Healer. There is no cure except Your cure, a cure that leaves no illness.':
@@ -176,29 +145,15 @@ class _DuaaScreenState extends State<DuaaScreen> with SingleTickerProviderStateM
         'Ô Allah, dans mon voyage, je Te demande la bienfaisance et la piété, et des œuvres qui Te plaisent. Ô Allah, rends ce voyage facile pour moi et raccourcis sa distance.',
   };
 
-  // Translation helper
   String _translateToFrench(String text) {
     if (text.isEmpty) return text;
-    // Try exact match first
-    if (_frenchTranslations.containsKey(text)) {
-      return _frenchTranslations[text]!;
-    }
-    // If not found, return original (will show English)
-    // In production you could add a fallback or log missing keys
-    return text;
-  }
-
-  String _getFrenchCategory(String englishText) {
-    return _frenchTranslations[englishText] ?? englishText;
+    return _frenchTranslations[text] ?? text;
   }
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: DuaaData.categories.length, vsync: this);
-    _tabController.addListener(() {
-      setState(() => _selectedCategoryIndex = _tabController.index);
-    });
   }
 
   @override
@@ -214,73 +169,78 @@ class _DuaaScreenState extends State<DuaaScreen> with SingleTickerProviderStateM
     final isArabic = lang == 'ar';
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      body: IslamicPatternBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(context, l10n, isArabic),
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1000),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: isDarkMode
-                          ? BackdropFilter(
-                              filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF0B3D2E).withValues(alpha: 0.6),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+    return Consumer<ThemeService>(
+      builder: (context, themeService, _) {
+        return Scaffold(
+          body: IslamicPatternBackground(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  _buildHeader(context, l10n, isArabic, themeService),
+                  Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1000),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: isDarkMode
+                              ? BackdropFilter(
+                                  filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF0B3D2E).withValues(alpha: 0.6),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+                                    ),
+                                    child: _buildTabBar(isDarkMode, lang, themeService),
+                                  ),
+                                )
+                              : Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.5)),
+                                  ),
+                                  child: _buildTabBar(isDarkMode, lang, themeService),
                                 ),
-                                child: _buildTabBar(isDarkMode),
-                              ),
-                            )
-                          : Container(
-                              decoration: BoxDecoration(
-                                color: Colors.transparent,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.5)),
-                              ),
-                              child: _buildTabBar(isDarkMode),
-                            ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              Expanded(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: DuaaData.categories.map((category) {
-                        return ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
-                          itemCount: category.duaas.length,
-                          itemBuilder: (context, index) => _DuaaCard(
-                            duaa: category.duaas[index],
-                            lang: lang,
-                            index: index,
-                            translator: _translateToFrench,
-                          ),
-                        );
-                      }).toList(),
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 800),
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: DuaaData.categories.map((category) {
+                            return ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+                              itemCount: category.duaas.length,
+                              itemBuilder: (context, index) => _DuaaCard(
+                                duaa: category.duaas[index],
+                                lang: lang,
+                                index: index,
+                                translator: _translateToFrench,
+                                themeService: themeService,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildTabBar(bool isDarkMode) {
+  Widget _buildTabBar(bool isDarkMode, String lang, ThemeService themeService) {
     return TabBar(
       controller: _tabController,
       isScrollable: true,
@@ -289,20 +249,27 @@ class _DuaaScreenState extends State<DuaaScreen> with SingleTickerProviderStateM
       indicatorColor: const Color(0xFFD4AF37),
       indicatorWeight: 3,
       dividerColor: Colors.transparent,
-      labelStyle: GoogleFonts.elMessiri(fontSize: 16, fontWeight: FontWeight.bold),
+      labelStyle: themeService.getTextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: isDarkMode ? const Color(0xFFD4AF37) : Colors.black,
+      ),
       tabs: DuaaData.categories.map((category) {
         String tabText = category.categoryEn;
-        if (Localizations.localeOf(context).languageCode == 'ar') {
+        if (lang == 'ar') {
           tabText = category.categoryAr;
-        } else if (Localizations.localeOf(context).languageCode == 'fr') {
-          tabText = _getFrenchCategory(category.categoryEn);
+        } else if (lang == 'fr') {
+          tabText = _translateToFrench(category.categoryEn);
         }
-        return Padding(padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4), child: Tab(text: tabText));
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4), 
+          child: Tab(text: tabText),
+        );
       }).toList(),
     );
   }
 
-  Widget _buildHeader(BuildContext context, AppLocalizations? l10n, bool isArabic) {
+  Widget _buildHeader(BuildContext context, AppLocalizations? l10n, bool isArabic, ThemeService themeService) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Row(
@@ -315,9 +282,11 @@ class _DuaaScreenState extends State<DuaaScreen> with SingleTickerProviderStateM
             child: Text(
               l10n?.duaaTitle ?? 'الأدعية',
               textAlign: TextAlign.center,
-              style: isArabic
-                  ? GoogleFonts.amiri(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold)
-                  : GoogleFonts.arefRuqaa(color: const Color(0xFFD4AF37), fontSize: 32, fontWeight: FontWeight.bold),
+              style: themeService.getTextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFFD4AF37),
+              ),
             ),
           ),
           const SizedBox(width: 48),
@@ -327,19 +296,19 @@ class _DuaaScreenState extends State<DuaaScreen> with SingleTickerProviderStateM
   }
 }
 
-// ==================== Duaa Card Widget ====================
-
 class _DuaaCard extends StatefulWidget {
   final Duaa duaa;
   final String lang;
   final int index;
   final String Function(String) translator;
+  final ThemeService themeService;
 
   const _DuaaCard({
     required this.duaa,
     required this.lang,
     required this.index,
     required this.translator,
+    required this.themeService,
   });
 
   @override
@@ -368,7 +337,6 @@ class _DuaaCardState extends State<_DuaaCard> {
     final isArabic = widget.lang == 'ar';
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    // Title
     String cardTitle;
     if (isArabic) {
       cardTitle = widget.duaa.titleAr;
@@ -378,25 +346,24 @@ class _DuaaCardState extends State<_DuaaCard> {
       cardTitle = widget.duaa.titleEn;
     }
 
-    // Duaa text (the actual prayer)
     String translatedText;
     if (isArabic) {
-      translatedText = widget.duaa.duaaEn; // fallback for Arabic mode (not used)
+      translatedText = widget.duaa.duaaEn;
     } else if (widget.lang == 'fr') {
       translatedText = widget.translator(widget.duaa.duaaEn);
     } else {
       translatedText = widget.duaa.duaaEn;
     }
 
-    // Benefit / Context
     String benefitText;
     if (isArabic) {
       benefitText = widget.duaa.benefitAr ?? '';
     } else if (widget.lang == 'fr') {
       final englishBenefit = widget.duaa.benefitEn ?? '';
-      benefitText = 'Contexte: ${widget.translator(englishBenefit)}';
+      benefitText = englishBenefit.isNotEmpty ? 'Contexte: ${widget.translator(englishBenefit)}' : '';
     } else {
-      benefitText = 'Context: ${widget.duaa.benefitEn ?? ''}';
+      final englishBenefit = widget.duaa.benefitEn ?? '';
+      benefitText = englishBenefit.isNotEmpty ? 'Context: $englishBenefit' : '';
     }
 
     return TweenAnimationBuilder<double>(
@@ -485,7 +452,7 @@ class _DuaaCardState extends State<_DuaaCard> {
             Expanded(
               child: Text(
                 title,
-                style: GoogleFonts.elMessiri(
+                style: widget.themeService.getTextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: _isExpanded ? (isDarkMode ? Colors.white : Colors.black) : const Color(0xFFD4AF37),
@@ -518,12 +485,11 @@ class _DuaaCardState extends State<_DuaaCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Arabic text
                 Text(
                   widget.duaa.duaaAr,
                   textAlign: TextAlign.center,
                   textDirection: TextDirection.rtl,
-                  style: GoogleFonts.amiri(
+                  style: widget.themeService.getTextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
                     color: const Color(0xFFD4AF37),
@@ -533,11 +499,10 @@ class _DuaaCardState extends State<_DuaaCard> {
                 const SizedBox(height: 16),
                 Divider(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
                 const SizedBox(height: 16),
-                // Translated text (English or French)
                 Text(
                   text,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.elMessiri(
+                  style: widget.themeService.getTextStyle(
                     fontSize: 18,
                     color: isDarkMode ? Colors.white.withValues(alpha: 0.9) : Colors.black87,
                     height: 1.6,
@@ -559,7 +524,7 @@ class _DuaaCardState extends State<_DuaaCard> {
                         Expanded(
                           child: Text(
                             benefit,
-                            style: GoogleFonts.elMessiri(
+                            style: widget.themeService.getTextStyle(
                               fontSize: 14,
                               color: isDarkMode ? Colors.white70 : Colors.black54,
                             ),

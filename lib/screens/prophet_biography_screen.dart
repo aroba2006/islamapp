@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../widgets/islamic_pattern_background.dart';
 import '../app_theme.dart';
@@ -87,8 +86,8 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                           child: Text(
                             isArabic ? 'سيرة الأنبياء' : 'Prophet Biographies',
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.elMessiri(
-                              fontSize: themeService.getScaledSize(24),
+                            style: themeService.getTextStyle(
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
                               color: const Color(0xFFD4AF37),
                             ),
@@ -104,11 +103,16 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     child: TextField(
                       controller: searchController,
-                      style: GoogleFonts.elMessiri(
+                      style: themeService.getTextStyle(
+                        fontSize: 16,
                         color: AppTheme.getOnBackgroundColor(context),
                       ),
                       decoration: InputDecoration(
                         hintText: isArabic ? 'ابحث عن نبي...' : 'Search for a prophet...',
+                        hintStyle: themeService.getTextStyle(
+                          fontSize: 14,
+                          color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.6),
+                        ),
                         prefixIcon: Icon(
                           Icons.search_rounded,
                           color: const Color(0xFFD4AF37).withValues(alpha: 0.6),
@@ -142,10 +146,9 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                         ? Center(
                             child: Text(
                               isArabic ? 'لا توجد نتائج' : 'No results found',
-                              style: GoogleFonts.elMessiri(
-                                fontSize: themeService.getScaledSize(16),
-                                color: AppTheme.getOnBackgroundColor(context)
-                                    .withValues(alpha: 0.6),
+                              style: themeService.getTextStyle(
+                                fontSize: 16,
+                                color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.6),
                               ),
                             ),
                           )
@@ -160,6 +163,7 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                                   onTap: () => setState(
                                     () => selectedProphet = filteredProphets[index],
                                   ),
+                                  themeService: themeService,
                                 ),
                               );
                             },
@@ -193,9 +197,10 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                     ),
                     title: Text(
                       prophet.name,
-                      style: GoogleFonts.elMessiri(
-                        color: const Color(0xFFD4AF37),
+                      style: themeService.getTextStyle(
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
+                        color: const Color(0xFFD4AF37),
                       ),
                     ),
                     centerTitle: true,
@@ -233,12 +238,10 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                                   children: [
                                     Text(
                                       prophet.arabicName,
-                                      style: GoogleFonts.amiri(
-                                        fontSize:
-                                            themeService.getScaledSize(32),
+                                      style: themeService.getTextStyle(
+                                        fontSize: 32,
                                         fontWeight: FontWeight.bold,
-                                        color:
-                                            const Color(0xFFD4AF37),
+                                        color: const Color(0xFFD4AF37),
                                       ),
                                     ),
                                     const Spacer(),
@@ -253,9 +256,8 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                                       ),
                                       child: Text(
                                         prophet.title,
-                                        style: GoogleFonts.elMessiri(
-                                          fontSize: themeService
-                                              .getScaledSize(12),
+                                        style: themeService.getTextStyle(
+                                          fontSize: 12,
                                           fontWeight: FontWeight.bold,
                                           color: const Color(0xFFD4AF37),
                                         ),
@@ -266,8 +268,8 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                                 const SizedBox(height: 12),
                                 Text(
                                   prophet.speciality,
-                                  style: GoogleFonts.elMessiri(
-                                    fontSize: themeService.getScaledSize(14),
+                                  style: themeService.getTextStyle(
+                                    fontSize: 14,
                                     color: AppTheme.getOnBackgroundColor(
                                             context)
                                         .withValues(alpha: 0.8),
@@ -280,15 +282,14 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
 
                           const SizedBox(height: 24),
 
-                         // Info Grid
+                          // Info Grid
                           GridView(
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
-                              // Replace childAspectRatio with a fixed height:
-                              mainAxisExtent: 85, 
+                              mainAxisExtent: 85,
                             ),
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -296,14 +297,17 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                               _InfoCard(
                                 title: isArabic ? 'الفترة الزمنية' : 'Lifespan',
                                 value: prophet.lifespan,
+                                themeService: themeService,
                               ),
                               _InfoCard(
                                 title: isArabic ? 'مكان المولد' : 'Birth Place',
                                 value: prophet.birthPlace,
+                                themeService: themeService,
                               ),
                               _InfoCard(
                                 title: isArabic ? 'مكان الوفاة' : 'Death Place',
                                 value: prophet.deathPlace,
+                                themeService: themeService,
                               ),
                               _InfoCard(
                                 title: isArabic
@@ -312,6 +316,7 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                                 value: isArabic
                                     ? '${prophet.mentionedInSurahs} سورة'
                                     : '${prophet.mentionedInSurahs} Surahs',
+                                themeService: themeService,
                               ),
                             ],
                           ),
@@ -321,8 +326,8 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                           // Biography
                           Text(
                             isArabic ? 'السيرة' : 'Biography',
-                            style: GoogleFonts.elMessiri(
-                              fontSize: themeService.getScaledSize(20),
+                            style: themeService.getTextStyle(
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: const Color(0xFFD4AF37),
                             ),
@@ -330,8 +335,8 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                           const SizedBox(height: 12),
                           Text(
                             prophet.description,
-                            style: GoogleFonts.elMessiri(
-                              fontSize: themeService.getScaledSize(14),
+                            style: themeService.getTextStyle(
+                              fontSize: 14,
                               height: 1.8,
                               color: AppTheme.getOnBackgroundColor(context),
                             ),
@@ -342,8 +347,8 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                           // Key Achievements
                           Text(
                             isArabic ? 'الإنجازات الرئيسية' : 'Key Achievements',
-                            style: GoogleFonts.elMessiri(
-                              fontSize: themeService.getScaledSize(20),
+                            style: themeService.getTextStyle(
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: const Color(0xFFD4AF37),
                             ),
@@ -365,9 +370,8 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                                   Expanded(
                                     child: Text(
                                       achievement,
-                                      style: GoogleFonts.elMessiri(
-                                        fontSize:
-                                            themeService.getScaledSize(14),
+                                      style: themeService.getTextStyle(
+                                        fontSize: 14,
                                         height: 1.6,
                                         color: AppTheme.getOnBackgroundColor(
                                             context),
@@ -384,8 +388,8 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                           // Quranic Mentions
                           Text(
                             isArabic ? 'الآيات القرآنية' : 'Quranic Mentions',
-                            style: GoogleFonts.elMessiri(
-                              fontSize: themeService.getScaledSize(20),
+                            style: themeService.getTextStyle(
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: const Color(0xFFD4AF37),
                             ),
@@ -413,9 +417,8 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                                   children: [
                                     Text(
                                       '${mention.surahName} (${mention.surahNumber}:${mention.verseNumber})',
-                                      style: GoogleFonts.elMessiri(
-                                        fontSize:
-                                            themeService.getScaledSize(14),
+                                      style: themeService.getTextStyle(
+                                        fontSize: 14,
                                         fontWeight: FontWeight.bold,
                                         color: const Color(0xFFD4AF37),
                                       ),
@@ -423,9 +426,8 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                                     const SizedBox(height: 8),
                                     Text(
                                       mention.verseText,
-                                      style: GoogleFonts.amiri(
-                                        fontSize:
-                                            themeService.getScaledSize(14),
+                                      style: themeService.getTextStyle(
+                                        fontSize: 14,
                                         height: 1.8,
                                         color: AppTheme.getOnBackgroundColor(
                                             context),
@@ -435,9 +437,8 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
                                     const SizedBox(height: 8),
                                     Text(
                                       mention.verseTranslation,
-                                      style: GoogleFonts.elMessiri(
-                                        fontSize:
-                                            themeService.getScaledSize(13),
+                                      style: themeService.getTextStyle(
+                                        fontSize: 13,
                                         height: 1.6,
                                         fontStyle: FontStyle.italic,
                                         color: AppTheme.getOnBackgroundColor(
@@ -469,10 +470,12 @@ class _ProphetBiographyScreenState extends State<ProphetBiographyScreen> {
 class _ProphetCard extends StatefulWidget {
   final ProphetBiography prophet;
   final VoidCallback onTap;
+  final ThemeService themeService;
 
   const _ProphetCard({
     required this.prophet,
     required this.onTap,
+    required this.themeService,
   });
 
   @override
@@ -484,130 +487,126 @@ class _ProphetCardState extends State<_ProphetCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeService>(
-      builder: (context, themeService, _) {
-        final isArabic =
-            Localizations.localeOf(context).languageCode == 'ar';
+    final isArabic =
+        Localizations.localeOf(context).languageCode == 'ar';
 
-        return MouseRegion(
-          onEnter: (_) => setState(() => _isHovered = true),
-          onExit: (_) => setState(() => _isHovered = false),
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            onTap: widget.onTap,
-            child: AnimatedScale(
-              scale: _isHovered ? 0.98 : 1.0,
-              duration: const Duration(milliseconds: 150),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: _isHovered
-                      ? Theme.of(context)
-                          .colorScheme
-                          .surface
-                          .withValues(alpha: 0.7)
-                      : Theme.of(context)
-                          .colorScheme
-                          .surface
-                          .withValues(alpha: 0.4),
-                  border: Border.all(
-                    color: const Color(0xFFD4AF37).withValues(
-                      alpha: _isHovered ? 0.8 : 0.3,
-                    ),
-                    width: _isHovered ? 2 : 1,
-                  ),
-                  boxShadow: [
-                    if (_isHovered)
-                      BoxShadow(
-                        color: const Color(0xFFD4AF37)
-                            .withValues(alpha: 0.15),
-                        blurRadius: 20,
-                      ),
-                  ],
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _isHovered ? 0.98 : 1.0,
+          duration: const Duration(milliseconds: 150),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: _isHovered
+                  ? Theme.of(context)
+                      .colorScheme
+                      .surface
+                      .withValues(alpha: 0.7)
+                  : Theme.of(context)
+                      .colorScheme
+                      .surface
+                      .withValues(alpha: 0.4),
+              border: Border.all(
+                color: const Color(0xFFD4AF37).withValues(
+                  alpha: _isHovered ? 0.8 : 0.3,
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            const Color(0xFFD4AF37)
-                                .withValues(alpha: 0.3),
-                            const Color(0xFFD4AF37)
-                                .withValues(alpha: 0.1),
-                          ],
-                        ),
-                        border: Border.all(
+                width: _isHovered ? 2 : 1,
+              ),
+              boxShadow: [
+                if (_isHovered)
+                  BoxShadow(
+                    color: const Color(0xFFD4AF37)
+                        .withValues(alpha: 0.15),
+                    blurRadius: 20,
+                  ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFFD4AF37)
+                            .withValues(alpha: 0.3),
+                        const Color(0xFFD4AF37)
+                            .withValues(alpha: 0.1),
+                      ],
+                    ),
+                    border: Border.all(
+                      color: const Color(0xFFD4AF37),
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      widget.prophet.arabicName.isNotEmpty
+                          ? widget.prophet.arabicName[0]
+                          : widget.prophet.name[0],
+                      style: widget.themeService.getTextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFFD4AF37),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.prophet.name,
+                        style: widget.themeService.getTextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                           color: const Color(0xFFD4AF37),
                         ),
                       ),
-                      child: Center(
-                        child: Text(
-                          widget.prophet.arabicName.isNotEmpty
-                              ? widget.prophet.arabicName[0]
-                              : widget.prophet.name[0],
-                          style: GoogleFonts.amiri(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFFD4AF37),
-                          ),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.prophet.title,
+                        style: widget.themeService.getTextStyle(
+                          fontSize: 12,
+                          color: AppTheme.getOnBackgroundColor(context)
+                              .withValues(alpha: 0.7),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.prophet.name,
-                            style: GoogleFonts.elMessiri(
-                              fontSize: themeService.getScaledSize(16),
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFFD4AF37),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            widget.prophet.title,
-                            style: GoogleFonts.elMessiri(
-                              fontSize: themeService.getScaledSize(12),
-                              color: AppTheme.getOnBackgroundColor(context)
-                                  .withValues(alpha: 0.7),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            widget.prophet.speciality,
-                            style: GoogleFonts.elMessiri(
-                              fontSize: themeService.getScaledSize(11),
-                              fontStyle: FontStyle.italic,
-                              color: AppTheme.getOnBackgroundColor(context)
-                                  .withValues(alpha: 0.6),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.prophet.speciality,
+                        style: widget.themeService.getTextStyle(
+                          fontSize: 11,
+                          fontStyle: FontStyle.italic,
+                          color: AppTheme.getOnBackgroundColor(context)
+                              .withValues(alpha: 0.6),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Icon(
-                      isArabic
-                          ? Icons.arrow_back_rounded
-                          : Icons.arrow_forward_rounded,
-                      color: const Color(0xFFD4AF37),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+                Icon(
+                  isArabic
+                      ? Icons.arrow_back_rounded
+                      : Icons.arrow_forward_rounded,
+                  color: const Color(0xFFD4AF37),
+                ),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
@@ -615,55 +614,53 @@ class _ProphetCardState extends State<_ProphetCard> {
 class _InfoCard extends StatelessWidget {
   final String title;
   final String value;
+  final ThemeService themeService;
 
   const _InfoCard({
     required this.title,
     required this.value,
+    required this.themeService,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeService>(
-      builder: (context, themeService, _) {
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: Theme.of(context)
-                .colorScheme
-                .surface
-                .withValues(alpha: 0.3),
-            border: Border.all(
-              color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Theme.of(context)
+            .colorScheme
+            .surface
+            .withValues(alpha: 0.3),
+        border: Border.all(
+          color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            style: themeService.getTextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFFD4AF37),
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                title,
-                style: GoogleFonts.elMessiri(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFFD4AF37),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                value,
-                style: GoogleFonts.elMessiri(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.getOnBackgroundColor(context),
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: themeService.getTextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.getOnBackgroundColor(context),
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }

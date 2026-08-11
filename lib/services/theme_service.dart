@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// App Theme Mode (renamed to avoid conflict with Flutter's ThemeMode)
@@ -51,12 +52,14 @@ class ThemeService extends ChangeNotifier {
   late SharedPreferences _prefs;
   AppThemeMode _themeMode = AppThemeMode.system;
   TextScaleFactor _textScaleFactor = TextScaleFactor.medium;
+  String _fontFamily = 'amiri';
   bool _isInitialized = false;
 
   // Getters
   AppThemeMode get themeMode => _themeMode;
   TextScaleFactor get textScaleFactor => _textScaleFactor;
   double get textScaleMultiplier => _textScaleFactor.multiplier;
+  String get fontFamily => _fontFamily;
   bool get isInitialized => _isInitialized;
 
   /// A TextScaler built from the current multiplier — use this in a
@@ -68,6 +71,7 @@ class ThemeService extends ChangeNotifier {
     _prefs = await SharedPreferences.getInstance();
     _loadThemeMode();
     _loadTextScaleFactor();
+    _loadFontFamily();
     _isInitialized = true;
     notifyListeners();
   }
@@ -96,6 +100,10 @@ class ThemeService extends ChangeNotifier {
     }
   }
 
+  void _loadFontFamily() {
+    _fontFamily = _prefs.getString('fontFamily') ?? 'amiri';
+  }
+
   Future<void> setThemeMode(AppThemeMode mode) async {
     _themeMode = mode;
     await _prefs.setString('themeMode', mode.toString());
@@ -105,6 +113,12 @@ class ThemeService extends ChangeNotifier {
   Future<void> setTextScaleFactor(TextScaleFactor scale) async {
     _textScaleFactor = scale;
     await _prefs.setString('textScaleFactor', scale.toString());
+    notifyListeners();
+  }
+
+  Future<void> setFontFamily(String fontKey) async {
+    _fontFamily = fontKey;
+    await _prefs.setString('fontFamily', fontKey);
     notifyListeners();
   }
 
@@ -133,5 +147,93 @@ class ThemeService extends ChangeNotifier {
   /// Apply text scale to a given size
   double getScaledSize(double baseSize) {
     return baseSize * _textScaleFactor.multiplier;
+  }
+
+  /// ────────────────────────────────────────────────────────────────
+  /// FONT HELPER METHODS - USE THESE IN YOUR SCREENS!
+  /// ────────────────────────────────────────────────────────────────
+
+  /// Get Google Font TextStyle based on current font selection
+  /// Use this instead of hardcoding GoogleFonts.xyz()
+  TextStyle getTextStyle({
+    required double fontSize,
+    FontWeight fontWeight = FontWeight.normal,
+    Color? color,
+    double? height,
+    FontStyle fontStyle = FontStyle.normal,
+    double? letterSpacing,
+    TextDecoration? decoration,      // ✅ NEW: Add decoration parameter
+    Color? decorationColor,         // ✅ NEW: Add decorationColor parameter
+  }) {
+    final scaledSize = getScaledSize(fontSize);
+
+    switch (_fontFamily) {
+      case 'amiri':
+        return GoogleFonts.amiri(
+          fontWeight: fontWeight,
+          color: color,
+          fontSize: scaledSize,
+          height: height,
+          fontStyle: fontStyle,
+          letterSpacing: letterSpacing,
+          decoration: decoration,          // ✅ Pass through to GoogleFonts
+          decorationColor: decorationColor, // ✅ Pass through to GoogleFonts
+        );
+      case 'elMessiri':
+        return GoogleFonts.elMessiri(
+          fontWeight: fontWeight,
+          color: color,
+          fontSize: scaledSize,
+          height: height,
+          fontStyle: fontStyle,
+          letterSpacing: letterSpacing,
+          decoration: decoration,          // ✅ Pass through to GoogleFonts
+          decorationColor: decorationColor, // ✅ Pass through to GoogleFonts
+        );
+      case 'arefRuqaa':
+        return GoogleFonts.arefRuqaa(
+          fontWeight: fontWeight,
+          color: color,
+          fontSize: scaledSize,
+          height: height,
+          fontStyle: fontStyle,
+          letterSpacing: letterSpacing,
+          decoration: decoration,          // ✅ Pass through to GoogleFonts
+          decorationColor: decorationColor, // ✅ Pass through to GoogleFonts
+        );
+      case 'cairo':
+        return GoogleFonts.cairo(
+          fontWeight: fontWeight,
+          color: color,
+          fontSize: scaledSize,
+          height: height,
+          fontStyle: fontStyle,
+          letterSpacing: letterSpacing,
+          decoration: decoration,          // ✅ Pass through to GoogleFonts
+          decorationColor: decorationColor, // ✅ Pass through to GoogleFonts
+        );
+      case 'tajawal':
+        return GoogleFonts.tajawal(
+          fontWeight: fontWeight,
+          color: color,
+          fontSize: scaledSize,
+          height: height,
+          fontStyle: fontStyle,
+          letterSpacing: letterSpacing,
+          decoration: decoration,          // ✅ Pass through to GoogleFonts
+          decorationColor: decorationColor, // ✅ Pass through to GoogleFonts
+        );
+      default:
+        return GoogleFonts.amiri(
+          fontWeight: fontWeight,
+          color: color,
+          fontSize: scaledSize,
+          height: height,
+          fontStyle: fontStyle,
+          letterSpacing: letterSpacing,
+          decoration: decoration,          // ✅ Pass through to GoogleFonts
+          decorationColor: decorationColor, // ✅ Pass through to GoogleFonts
+        );
+    }
   }
 }

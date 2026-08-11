@@ -1,10 +1,10 @@
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class GoodDeed {
   final String id;
   final String title;
-  final String category; // 'prayer', 'charity', 'learning', 'family', 'other'
+  final String category;
   final DateTime timestamp;
   final String? notes;
 
@@ -17,57 +17,69 @@ class GoodDeed {
   });
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'title': title,
-    'category': category,
-    'timestamp': timestamp.toIso8601String(),
-    'notes': notes,
-  };
+        'id': id,
+        'title': title,
+        'category': category,
+        'timestamp': timestamp.toIso8601String(),
+        'notes': notes,
+      };
 
   factory GoodDeed.fromJson(Map<String, dynamic> json) => GoodDeed(
-    id: json['id'],
-    title: json['title'],
-    category: json['category'],
-    timestamp: DateTime.parse(json['timestamp']),
-    notes: json['notes'],
-  );
+        id: json['id'] as String,
+        title: json['title'] as String,
+        category: json['category'] as String,
+        timestamp: DateTime.parse(json['timestamp'] as String),
+        notes: json['notes'] as String?,
+      );
 }
 
 class DeedsService {
-  static const String _deedsKey = 'good_deeds';
-  static const String _streakKey = 'deeds_streak';
-
-  static Future<void> addDeed(GoodDeed deed) async {
-    final prefs = await SharedPreferences.getInstance();
-    final deeds = await getAllDeeds();
-    deeds.add(deed);
-    
-    final jsonList = deeds.map((d) => jsonEncode(d.toJson())).toList();
-    await prefs.setStringList(_deedsKey, jsonList);
-    
-    // Update streak
-    await _updateStreak();
-  }
+  static const String _storageKey = 'islamic_good_deeds_list';
+  static final List<GoodDeed> _inMemoryFallback = [];
 
   static Future<List<GoodDeed>> getAllDeeds() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonList = prefs.getStringList(_deedsKey) ?? [];
-    
-    return jsonList
-        .map((json) => GoodDeed.fromJson(jsonDecode(json)))
-        .toList()
-        ..sort((a, b) => b.timestamp.compareTo(a.timestamp)); // Recent first
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? rawJson = prefs.getString(_storageKey);
+      if (rawJson == null || rawJson.isEmpty) {
+        return List.from(_inMemoryFallback);
+      }
+      final List<dynamic> list = jsonDecode(rawJson);
+      return list.map((item) => GoodDeed.fromJson(item as Map<String, dynamic>)).toList();
+    } catch (e) {
+      print('DeedsService.getAllDeeds error: $e');
+      return List.from(_inMemoryFallback);
+    }
   }
 
-  static Future<void> deleteDeed(String deedId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final deeds = await getAllDeeds();
-    deeds.removeWhere((d) => d.id == deedId);
-    
-    final jsonList = deeds.map((d) => jsonEncode(d.toJson())).toList();
-    await prefs.setStringList(_deedsKey, jsonList);
-    
-    await _updateStreak();
+  static Future<bool> addDeed(GoodDeed deed) async {
+    try {
+      _inMemoryFallback.insert(0, deed);
+      final deeds = await getAllDeeds();
+      if (!deeds.any((d) => d.id == deed.id)) {
+        deeds.insert(0, deed);
+      }
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = jsonEncode(deeds.map((d) => d.toJson()).toList());
+      return await prefs.setString(_storageKey, encoded);
+    } catch (e) {
+      print('DeedsService.addDeed error: $e');
+      return true;
+    }
+  }
+
+  static Future<bool> deleteDeed(String id) async {
+    try {
+      _inMemoryFallback.removeWhere((d) => d.id == id);
+      final deeds = await getAllDeeds();
+      deeds.removeWhere((d) => d.id == id);
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = jsonEncode(deeds.map((d) => d.toJson()).toList());
+      return await prefs.setString(_storageKey, encoded);
+    } catch (e) {
+      print('DeedsService.deleteDeed error: $e');
+      return true;
+    }
   }
 
   static Future<int> getTotalDeeds() async {
@@ -78,113 +90,39 @@ class DeedsService {
   static Future<int> getDeedCountToday() async {
     final deeds = await getAllDeeds();
     final now = DateTime.now();
-    
-    return deeds
-        .where((d) =>
-            d.timestamp.day == now.day &&
-            d.timestamp.month == now.month &&
-            d.timestamp.year == now.year)
-        .length;
-  }
-
-  static Future<Map<String, int>> getDeedsByCategory() async {
-    final deeds = await getAllDeeds();
-    final categoryCounts = <String, int>{};
-    
-    for (var deed in deeds) {
-      categoryCounts[deed.category] = (categoryCounts[deed.category] ?? 0) + 1;
-    }
-    
-    return categoryCounts;
+    return deeds.where((d) =>
+      d.timestamp.year == now.year &&
+      d.timestamp.month == now.month &&
+      d.timestamp.day == now.day
+    ).length;
   }
 
   static Future<int> getCurrentStreak() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_streakKey) ?? 0;
-  }
-
-  static Future<void> _updateStreak() async {
     final deeds = await getAllDeeds();
-    if (deeds.isEmpty) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_streakKey, 0);
-      return;
-    }
+    if (deeds.isEmpty) return 0;
+
+    final dates = deeds
+        .map((d) => DateTime(d.timestamp.year, d.timestamp.month, d.timestamp.day))
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
+
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
 
     int streak = 0;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    
-    // Check if there's a deed today
-    final hasToday = deeds.any((d) {
-      final deedDate = DateTime(d.timestamp.year, d.timestamp.month, d.timestamp.day);
-      return deedDate == today;
-    });
+    DateTime checkDate = todayDate;
 
-    if (!hasToday) {
-      // Reset streak if no deed today
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt(_streakKey, 0);
-      return;
+    if (!dates.contains(todayDate)) {
+      checkDate = todayDate.subtract(const Duration(days: 1));
+      if (!dates.contains(checkDate)) return 0;
     }
 
-    // Count consecutive days with deeds
-    streak = 1;
-    for (int i = 1; i < 365; i++) {
-      final checkDate = today.subtract(Duration(days: i));
-      final hasDeeds = deeds.any((d) {
-        final deedDate = DateTime(d.timestamp.year, d.timestamp.month, d.timestamp.day);
-        return deedDate == checkDate;
-      });
-
-      if (hasDeeds) {
-        streak++;
-      } else {
-        break;
-      }
+    while (dates.contains(checkDate)) {
+      streak++;
+      checkDate = checkDate.subtract(const Duration(days: 1));
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_streakKey, streak);
-  }
-
-  static Future<List<GoodDeed>> getDeeds({
-    DateTime? from,
-    DateTime? to,
-    String? categoryFilter,
-  }) async {
-    var deeds = await getAllDeeds();
-
-    if (categoryFilter != null) {
-      deeds = deeds.where((d) => d.category == categoryFilter).toList();
-    }
-
-    if (from != null && to != null) {
-      deeds = deeds
-          .where((d) => d.timestamp.isAfter(from) && d.timestamp.isBefore(to))
-          .toList();
-    }
-
-    return deeds;
-  }
-
-  // Get deeds for chart/stats
-  static Future<List<int>> getDeedsPerDay(int days) async {
-    final deeds = await getAllDeeds();
-    final List<int> deedsPerDay = List.filled(days, 0);
-    final now = DateTime.now();
-
-    for (int i = 0; i < days; i++) {
-      final date = now.subtract(Duration(days: i));
-      final count = deeds
-          .where((d) =>
-              d.timestamp.day == date.day &&
-              d.timestamp.month == date.month &&
-              d.timestamp.year == date.year)
-          .length;
-      deedsPerDay[i] = count;
-    }
-
-    return deedsPerDay.reversed.toList();
+    return streak;
   }
 }

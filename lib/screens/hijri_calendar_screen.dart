@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../services/hijri_calendar_service.dart';
 import '../models/islamic_event.dart';
 import '../widgets/islamic_pattern_background.dart';
 import '../l10n/app_localizations.dart';
+import '../services/theme_service.dart';
 
 class HijriCalendarScreen extends StatefulWidget {
   const HijriCalendarScreen({super.key});
@@ -41,7 +42,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
   List<String> _getDayNames(BuildContext context) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    // Correct day names in Arabic
     return isArabic
         ? ['أحد', 'إثن', 'ثلث', 'أرب', 'خميس', 'جمعة', 'سبت']
         : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -50,7 +50,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   int _getFirstDayOfMonth(int year, int month) {
     final hijriDate = HijriDate(year: year, month: month, day: 1);
     final gregorian = hijriDate.toGregorian();
-    // weekday: 1=Monday, 7=Sunday. We want 0=Sunday, so we use %7.
     return gregorian.weekday % 7;
   }
 
@@ -87,8 +86,8 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     });
   }
 
-  void _showEventDetails(List<IslamicEvent> events, BuildContext context) {
-    final l10n = AppLocalizations.of(context);
+  void _showEventDetails(List<IslamicEvent> events, BuildContext context, ThemeService themeService) {
+    final l10n = AppLocalizations.of(context)!;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     showDialog(
       context: context,
@@ -96,7 +95,11 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Text(
           isArabic ? 'المناسبات الإسلامية' : 'Islamic Events',
-          style: const TextStyle(color: Color(0xFFD4AF37)),
+          style: themeService.getTextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFFD4AF37),
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -109,12 +112,19 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                 children: [
                   Text(
                     event.getName(isArabic ? 'ar' : 'en'),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: themeService.getTextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                   if (event.descriptionEn.isNotEmpty)
                     Text(
                       event.getDescription(isArabic ? 'ar' : 'en'),
-                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                      style: themeService.getTextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[400],
+                      ),
                     ),
                   const Divider(color: Color(0xFFD4AF37), thickness: 0.5),
                 ],
@@ -125,29 +135,77 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.close, style: const TextStyle(color: Color(0xFFD4AF37))),
+            child: Text(
+              l10n.close,
+              style: themeService.getTextStyle(
+                fontSize: 14,
+                color: const Color(0xFFD4AF37),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // Get Gregorian date for a given Hijri day
+  void _showGregorianDateDialog(
+    BuildContext context, 
+    int day, 
+    AppLocalizations l10n, 
+    bool isArabic, 
+    bool isDarkMode,
+    ThemeService themeService,
+  ) {
+    final gregorianDateStr = _getGregorianDate(_year, _month, day);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        title: Text(
+          isArabic ? 'التاريخ الميلادي' : 'Gregorian Date',
+          style: themeService.getTextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFFD4AF37),
+          ),
+        ),
+        content: Text(
+          isArabic
+              ? 'التاريخ الهجري: $day/$_month/$_year هـ\nالتاريخ الميلادي: $gregorianDateStr'
+              : 'Hijri: $day/$_month/$_year AH\nGregorian: $gregorianDateStr',
+          style: themeService.getTextStyle(
+            fontSize: 16,
+            color: isDarkMode ? Colors.white : Colors.black87,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              l10n.close,
+              style: themeService.getTextStyle(
+                fontSize: 14,
+                color: const Color(0xFFD4AF37),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _getGregorianDate(int year, int month, int day) {
     final hijriDate = HijriDate(year: year, month: month, day: day);
     final gregorian = hijriDate.toGregorian();
-    // Format as dd/MM/yyyy or MMM dd, yyyy
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    if (isArabic) {
-      return '${gregorian.day}/${gregorian.month}/${gregorian.year}';
-    } else {
-      return '${gregorian.month}/${gregorian.day}/${gregorian.year}';
-    }
+    return isArabic
+        ? '${gregorian.day}/${gregorian.month}/${gregorian.year}'
+        : '${gregorian.month}/${gregorian.day}/${gregorian.year}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final monthNames = _getMonthNames(context);
     final dayNames = _getDayNames(context);
@@ -158,7 +216,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
     List<Widget> dayWidgets = [];
 
-    // Empty cells for offset
     for (int i = 0; i < firstDayOffset; i++) {
       dayWidgets.add(
         Container(
@@ -171,72 +228,36 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       );
     }
 
-    // Day cells
     for (int day = 1; day <= daysInMonth; day++) {
       final isToday = (day == _currentDay && _month == _currentMonth && _year == _currentYear);
       final isCurrentMonth = (_month == _currentMonth && _year == _currentYear);
       final events = IslamicEventsService.getEventsOnDate(_month, day);
       final hasEvent = events.isNotEmpty;
 
-      // Compute Gregorian date for this Hijri day
-      final gregorianDateStr = _getGregorianDate(_year, _month, day);
-
       dayWidgets.add(
         GestureDetector(
           onTap: () {
             if (hasEvent) {
-              _showEventDetails(events, context);
+              _showEventDetails(events, context, context.read<ThemeService>());
             } else {
-              // Show a simple dialog with Gregorian date
-              showDialog(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                  title: Text(
-                    isArabic ? 'التاريخ الميلادي' : 'Gregorian Date',
-                    style: const TextStyle(color: Color(0xFFD4AF37)),
-                  ),
-                  content: Text(
-                    isArabic
-                        ? 'التاريخ الهجري: $day/$_month/$_year هـ\nالتاريخ الميلادي: $gregorianDateStr'
-                        : 'Hijri: $day/$_month/$_year AH\nGregorian: $gregorianDateStr',
-                    style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: Text(l10n.close, style: const TextStyle(color: Color(0xFFD4AF37))),
-                    ),
-                  ],
-                ),
+              _showGregorianDateDialog(
+                context, 
+                day, 
+                l10n, 
+                isArabic, 
+                isDarkMode,
+                context.read<ThemeService>(),
               );
             }
           },
-          onLongPress: () {
-            // On long press, show Gregorian date
-            showDialog(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                title: Text(
-                  isArabic ? 'التاريخ الميلادي' : 'Gregorian Date',
-                  style: const TextStyle(color: Color(0xFFD4AF37)),
-                ),
-                content: Text(
-                  isArabic
-                      ? 'التاريخ الهجري: $day/$_month/$_year هـ\nالتاريخ الميلادي: $gregorianDateStr'
-                      : 'Hijri: $day/$_month/$_year AH\nGregorian: $gregorianDateStr',
-                  style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: Text(l10n.close, style: const TextStyle(color: Color(0xFFD4AF37))),
-                  ),
-                ],
-              ),
-            );
-          },
+          onLongPress: () => _showGregorianDateDialog(
+            context, 
+            day, 
+            l10n, 
+            isArabic, 
+            isDarkMode,
+            context.read<ThemeService>(),
+          ),
           child: Container(
             margin: const EdgeInsets.all(4),
             decoration: BoxDecoration(
@@ -264,7 +285,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
               children: [
                 Text(
                   day.toString(),
-                  style: TextStyle(
+                  style: context.read<ThemeService>().getTextStyle(
+                    fontSize: 18,
+                    fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
                     color: isToday
                         ? const Color(0xFFD4AF37)
                         : hasEvent
@@ -272,8 +295,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                             : (isDarkMode
                                 ? (isCurrentMonth ? Colors.white : Colors.grey[500])
                                 : (isCurrentMonth ? Colors.black87 : Colors.grey[400])),
-                    fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                    fontSize: 18,
                   ),
                 ),
                 if (hasEvent)
@@ -286,15 +307,6 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                       color: Color(0xFFD4AF37),
                     ),
                   ),
-                // Show small Gregorian date as subtitle (optional)
-                // Uncomment to show Gregorian date under each day:
-                // Text(
-                //   gregorianDateStr,
-                //   style: TextStyle(
-                //     fontSize: 8,
-                //     color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
-                //   ),
-                // ),
               ],
             ),
           ),
@@ -302,182 +314,186 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          l10n.hijriCalendarTitle,
-          style: GoogleFonts.elMessiri(
-            color: const Color(0xFFD4AF37),
-            fontSize: 22,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        foregroundColor: const Color(0xFFD4AF37),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.today_rounded),
-            onPressed: _goToToday,
-            tooltip: isArabic ? 'اليوم' : 'Today',
-          ),
-        ],
-      ),
-      body: IslamicPatternBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Month/Year selector
-              Padding(
-                 padding: const EdgeInsets.all(16),
-                  child: SingleChildScrollView( // <-- ADD THIS
-                    scrollDirection: Axis.horizontal,
-                    child: Row( // <-- YOUR EXISTING ROW
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                    IconButton(
-                      icon: const Icon(Icons.chevron_left_rounded, color: Color(0xFFD4AF37)),
-                      onPressed: () => _changeMonth(-1),
-                      iconSize: 32,
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: DropdownButton<int>(
-                        value: _month,
-                        dropdownColor: Theme.of(context).scaffoldBackgroundColor,
-                        style: GoogleFonts.elMessiri(
-                          color: const Color(0xFFD4AF37),
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        underline: const SizedBox(),
-                        icon: const Icon(Icons.arrow_drop_down, color: Color(0xFFD4AF37)),
-                        items: List.generate(12, (index) {
-                          final monthIndex = index + 1;
-                          return DropdownMenuItem<int>(
-                            value: monthIndex,
-                            child: Text(
-                              monthNames[index],
-                              style: GoogleFonts.elMessiri(
-                                color: isDarkMode ? Colors.white : Colors.black87,
-                                fontSize: 16,
-                              ),
-                            ),
-                          );
-                        }),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => _month = value);
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: DropdownButton<int>(
-                        value: _year,
-                        dropdownColor: Theme.of(context).scaffoldBackgroundColor,
-                        style: GoogleFonts.elMessiri(
-                          color: const Color(0xFFD4AF37),
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        underline: const SizedBox(),
-                        icon: const Icon(Icons.arrow_drop_down, color: Color(0xFFD4AF37)),
-                        items: List.generate(30, (index) {
-                          final yearValue = _year - 15 + index;
-                          return DropdownMenuItem<int>(
-                            value: yearValue,
-                            child: Text(
-                              '$yearValue ${isArabic ? 'هـ' : 'AH'}',
-                              style: GoogleFonts.elMessiri(
-                                color: isDarkMode ? Colors.white : Colors.black87,
-                                fontSize: 16,
-                              ),
-                            ),
-                          );
-                        }),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => _year = value);
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right_rounded, color: Color(0xFFD4AF37)),
-                      onPressed: () => _changeMonth(1),
-                      iconSize: 32,
-                    ),
-                  ],
-                ),
+    return Consumer<ThemeService>(
+      builder: (context, themeService, _) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              l10n.hijriCalendarTitle,
+              style: themeService.getTextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFFD4AF37),
               ),
-              ),
-              Center(
-                child: Text(
-                  '${monthNames[_month - 1]} $_year ${isArabic ? 'هـ' : 'AH'}',
-                  style: GoogleFonts.elMessiri(
-                    color: const Color(0xFFD4AF37),
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: dayNames.map((d) =>
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          d,
-                          style: TextStyle(
-                            color: isDarkMode ? const Color(0xFFD4AF37) : Colors.black54,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    )
-                  ).toList(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Divider(
-                  color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
-                  thickness: 1,
-                ),
-              ),
-              Expanded(
-                child: GridView.count(
-                  crossAxisCount: 7,
-                  childAspectRatio: 1.1,
-                  padding: const EdgeInsets.all(8),
-                  children: dayWidgets,
-                ),
+            ),
+            backgroundColor: Colors.transparent,
+            foregroundColor: const Color(0xFFD4AF37),
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded),
+              onPressed: () => Navigator.pop(context),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.today_rounded),
+                onPressed: _goToToday,
+                tooltip: isArabic ? 'اليوم' : 'Today',
               ),
             ],
           ),
-        ),
-      ),
+          body: IslamicPatternBackground(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.chevron_left_rounded, color: Color(0xFFD4AF37)),
+                            onPressed: () => _changeMonth(-1),
+                            iconSize: 32,
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: DropdownButton<int>(
+                              value: _month,
+                              dropdownColor: Theme.of(context).scaffoldBackgroundColor,
+                              style: themeService.getTextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFFD4AF37),
+                              ),
+                              underline: const SizedBox(),
+                              icon: const Icon(Icons.arrow_drop_down, color: Color(0xFFD4AF37)),
+                              items: List.generate(12, (index) {
+                                final monthIndex = index + 1;
+                                return DropdownMenuItem<int>(
+                                  value: monthIndex,
+                                  child: Text(
+                                    monthNames[index],
+                                    style: themeService.getTextStyle(
+                                      fontSize: 16,
+                                      color: isDarkMode ? Colors.white : Colors.black87,
+                                    ),
+                                  ),
+                                );
+                              }),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() => _month = value);
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: DropdownButton<int>(
+                              value: _year,
+                              dropdownColor: Theme.of(context).scaffoldBackgroundColor,
+                              style: themeService.getTextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFFD4AF37),
+                              ),
+                              underline: const SizedBox(),
+                              icon: const Icon(Icons.arrow_drop_down, color: Color(0xFFD4AF37)),
+                              items: List.generate(30, (index) {
+                                final yearValue = _year - 15 + index;
+                                return DropdownMenuItem<int>(
+                                  value: yearValue,
+                                  child: Text(
+                                    '$yearValue ${isArabic ? 'هـ' : 'AH'}',
+                                    style: themeService.getTextStyle(
+                                      fontSize: 16,
+                                      color: isDarkMode ? Colors.white : Colors.black87,
+                                    ),
+                                  ),
+                                );
+                              }),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() => _year = value);
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.chevron_right_rounded, color: Color(0xFFD4AF37)),
+                            onPressed: () => _changeMonth(1),
+                            iconSize: 32,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Center(
+                    child: Text(
+                      '${monthNames[_month - 1]} $_year ${isArabic ? 'هـ' : 'AH'}',
+                      style: themeService.getTextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFFD4AF37),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: dayNames.map((d) =>
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              d,
+                              style: themeService.getTextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: isDarkMode ? const Color(0xFFD4AF37) : Colors.black54,
+                              ),
+                            ),
+                          ),
+                        )
+                      ).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Divider(
+                      color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                      thickness: 1,
+                    ),
+                  ),
+                  Expanded(
+                    child: GridView.count(
+                      crossAxisCount: 7,
+                      childAspectRatio: 1.1,
+                      padding: const EdgeInsets.all(8),
+                      children: dayWidgets,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

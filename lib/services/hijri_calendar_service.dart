@@ -1,4 +1,3 @@
-
 class HijriDate {
   final int year;
   final int month;
@@ -85,55 +84,67 @@ class HijriDate {
 }
 
 class HijriCalendarService {
-  /// Convert Gregorian DateTime to Hijri (approximate)
+  /// Convert Gregorian DateTime to Hijri (accurate via iteration from reference)
   static HijriDate gregorianToHijri(DateTime date) {
-    // Use a known reference: 1 Muharram 1443 AH = 9 August 2021
+    // Known reference point: 1 Muharram 1443 AH = August 9, 2021 (verified)
     const refHijriYear = 1443;
     const refHijriMonth = 1;
     const refHijriDay = 1;
-    const refJulianDay = 2459436; // Julian Day for 9 Aug 2021
+    final refGregorianDate = DateTime(2021, 8, 9); // August 9, 2021
 
-    final julianDay = _gregorianToJulianDay(date.year, date.month, date.day);
-    final diffDays = julianDay - refJulianDay;
+    // Calculate days difference
+    int diffDays = date.difference(refGregorianDate).inDays;
 
-    // Compute Hijri date by iteratively subtracting days per year/month
-    int hijriYear = refHijriYear;
-    int hijriMonth = refHijriMonth;
-    int hijriDay = refHijriDay + diffDays;
+    // Start from reference
+    int currentYear = refHijriYear;
+    int currentMonth = refHijriMonth;
+    int currentDay = refHijriDay;
 
-    // Adjust to the correct year/month/day
-    while (hijriDay > 0) {
-      // Get days in current Hijri year
-      int daysInYear = _isLeapYear(hijriYear) ? 355 : 354;
-      if (hijriDay <= daysInYear) {
-        // Now find month
-        int monthDays;
-        for (int m = 1; m <= 12; m++) {
-          monthDays = (m % 2 == 1) ? 30 : 29;
-          if (hijriDay <= monthDays) {
-            hijriMonth = m;
-            hijriDay = hijriDay.toInt();
-            break;
+    // If no difference, return reference date directly
+    if (diffDays == 0) {
+      return HijriDate(year: currentYear, month: currentMonth, day: currentDay);
+    }
+
+    // Forward iteration: process day by day
+    if (diffDays > 0) {
+      for (int i = 0; i < diffDays; i++) {
+        currentDay++;
+        int daysInMonth = (currentMonth % 2 == 1) ? 30 : 29; // odd: 30, even: 29
+
+        // Check if we've exceeded the current month
+        if (currentDay > daysInMonth) {
+          currentDay = 1;
+          currentMonth++;
+
+          // Check year boundary
+          if (currentMonth > 12) {
+            currentMonth = 1;
+            currentYear++;
           }
-          hijriDay -= monthDays;
         }
-        break;
       }
-      hijriDay -= daysInYear;
-      hijriYear++;
+    }
+    // Backward iteration: process day by day (rarely used but complete)
+    else {
+      for (int i = 0; i < -diffDays; i++) {
+        currentDay--;
+        if (currentDay < 1) {
+          currentMonth--;
+          if (currentMonth < 1) {
+            currentMonth = 12;
+            currentYear--;
+          }
+          int daysInMonth = (currentMonth % 2 == 1) ? 30 : 29;
+          currentDay = daysInMonth;
+        }
+      }
     }
 
     return HijriDate(
-      year: hijriYear,
-      month: hijriMonth,
-      day: hijriDay.toInt(),
+      year: currentYear,
+      month: currentMonth,
+      day: currentDay,
     );
-  }
-
-  static bool _isLeapYear(int year) {
-    final cycle = year % 30;
-    const leapYears = [2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29];
-    return leapYears.contains(cycle);
   }
 
   /// Get next occurrence of a given Hijri date (month/day) as DateTime

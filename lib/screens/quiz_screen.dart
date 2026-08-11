@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../widgets/islamic_pattern_background.dart';
 import '../app_theme.dart';
@@ -159,8 +158,8 @@ class _QuizScreenState extends State<QuizScreen> {
                           _ => 'Islamic Quizzes',
                         },
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.elMessiri(
-                          fontSize: themeService.getScaledSize(24),
+                        style: themeService.getTextStyle(
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: const Color(0xFFD4AF37),
                         ),
@@ -183,8 +182,8 @@ class _QuizScreenState extends State<QuizScreen> {
                             'fr' => 'Sélectionnez le niveau de difficulté',
                             _ => 'Select Difficulty Level',
                           },
-                          style: GoogleFonts.elMessiri(
-                            fontSize: themeService.getScaledSize(20),
+                          style: themeService.getTextStyle(
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.getOnBackgroundColor(context),
                           ),
@@ -280,8 +279,8 @@ class _QuizScreenState extends State<QuizScreen> {
                         ),
                         Text(
                           '${currentQuestionIndex + 1}/${currentQuestions!.length}',
-                          style: GoogleFonts.elMessiri(
-                            fontSize: themeService.getScaledSize(16),
+                          style: themeService.getTextStyle(
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: const Color(0xFFD4AF37),
                           ),
@@ -331,8 +330,8 @@ class _QuizScreenState extends State<QuizScreen> {
                           ),
                           child: Text(
                             question.question,
-                            style: GoogleFonts.elMessiri(
-                              fontSize: themeService.getScaledSize(18),
+                            style: themeService.getTextStyle(
+                              fontSize: 18,
                               fontWeight: FontWeight.w600,
                               color: AppTheme.getOnBackgroundColor(context),
                               height: 1.5,
@@ -382,7 +381,8 @@ class _QuizScreenState extends State<QuizScreen> {
                           'fr' => 'Précédent',
                           _ => 'Previous',
                         },
-                        style: GoogleFonts.elMessiri(
+                        style: themeService.getTextStyle(
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -414,7 +414,7 @@ class _QuizScreenState extends State<QuizScreen> {
                                 child: Center(
                                   child: Text(
                                     '${index + 1}',
-                                    style: GoogleFonts.elMessiri(
+                                    style: themeService.getTextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                       color: currentQuestionIndex == index
@@ -439,7 +439,8 @@ class _QuizScreenState extends State<QuizScreen> {
                           'fr' => 'Suivant',
                           _ => 'Next',
                         },
-                        style: GoogleFonts.elMessiri(
+                        style: themeService.getTextStyle(
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -503,16 +504,16 @@ class _QuizScreenState extends State<QuizScreen> {
                         children: [
                           Text(
                             '$score/$total',
-                            style: GoogleFonts.elMessiri(
-                              fontSize: themeService.getScaledSize(48),
+                            style: themeService.getTextStyle(
+                              fontSize: 48,
                               fontWeight: FontWeight.bold,
                               color: const Color(0xFFD4AF37),
                             ),
                           ),
                           Text(
                             '$percentage%',
-                            style: GoogleFonts.elMessiri(
-                              fontSize: themeService.getScaledSize(24),
+                            style: themeService.getTextStyle(
+                              fontSize: 24,
                               color: const Color(0xFFD4AF37).withValues(alpha: 0.8),
                             ),
                           ),
@@ -526,8 +527,8 @@ class _QuizScreenState extends State<QuizScreen> {
                   // Grade
                   Text(
                     getGrade(),
-                    style: GoogleFonts.elMessiri(
-                      fontSize: themeService.getScaledSize(28),
+                    style: themeService.getTextStyle(
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.getOnBackgroundColor(context),
                     ),
@@ -552,7 +553,8 @@ class _QuizScreenState extends State<QuizScreen> {
                         'hard' => switch (langCode) { 'ar' => 'صعب', 'fr' => 'DIFFICILE', _ => 'HARD' },
                         _ => selectedDifficulty!.toUpperCase(),
                       },
-                      style: GoogleFonts.elMessiri(
+                      style: themeService.getTextStyle(
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: _getDifficultyColor(selectedDifficulty!),
                       ),
@@ -579,9 +581,9 @@ class _QuizScreenState extends State<QuizScreen> {
                             'fr' => 'Résumé des réponses',
                             _ => 'Answer Summary',
                           },
-                          style: GoogleFonts.elMessiri(
+                          style: themeService.getTextStyle(
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            fontSize: themeService.getScaledSize(16),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -605,7 +607,7 @@ class _QuizScreenState extends State<QuizScreen> {
                                   Expanded(
                                     child: Text(
                                       'Q${index + 1}: ${isCorrect ? correctText : wrongText}',
-                                      style: GoogleFonts.elMessiri(
+                                      style: themeService.getTextStyle(
                                         fontSize: 14,
                                         color: AppTheme.getOnBackgroundColor(context),
                                       ),
@@ -784,7 +786,7 @@ class _DifficultyCardState extends State<_DifficultyCard> {
                         children: [
                           Text(
                             widget.title,
-                            style: GoogleFonts.elMessiri(
+                            style: themeService.getTextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: widget.color,
@@ -793,7 +795,7 @@ class _DifficultyCardState extends State<_DifficultyCard> {
                           const SizedBox(height: 4),
                           Text(
                             widget.description,
-                            style: GoogleFonts.elMessiri(
+                            style: themeService.getTextStyle(
                               fontSize: 13,
                               color: AppTheme.getOnBackgroundColor(context)
                                   .withValues(alpha: 0.6),
@@ -867,48 +869,52 @@ class _OptionButtonState extends State<_OptionButton> {
       return const Color(0xFFD4AF37).withValues(alpha: 0.2);
     }
 
-    return MouseRegion(
-      onEnter: widget.onTap != null ? (_) => setState(() => _isHovered = true) : null,
-      onExit: widget.onTap != null ? (_) => setState(() => _isHovered = false) : null,
-      cursor: widget.onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: getBackgroundColor(),
-            border: Border.all(
-              color: getBorderColor(),
-              width: widget.isSelected && widget.isAnswered ? 2 : 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  widget.text,
-                  style: GoogleFonts.elMessiri(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.getOnBackgroundColor(context),
-                  ),
+    return Consumer<ThemeService>(
+      builder: (context, themeService, _) {
+        return MouseRegion(
+          onEnter: widget.onTap != null ? (_) => setState(() => _isHovered = true) : null,
+          onExit: widget.onTap != null ? (_) => setState(() => _isHovered = false) : null,
+          cursor: widget.onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+          child: GestureDetector(
+            onTap: widget.onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: getBackgroundColor(),
+                border: Border.all(
+                  color: getBorderColor(),
+                  width: widget.isSelected && widget.isAnswered ? 2 : 1,
                 ),
               ),
-              if (widget.isAnswered)
-                Padding(
-                  padding: const EdgeInsets.only(left: 12),
-                  child: Icon(
-                    widget.isCorrect ? Icons.check_circle : Icons.cancel,
-                    color: widget.isCorrect ? Colors.green : Colors.red,
-                    size: 24,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.text,
+                      style: themeService.getTextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.getOnBackgroundColor(context),
+                      ),
+                    ),
                   ),
-                ),
-            ],
+                  if (widget.isAnswered)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Icon(
+                        widget.isCorrect ? Icons.check_circle : Icons.cancel,
+                        color: widget.isCorrect ? Colors.green : Colors.red,
+                        size: 24,
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
