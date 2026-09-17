@@ -32,6 +32,7 @@ abstract class AppLocalizations {
   String get refresh;
   String get back;
   String get next;
+  String get previous; // Add this line
   String get sunrise;
   String get errorMessage;
   String get arabic;
@@ -170,6 +171,8 @@ abstract class AppLocalizations {
 
   // Hijri Calendar
   String get hijriCalendarTitle;
+
+  
 }
 
 class _AppLocalizationsDelegate

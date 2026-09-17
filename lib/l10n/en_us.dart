@@ -27,6 +27,8 @@ class EnUS extends AppLocalizations {
   @override
   String get adhan => 'Adhan';
   @override
+  String get previous => 'Previous'; // Add this line
+  @override
   String get selectAdhanReciter => 'Select Reciter';
   @override
   String get adhanNotifications => 'Adhan Notifications';

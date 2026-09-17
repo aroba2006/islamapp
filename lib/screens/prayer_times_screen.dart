@@ -301,6 +301,26 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   Widget _buildContent(AppLocalizations l10n, bool isArabic, ThemeService themeService) {
     if (_times == null) return const SizedBox.shrink();
 
+    // NEW: Helper function to convert 24h to 12h format just for the UI display
+    String format12Hour(String time24) {
+      final parts = time24.split(':');
+      if (parts.length != 2) return time24;
+      final h = int.tryParse(parts[0]);
+      if (h == null) return time24;
+      
+      final isPm = h >= 12;
+      int displayH = h % 12;
+      if (displayH == 0) displayH = 12; // Handle midnight and noon
+      
+      // Add AM/PM or Arabic equivalents (ص / م)
+      final amPm = isArabic ? (isPm ? 'م' : 'ص') : (isPm ? 'PM' : 'AM');
+      
+      // Keep the leading zero for hours (e.g., 04:20)
+      final displayHStr = displayH.toString().padLeft(2, '0');
+      
+      return '$displayHStr:${parts[1]} $amPm';
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
       child: Column(
@@ -335,7 +355,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
               },
               child: _PrayerRow(
                 name: _getLocalizedPrayerName(entry.key, l10n),
-                time: entry.value,
+                time: format12Hour(entry.value), // FIX APPLIED HERE: Formatted time string
                 icon: _iconFor(entry.key),
                 isNext: isNext,
                 l10n: l10n,

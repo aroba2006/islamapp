@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math' as Math;
 import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
-import 'package:flutter_qiblah/flutter_qiblah.dart';
+import 'package:flutter_qiblah_advanced/flutter_qiblah_advanced.dart';
 import '../services/theme_service.dart';
 
 class QiblahFinderScreen extends StatefulWidget {

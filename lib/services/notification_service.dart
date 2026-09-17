@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // FIX: Added foundation for web-safe platform checks
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -5,6 +7,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
 /// Represents an available adhan reciter
 class AdhanReciter {
@@ -75,15 +78,17 @@ class NotificationService {
 
     await _notifications.initialize(initSettings);
 
-    // Request iOS permissions
-    await _notifications
-        .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+    // FIX: Web-safe check for iOS
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      await _notifications
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>()
+          ?.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+    }
 
     // Setup audio session
     await _setupAudioSession();
@@ -104,7 +109,7 @@ class NotificationService {
       _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
     } catch (e) {
       print('Error loading notification state: $e');
-      _notificationsEnabled = true; // Default to enabled on error
+      _notificationsEnabled = true;
     }
   }
 
@@ -131,12 +136,10 @@ class NotificationService {
     }
   }
 
-  /// Set the app foreground/background state
   static void setAppInForeground(bool inForeground) {
     _isAppInForeground = inForeground;
   }
 
-  /// Select which adhan reciter to use
   static void selectAdhanReciter(AdhanReciter reciter) {
     selectedReciter = reciter;
   }
@@ -146,17 +149,12 @@ class NotificationService {
     String prayerName, {
     Duration duration = const Duration(seconds: 30),
   }) async {
-    if (selectedReciter == null) {
-      print('No adhan reciter selected');
-      return;
-    }
+    if (selectedReciter == null) return;
 
     try {
-      // Load from local assets
       await _audioPlayer.setAsset(selectedReciter!.assetPath);
-      await _audioPlayer.play();
+      _audioPlayer.play(); 
 
-      // Stop after specified duration
       _adhanStopTimer?.cancel();
       _adhanStopTimer = Timer(duration, () async {
         await _audioPlayer.stop();
@@ -166,36 +164,25 @@ class NotificationService {
     }
   }
 
-  /// Stop adhan playback
   static Future<void> stopAdhan() async {
     _adhanStopTimer?.cancel();
     await _audioPlayer.stop();
   }
 
-  /// Show instant notification with optional adhan playback
-  /// Only shows if notifications are enabled
   static Future<void> showInstantNotification(
     String title,
     String body, {
     bool playAdhan = false,
     Duration adhanDuration = const Duration(seconds: 30),
   }) async {
-    // CHECK IF NOTIFICATIONS ARE ENABLED
-    if (!_notificationsEnabled) {
-      print('Notifications disabled - skipping notification');
-      return;
-    }
+    if (!_notificationsEnabled) return;
 
-    // Show notification or in-app popup FIRST (don't wait for adhan)
     if (_isAppInForeground) {
-      // App is in foreground - show in-app popup immediately
       onPrayerTimeNotification?.call(title);
     } else {
-      // App is in background - show system notification
       const androidDetails = AndroidNotificationDetails(
         'prayer_channel',
         'Prayer Times',
-        channelDescription: 'Notifications for prayer times',
         importance: Importance.max,
         priority: Priority.high,
         enableVibration: true,
@@ -216,95 +203,142 @@ class NotificationService {
       await _notifications.show(0, title, body, details);
     }
 
-    // Play adhan in background (after popup is shown)
     if (playAdhan) {
-      _playAdhan(title, duration: adhanDuration); // Don't await
+      _playAdhan(title, duration: adhanDuration);
     }
   }
 
   /// Schedule prayer notification with adhan playback
-  /// Only schedules if notifications are enabled
   static Future<void> schedulePrayerNotification(
     String prayerName,
     DateTime prayerTime, {
     bool playAdhan = true,
     Duration adhanDuration = const Duration(seconds: 30),
   }) async {
-    // CHECK IF NOTIFICATIONS ARE ENABLED
-    if (!_notificationsEnabled) {
-      print('Notifications disabled - skipping scheduled notification for $prayerName');
-      return;
+    if (!_notificationsEnabled) return;
+    if (prayerTime.isBefore(DateTime.now())) return;
+
+    // FIX: Web-safe check for Android
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('nextPrayerName', prayerName);
+
+      await AndroidAlarmManager.oneShotAt(
+        prayerTime,
+        prayerName.hashCode,
+        playBackgroundAdhanCallback,
+        exact: true,
+        wakeup: true,
+        allowWhileIdle: true,
+        rescheduleOnReboot: true,
+      );
+    } 
+    // FIX: Web-safe check for iOS
+    else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      final scheduledTime = tz.TZDateTime.from(prayerTime, tz.local);
+      
+      const iosDetails = DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      );
+
+      const details = NotificationDetails(
+        iOS: iosDetails,
+      );
+
+      await _notifications.zonedSchedule(
+        prayerName.hashCode,
+        'Time for $prayerName',
+        'It\'s time to pray $prayerName',
+        scheduledTime,
+        details,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
     }
-
-    final scheduledTime = tz.TZDateTime.from(prayerTime, tz.local);
-
-    if (scheduledTime.isBefore(DateTime.now())) {
-      return; // Don't schedule past times
-    }
-
-    // Create a callback that will be triggered at prayer time
-    // Note: This requires native platform-specific setup for background execution
-
-    const androidDetails = AndroidNotificationDetails(
-      'prayer_channel',
-      'Prayer Times',
-      channelDescription: 'Notifications for prayer times',
-      importance: Importance.max,
-      priority: Priority.high,
-      enableVibration: true,
-      playSound: true,
-      fullScreenIntent: true, // Show full-screen notification on Android
-    );
-
-    const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-
-    const details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-
-    await _notifications.zonedSchedule(
-  prayerName.hashCode,
-  'Time for $prayerName',
-  'It\'s time to pray $prayerName',
-  scheduledTime,
-  details,
-  androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-  uiLocalNotificationDateInterpretation:
-      UILocalNotificationDateInterpretation.absoluteTime,
-  matchDateTimeComponents: DateTimeComponents.time,
-);
   }
 
-  /// Cancel all notifications
   static Future<void> cancelAll() async {
     await cancelAdhan();
     await _notifications.cancelAll();
   }
 
-  /// Cancel specific prayer notification
   static Future<void> cancelPrayerNotification(String prayerName) async {
     await _notifications.cancel(prayerName.hashCode);
   }
 
-  /// Cancel adhan playback
   static Future<void> cancelAdhan() async {
     _adhanStopTimer?.cancel();
     await _audioPlayer.stop();
   }
 
-  /// Get list of available reciters
   static List<String> getAvailableReciters() {
     return adhanReciters.map((r) => r.name).toList();
   }
 
-  /// Dispose resources
   static Future<void> dispose() async {
     _adhanStopTimer?.cancel();
     await _audioPlayer.dispose();
+  }
+}
+
+// -------------------------------------------------------------
+// STANDALONE BACKGROUND CALLBACK (ANDROID ONLY)
+// -------------------------------------------------------------
+@pragma('vm:entry-point')
+Future<void> playBackgroundAdhanCallback() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  
+  final reciterId = prefs.getString('adhanReciter') ?? 'mishary';
+  final duration = prefs.getInt('notificationAdhanDuration') ?? 30;
+  final prayerName = prefs.getString('nextPrayerName') ?? 'Prayer';
+  
+  // Initialize notifications for background isolate
+  final notifications = FlutterLocalNotificationsPlugin();
+  const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+  await notifications.initialize(const InitializationSettings(android: androidInit));
+
+  const androidDetails = AndroidNotificationDetails(
+    'prayer_channel', 
+    'Prayer Times',
+    importance: Importance.max,
+    priority: Priority.high,
+    playSound: false, // Keep silent, we play audio manually below!
+    enableVibration: true,
+  );
+  
+  await notifications.show(
+    prayerName.hashCode, 
+    'Time for $prayerName', 
+    'It is time to pray $prayerName', 
+    const NotificationDetails(android: androidDetails)
+  );
+
+  final player = AudioPlayer();
+  
+  final paths = {
+    'mishary': 'assets/adhan/afasiadhan.mp3',
+    'nasser':  'assets/adhan/qatamiadhan.mp3',
+    'qassas':  'assets/adhan/moqassas.mp3',
+    'refaat':  'assets/adhan/refaatadhan.mp3',
+    'tobar':   'assets/adhan/adhantobar.mp3',
+  };
+  
+  try {
+    await player.setAsset(paths[reciterId] ?? 'assets/adhan/afasiadhan.mp3');
+    
+    player.play(); 
+    
+    // Start cutoff timer
+    if (duration < 300) { 
+      Timer(Duration(seconds: duration), () async {
+        await player.stop();
+        await player.dispose();
+      });
+    }
+  } catch (e) {
+    debugPrint("Background audio error: $e");
   }
 }

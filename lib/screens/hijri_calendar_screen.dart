@@ -32,34 +32,32 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   }
 
   List<String> _getMonthNames(BuildContext context) {
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    return isArabic
-        ? ['محرم', 'صفر', 'ربيع الأول', 'ربيع الثاني', 'جمادى الأولى', 'جمادى الثانية',
-           'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة']
-        : ['Muharram', 'Safar', 'Rabi I', 'Rabi II', 'Jumada I', 'Jumada II',
+    final langCode = Localizations.localeOf(context).languageCode;
+    if (langCode == 'ar') {
+      return ['محرم', 'صفر', 'ربيع الأول', 'ربيع الثاني', 'جمادى الأولى', 'جمادى الثانية',
+             'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'];
+    } else if (langCode == 'fr') {
+      return ['Muharram', 'Safar', 'Rabi I', 'Rabi II', 'Jumada I', 'Jumada II',
+             'Rajab', 'Sha\'ban', 'Ramadan', 'Shawwal', 'Dhu al-Qa\'dah', 'Dhu al-Hijjah'];
+    }
+    return ['Muharram', 'Safar', 'Rabi I', 'Rabi II', 'Jumada I', 'Jumada II',
            'Rajab', 'Sha\'ban', 'Ramadan', 'Shawwal', 'Dhu al-Qa\'dah', 'Dhu al-Hijjah'];
   }
 
   List<String> _getDayNames(BuildContext context) {
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    return isArabic
-        ? ['أحد', 'إثن', 'ثلث', 'أرب', 'خميس', 'جمعة', 'سبت']
-        : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    final langCode = Localizations.localeOf(context).languageCode;
+    if (langCode == 'ar') {
+      return ['أحد', 'إثن', 'ثلث', 'أرب', 'خميس', 'جمعة', 'سبت'];
+    } else if (langCode == 'fr') {
+      return ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    }
+    return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   }
 
   int _getFirstDayOfMonth(int year, int month) {
     final hijriDate = HijriDate(year: year, month: month, day: 1);
     final gregorian = hijriDate.toGregorian();
     return gregorian.weekday % 7;
-  }
-
-  int _getDaysInMonth(int year, int month) {
-    if (month == 12) {
-      final cycle = year % 30;
-      const leapYears = [2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29];
-      return leapYears.contains(cycle) ? 30 : 29;
-    }
-    return month % 2 == 1 ? 30 : 29;
   }
 
   void _changeMonth(int delta) {
@@ -88,13 +86,15 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
 
   void _showEventDetails(List<IslamicEvent> events, BuildContext context, ThemeService themeService) {
     final l10n = AppLocalizations.of(context)!;
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final langCode = Localizations.localeOf(context).languageCode;
+    final isArabic = langCode == 'ar';
+    
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Text(
-          isArabic ? 'المناسبات الإسلامية' : 'Islamic Events',
+          isArabic ? 'المناسبات الإسلامية' : (langCode == 'fr' ? 'Événements Islamiques' : 'Islamic Events'),
           style: themeService.getTextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -111,16 +111,16 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    event.getName(isArabic ? 'ar' : 'en'),
+                    event.getName(langCode),
                     style: themeService.getTextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  if (event.descriptionEn.isNotEmpty)
+                  if (event.getDescription(langCode).isNotEmpty)
                     Text(
-                      event.getDescription(isArabic ? 'ar' : 'en'),
+                      event.getDescription(langCode),
                       style: themeService.getTextStyle(
                         fontSize: 12,
                         color: Colors.grey[400],
@@ -157,12 +157,14 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
     ThemeService themeService,
   ) {
     final gregorianDateStr = _getGregorianDate(_year, _month, day);
+    final langCode = Localizations.localeOf(context).languageCode;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Text(
-          isArabic ? 'التاريخ الميلادي' : 'Gregorian Date',
+          isArabic ? 'التاريخ الميلادي' : (langCode == 'fr' ? 'Date Grégorienne' : 'Gregorian Date'),
           style: themeService.getTextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -172,7 +174,9 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
         content: Text(
           isArabic
               ? 'التاريخ الهجري: $day/$_month/$_year هـ\nالتاريخ الميلادي: $gregorianDateStr'
-              : 'Hijri: $day/$_month/$_year AH\nGregorian: $gregorianDateStr',
+              : (langCode == 'fr'
+                  ? 'Hégirien : $day/$_month/$_year AH\nGrégorien : $gregorianDateStr'
+                  : 'Hijri: $day/$_month/$_year AH\nGregorian: $gregorianDateStr'),
           style: themeService.getTextStyle(
             fontSize: 16,
             color: isDarkMode ? Colors.white : Colors.black87,
@@ -206,12 +210,13 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final langCode = Localizations.localeOf(context).languageCode;
+    final isArabic = langCode == 'ar';
     final monthNames = _getMonthNames(context);
     final dayNames = _getDayNames(context);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    final daysInMonth = _getDaysInMonth(_year, _month);
+    final daysInMonth = HijriCalendarService.getDaysInMonth(_year, _month);
     final firstDayOffset = _getFirstDayOfMonth(_year, _month);
 
     List<Widget> dayWidgets = [];
@@ -337,7 +342,7 @@ class _HijriCalendarScreenState extends State<HijriCalendarScreen> {
               IconButton(
                 icon: const Icon(Icons.today_rounded),
                 onPressed: _goToToday,
-                tooltip: isArabic ? 'اليوم' : 'Today',
+                tooltip: isArabic ? 'اليوم' : (langCode == 'fr' ? 'Aujourd\'hui' : 'Today'),
               ),
             ],
           ),

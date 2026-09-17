@@ -13,6 +13,8 @@ class FrFR extends AppLocalizations {
   @override
   String get noCountriesFound => 'Aucun pays trouvé';
   @override
+  String get previous => 'Précédent'; // Add this line
+  @override
   String get chooseYourState => 'Choisissez votre état / province';
   @override
   String get timeUntil => 'Temps restant avant';

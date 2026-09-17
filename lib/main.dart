@@ -3,6 +3,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/foundation.dart';
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 // ✅ ADDED
 import 'l10n/app_localizations.dart';
 import 'screens/home_screen.dart';
@@ -12,6 +14,7 @@ import 'services/theme_service.dart';
 import 'widgets/prayer_notification_popup.dart';
 import 'app_theme.dart';
 import 'services/auth_service.dart';
+//import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +22,12 @@ void main() async {
   // ✅ ADDED: Initialize Firebase before anything else
   //await Firebase.initializeApp();
 
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    await AndroidAlarmManager.initialize();
+  }
+
   // Initialize services
+  //await AndroidAlarmManager.initialize();
   await NotificationService.initialize();
   await AdhanService.initialize();
   await ThemeService().initialize();

@@ -643,6 +643,8 @@ class _QuizScreenState extends State<QuizScreen> {
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white, // FIX: Ensured high contrast text
+                            textStyle: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
@@ -665,6 +667,8 @@ class _QuizScreenState extends State<QuizScreen> {
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             backgroundColor: Colors.amber,
+                            foregroundColor: Colors.black87, // FIX: Ensured dark text on bright amber
+                            textStyle: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
@@ -687,6 +691,8 @@ class _QuizScreenState extends State<QuizScreen> {
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             backgroundColor: Colors.deepPurple,
+                            foregroundColor: Colors.white, // FIX: Ensured high contrast text
+                            textStyle: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),

@@ -281,6 +281,9 @@ class ArAR extends AppLocalizations {
   @override
   String get signupFailed => 'فشل إنشاء الحساب';
 
+  @override
+  String get previous => 'السابق'; // Add this line
+
   // Ramadan
   @override
   String get ramadan => 'رمضان';

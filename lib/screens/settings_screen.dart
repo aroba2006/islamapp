@@ -42,7 +42,11 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(
+      length: 2, 
+      vsync: this,
+      initialIndex: 1, // FIX: Forces the tab bar to start on the System tab
+    );
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),

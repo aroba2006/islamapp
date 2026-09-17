@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'package:provider/provider.dart';
 import '../widgets/islamic_pattern_background.dart';
 import '../widgets/outlined_text_widget.dart';
@@ -22,6 +21,7 @@ import 'prophet_biography_screen.dart';
 import 'hadiths_screen.dart';
 import 'ramadan_mode_screen.dart';
 import 'hijri_calendar_screen.dart';
+import 'ai_question_answer_screen.dart';
 import '../services/hijri_calendar_service.dart';
 import '../models/islamic_event.dart';
 
@@ -56,7 +56,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   String _getHijriDateString(BuildContext context) {
     final hijri = HijriCalendarService.gregorianToHijri(DateTime.now());
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final langCode = Localizations.localeOf(context).languageCode;
+    final isArabic = langCode == 'ar';
 
     final monthNamesAr = [
       'محرم', 'صفر', 'ربيع الأول', 'ربيع الثاني',
@@ -139,41 +140,102 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _showEventDetailsDialog(BuildContext context, IslamicEvent event) {
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final lang = Localizations.localeOf(context).languageCode;
+    final isArabic = lang == 'ar';
+    final isFrench = lang == 'fr';
+
+    // 1. Get the exact upcoming Gregorian date for this event
+    final gregorianDate = HijriCalendarService.getNextHijriDate(event.hijriMonth, event.hijriDay);
+    
+    // 2. Translate Gregorian months natively
+    final monthNamesAr = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+    final monthNamesEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final monthNamesFr = ['Janv', 'Févr', 'Mars', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'];
+
+    final monthList = isArabic ? monthNamesAr : (isFrench ? monthNamesFr : monthNamesEn);
+    final monthName = monthList[gregorianDate.month - 1];
+    
+    final formattedGregorian = isArabic 
+        ? '${gregorianDate.day} $monthName ${gregorianDate.year}'
+        : '$monthName ${gregorianDate.day}, ${gregorianDate.year}';
+
+    // FIX: Pass the correct language code to event methods
+    final eventLang = isArabic ? 'ar' : (isFrench ? 'fr' : 'en');
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: const Color(0xFFD4AF37).withValues(alpha: 0.3), width: 1),
+        ),
         title: Text(
-          event.getName(isArabic ? 'ar' : 'en'),
-          style: const TextStyle(color: Color(0xFFD4AF37)),
+          event.getName(eventLang),
+          style: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              event.getDescription(isArabic ? 'ar' : 'en'),
-              style: TextStyle(color: Colors.grey[400]),
+              event.getDescription(eventLang),
+              style: TextStyle(color: Colors.grey[300], height: 1.5),
+            ),
+            const SizedBox(height: 16),
+            
+            // Hijri Date Row
+            Row(
+              children: [
+                const Icon(Icons.calendar_today_rounded, size: 16, color: Color(0xFFD4AF37)),
+                const SizedBox(width: 8),
+                Text(
+                  isArabic
+                      ? 'الهجري: ${event.hijriDay}/${event.hijriMonth} هـ'
+                      : (isFrench 
+                          ? 'Hégirien : ${event.hijriDay}/${event.hijriMonth} AH' 
+                          : 'Hijri: ${event.hijriDay}/${event.hijriMonth} AH'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
-            Text(
-              isArabic
-                  ? 'التاريخ: ${event.hijriDay}/${event.hijriMonth} هـ'
-                  : 'Date: ${event.hijriDay}/${event.hijriMonth} AH',
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            
+            // Gregorian Date Row
+            Row(
+              children: [
+                const Icon(Icons.event_rounded, size: 16, color: Color(0xFFD4AF37)),
+                const SizedBox(width: 8),
+                Text(
+                  isArabic
+                      ? 'الميلادي: $formattedGregorian'
+                      : (isFrench 
+                          ? 'Grégorien : $formattedGregorian' 
+                          : 'Gregorian: $formattedGregorian'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              ],
             ),
+            
             if (event.isHoliday)
               Container(
-                margin: const EdgeInsets.only(top: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                margin: const EdgeInsets.only(top: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.4)),
                 ),
-                child: Text(
-                  isArabic ? 'يوم عطلة' : 'Holiday',
-                  style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.celebration_rounded, size: 16, color: Color(0xFFD4AF37)),
+                    const SizedBox(width: 6),
+                    Text(
+                      isArabic ? 'يوم عطلة' : (isFrench ? 'Jour Férié' : 'Holiday'),
+                      style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
               ),
           ],
@@ -182,8 +244,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              AppLocalizations.of(context).close,
-              style: const TextStyle(color: Color(0xFFD4AF37)),
+              isArabic ? 'إغلاق' : (isFrench ? 'Fermer' : 'Close'),
+              style: const TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -194,9 +256,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final langCode = Localizations.localeOf(context).languageCode;
+    final isArabic = langCode == 'ar';
+    final isFrench = langCode == 'fr';
 
-    final String userName = authService.userName ?? (isArabic ? 'ضيف' : 'Guest');
+    final String userName = authService.userName ?? (isArabic ? 'ضيف' : (isFrench ? 'Invité' : 'Guest'));
     final String? profilePicUrl = authService.profilePicUrl;
     final bool isLoggedIn = authService.isLoggedIn;
 
@@ -243,7 +307,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   OutlinedTextTitle(
-                                    text: isArabic ? 'تطبيق إسلامي' : 'Islamy App',
+                                    text: switch (langCode) {
+                                      'ar' => 'تطبيق إسلامي',
+                                      'fr' => 'Application Islamique',
+                                      _ => 'Islamy App',
+                                    },
                                     style: titleStyle.copyWith(fontSize: scaledTitleSize * 1.8),
                                   ),
                                   ShaderMask(
@@ -256,7 +324,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       end: Alignment.bottomRight,
                                     ).createShader(bounds),
                                     child: Text(
-                                      isArabic ? 'مرحباً بك، $userName' : 'Welcome back, $userName',
+                                      switch (langCode) {
+                                        'ar' => 'مرحباً بك، $userName',
+                                        'fr' => 'Bienvenue, $userName',
+                                        _ => 'Welcome back, $userName',
+                                      },
                                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
@@ -266,7 +338,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    isArabic ? 'رفيقك الإسلامي في حياتك اليومية' : 'Your Islamic companion in daily life',
+                                    switch (langCode) {
+                                      'ar' => 'رفيقك الإسلامي في حياتك اليومية',
+                                      'fr' => 'Votre compagnon islamique au quotidien',
+                                      _ => 'Your Islamic companion in daily life',
+                                    },
                                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                       color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.65),
                                       fontSize: scaledDescSize * 0.9,
@@ -296,12 +372,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                         children: [
                                           const Icon(Icons.calendar_today_rounded, color: Color(0xFFD4AF37), size: 15),
                                           const SizedBox(width: 8),
-                                          Text(
-                                            _getHijriDateString(context),
-                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                              color: const Color(0xFFD4AF37),
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
+                                          Flexible(
+                                            child: Text(
+                                              _getHijriDateString(context),
+                                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                color: const Color(0xFFD4AF37),
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                             ),
                                           ),
                                           const SizedBox(width: 6),
@@ -338,7 +416,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                               child: Text(
                                                 isArabic
                                                     ? '${nearestEvent.getName('ar')}\nمتبقي ${nearestEvent.daysUntil()} يوم'
-                                                    : '${nearestEvent.getName('en')}\n${nearestEvent.daysUntil()} days left',
+                                                    : (isFrench
+                                                        ? '${nearestEvent.getName('fr')}\n${nearestEvent.daysUntil()} jours restants'
+                                                        : '${nearestEvent.getName('en')}\n${nearestEvent.daysUntil()} days left'),
                                                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                                   color: const Color(0xFFD4AF37),
                                                   fontSize: 11,
@@ -358,9 +438,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 ],
                               ),
                             ),
-                            // HEADER BUTTONS
-                            Row(
+                            // HEADER BUTTONS STACKED VERTICALLY
+                            Column(
                               mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 AnimatedContainer(
                                   duration: const Duration(milliseconds: 300),
@@ -405,23 +486,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                         : null,
                                   ),
                                 ),
-                                const SizedBox(width: 6),
+                                const SizedBox(height: 6),
                                 IconButton(
                                   icon: const Icon(Icons.settings_rounded, color: Color(0xFFD4AF37), size: 24),
                                   onPressed: _openSettings,
                                   tooltip: l10n.settings,
                                   splashRadius: 20,
                                   padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                                 ),
-                                const SizedBox(width: 4),
+                                const SizedBox(height: 2),
                                 IconButton(
                                   icon: Icon(
                                     isLoggedIn ? Icons.logout_rounded : Icons.login_rounded, 
                                     color: isLoggedIn ? Colors.redAccent : const Color(0xFFD4AF37), 
                                     size: 24
                                   ),
-                                  tooltip: isLoggedIn ? (isArabic ? 'تسجيل الخروج' : 'Logout') : (isArabic ? 'تسجيل الدخول' : 'Login'),
+                                  tooltip: isLoggedIn ? (isArabic ? 'تسجيل الخروج' : (isFrench ? 'Déconnexion' : 'Logout')) : (isArabic ? 'تسجيل الدخول' : (isFrench ? 'Connexion' : 'Login')),
                                   onPressed: () async {
                                     if (isLoggedIn) {
                                       final bool? confirm = await showDialog<bool>(
@@ -429,27 +510,27 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                         builder: (dialogContext) => AlertDialog(
                                           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                                           title: Text(
-                                            isArabic ? 'تأكيد الخروج' : 'Confirm Logout',
+                                            isArabic ? 'تأكيد الخروج' : (isFrench ? 'Confirmer la déconnexion' : 'Confirm Logout'),
                                             style: const TextStyle(color: Color(0xFFD4AF37)),
                                           ),
                                           content: Text(
                                             isArabic 
                                                 ? 'هل أنت متأكد من رغبتك في الخروج؟' 
-                                                : 'Are you sure you want to log out?',
+                                                : (isFrench ? 'Êtes-vous sûr de vouloir vous déconnecter ?' : 'Are you sure you want to log out?'),
                                             style: TextStyle(color: Colors.grey[400]),
                                           ),
                                           actions: [
                                             TextButton(
                                               onPressed: () => Navigator.pop(dialogContext, false),
                                               child: Text(
-                                                isArabic ? 'إلغاء' : 'Cancel',
+                                                isArabic ? 'إلغاء' : (isFrench ? 'Annuler' : 'Cancel'),
                                                 style: const TextStyle(color: Colors.grey),
                                               ),
                                             ),
                                             TextButton(
                                               onPressed: () => Navigator.pop(dialogContext, true),
                                               child: Text(
-                                                isArabic ? 'نعم، خروج' : 'Yes, Logout',
+                                                isArabic ? 'نعم، خروج' : (isFrench ? 'Oui, Déconnexion' : 'Yes, Logout'),
                                                 style: const TextStyle(color: Colors.redAccent),
                                               ),
                                             ),
@@ -471,7 +552,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   },
                                   splashRadius: 20,
                                   padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                                 ),
                               ],
                             ),
@@ -528,7 +609,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ),
                       ),
 
-                      // CARDS GRID (Stable version)
+                      // CARDS GRID
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24.0),
                         child: Wrap(
@@ -624,6 +705,21 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   ? () => _navigate(const RamadanModeScreen())
                                   : () => _showRamadanNotAvailableDialog(context),
                               isEnabled: _isRamadan,
+                            ),
+                            _buildCard(
+                              index: 12,
+                              icon: Icons.lightbulb_rounded,
+                              title: isArabic
+                                  ? 'اسأل الذكاء الاصطناعي'
+                                  : (isFrench
+                                      ? 'Demander à l\'IA'
+                                      : 'Ask AI'),
+                              description: isArabic
+                                  ? 'اسأل أسئلة دينية وشخصية'
+                                  : (isFrench
+                                      ? 'Posez des questions religieuses et personnelles'
+                                      : 'Ask religious and personal questions'),
+                              onTap: () => _navigate(const AIQuestionAnswerScreen()),
                             ),
                           ],
                         ),

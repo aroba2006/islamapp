@@ -1,10 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../app_theme.dart';
 import '../widgets/islamic_pattern_background.dart';
 import '../services/theme_service.dart';
 import 'package:share_plus/share_plus.dart';
+
+// 1. Defined the Category Model
+class HadithCategory {
+  final String id;
+  final String nameAr;
+  final String nameEn;
+  final String nameFr;
+  final IconData icon;
+
+  const HadithCategory({
+    required this.id,
+    required this.nameAr,
+    required this.nameEn,
+    required this.nameFr,
+    required this.icon,
+  });
+}
+
+// 2. Defined the Master List of Categories
+const List<HadithCategory> hadithCategories = [
+  HadithCategory(id: 'all', nameAr: 'الكل', nameEn: 'All', nameFr: 'Tout', icon: Icons.all_inclusive_rounded),
+  HadithCategory(id: 'worship', nameAr: 'العبادة والإيمان', nameEn: 'Worship & Faith', nameFr: 'Adoration et Foi', icon: Icons.mosque_rounded),
+  HadithCategory(id: 'character', nameAr: 'الأخلاق والآداب', nameEn: 'Character & Manners', nameFr: 'Caractère et Manières', icon: Icons.favorite_rounded),
+  HadithCategory(id: 'community', nameAr: 'المجتمع والأخوة', nameEn: 'Community & Brotherhood', nameFr: 'Communauté et Fraternité', icon: Icons.people_rounded),
+  HadithCategory(id: 'family', nameAr: 'الأسرة والعلاقات', nameEn: 'Family & Relationships', nameFr: 'Famille et Relations', icon: Icons.family_restroom_rounded),
+  HadithCategory(id: 'knowledge', nameAr: 'العلم', nameEn: 'Knowledge', nameFr: 'Savoir', icon: Icons.menu_book_rounded),
+  HadithCategory(id: 'patience', nameAr: 'الصبر والابتلاء', nameEn: 'Patience & Trials', nameFr: 'Patience et Épreuves', icon: Icons.shield_rounded),
+  HadithCategory(id: 'business', nameAr: 'التجارة والمال', nameEn: 'Business & Wealth', nameFr: 'Commerce et Richesse', icon: Icons.monetization_on_rounded),
+];
 
 class HadithsScreen extends StatefulWidget {
   const HadithsScreen({super.key});
@@ -14,8 +42,14 @@ class HadithsScreen extends StatefulWidget {
 }
 
 class _HadithsScreenState extends State<HadithsScreen> {
+  String _selectedCategoryId = 'all';
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  // 3. Updated Hadith Data with Category Tags
   final List<Hadith> hadiths = const [
     Hadith(
+      categories: ['worship'],
       titleAr: 'حديث النية',
       titleEn: 'Hadith of Intention',
       titleFr: 'Hadith de l\'Intention',
@@ -33,6 +67,7 @@ class _HadithsScreenState extends State<HadithsScreen> {
       meaningFr: 'Purifier l\'intention est la base de toute action pieuse',
     ),
     Hadith(
+      categories: ['character', 'community'],
       titleAr: 'حديث الرحمة',
       titleEn: 'Hadith of Mercy',
       titleFr: 'Hadith de la Miséricorde',
@@ -50,6 +85,7 @@ class _HadithsScreenState extends State<HadithsScreen> {
       meaningFr: 'La bonté envers les gens mène à la miséricorde d\'Allah',
     ),
     Hadith(
+      categories: ['knowledge'],
       titleAr: 'حديث طلب العلم',
       titleEn: 'Hadith of Seeking Knowledge',
       titleFr: 'Hadith de la Quête du Savoir',
@@ -67,6 +103,7 @@ class _HadithsScreenState extends State<HadithsScreen> {
       meaningFr: 'Le savoir est un devoir religieux qu\'aucun musulman ne doit abandonner',
     ),
     Hadith(
+      categories: ['character'],
       titleAr: 'حديث حسن الخلق',
       titleEn: 'Hadith of Good Character',
       titleFr: 'Hadith du Bon Caractère',
@@ -84,6 +121,7 @@ class _HadithsScreenState extends State<HadithsScreen> {
       meaningFr: 'Un bon caractère est parmi les meilleures actions aux yeux d\'Allah',
     ),
     Hadith(
+      categories: ['character', 'worship'],
       titleAr: 'حديث الصدق',
       titleEn: 'Hadith of Truthfulness',
       titleFr: 'Hadith de l\'Honnêteté',
@@ -101,6 +139,7 @@ class _HadithsScreenState extends State<HadithsScreen> {
       meaningFr: 'La vérité mène aux bonnes actions et au Paradis',
     ),
     Hadith(
+      categories: ['patience', 'character'],
       titleAr: 'حديث الصبر',
       titleEn: 'Hadith of Patience',
       titleFr: 'Hadith de la Patience',
@@ -118,6 +157,7 @@ class _HadithsScreenState extends State<HadithsScreen> {
       meaningFr: 'La patience est l\'une des plus grandes vertus qui éclairent le chemin du croyant',
     ),
     Hadith(
+      categories: ['community'],
       titleAr: 'حديث نصرة الأخ',
       titleEn: 'Hadith of Helping Your Brother',
       titleFr: 'Hadith d\'Aider Votre Frère',
@@ -135,6 +175,7 @@ class _HadithsScreenState extends State<HadithsScreen> {
       meaningFr: 'La fraternité islamique exige le soutien par la justice et la sagesse',
     ),
     Hadith(
+      categories: ['family', 'character'],
       titleAr: 'حديث الوالدين',
       titleEn: 'Hadith of Parents',
       titleFr: 'Hadith des Parents',
@@ -152,6 +193,7 @@ class _HadithsScreenState extends State<HadithsScreen> {
       meaningFr: 'Honorer les parents est l\'un des plus grands moyens d\'entrer au Paradis',
     ),
     Hadith(
+      categories: ['character', 'patience'],
       titleAr: 'حديث كظم الغيظ',
       titleEn: 'Hadith of Controlling Anger',
       titleFr: 'Hadith de la Maîtrise de la Colère',
@@ -169,6 +211,7 @@ class _HadithsScreenState extends State<HadithsScreen> {
       meaningFr: 'Maîtriser la colère montre la force du caractère et la noblesse morale',
     ),
     Hadith(
+      categories: ['worship', 'business'],
       titleAr: 'حديث الصدقة',
       titleEn: 'Hadith of Charity',
       titleFr: 'Hadith de l\'Aumône',
@@ -186,6 +229,7 @@ class _HadithsScreenState extends State<HadithsScreen> {
       meaningFr: 'L\'aumône est une protection contre le châtiment et un moyen de la miséricorde d\'Allah',
     ),
     Hadith(
+      categories: ['community', 'character'],
       titleAr: 'حديث عيادة المريض',
       titleEn: 'Hadith of Visiting the Sick',
       titleFr: 'Hadith de la Visite aux Malades',
@@ -203,6 +247,7 @@ class _HadithsScreenState extends State<HadithsScreen> {
       meaningFr: 'Visiter le malade est un acte de miséricorde et de bonté',
     ),
     Hadith(
+      categories: ['character', 'community'],
       titleAr: 'حديث البسمة',
       titleEn: 'Hadith of Smiling',
       titleFr: 'Hadith du Sourire',
@@ -220,6 +265,7 @@ class _HadithsScreenState extends State<HadithsScreen> {
       meaningFr: 'Même les actes de bonté les plus simples ont une grande récompense chez Allah',
     ),
     Hadith(
+      categories: ['community'],
       titleAr: 'حديث الأخوة الإسلامية',
       titleEn: 'Hadith of Islamic Brotherhood',
       titleFr: 'Hadith de la Fraternité Islamique',
@@ -237,6 +283,7 @@ class _HadithsScreenState extends State<HadithsScreen> {
       meaningFr: 'La fraternité islamique est un lien sacré qui exige la loyauté et la compassion',
     ),
     Hadith(
+      categories: ['business', 'character'],
       titleAr: 'حديث الصدق في التجارة',
       titleEn: 'Hadith of Honesty in Trade',
       titleFr: 'Hadith de l\'Honnêteté dans le Commerce',
@@ -254,6 +301,7 @@ class _HadithsScreenState extends State<HadithsScreen> {
       meaningFr: 'L\'honnêteté dans les transactions est source de bénédiction et de prospérité',
     ),
     Hadith(
+      categories: ['character', 'worship'],
       titleAr: 'حديث حفظ اللسان',
       titleEn: 'Hadith of Guarding the Tongue',
       titleFr: 'Hadith de la Garde de la Langue',
@@ -271,6 +319,7 @@ class _HadithsScreenState extends State<HadithsScreen> {
       meaningFr: 'Garder la langue du péché mène à entrer au Paradis',
     ),
     Hadith(
+      categories: ['character', 'community'],
       titleAr: 'حديث النهي عن الحسد',
       titleEn: 'Hadith Against Envy',
       titleFr: 'Hadith Contre l\'Envie',
@@ -289,29 +338,60 @@ class _HadithsScreenState extends State<HadithsScreen> {
     ),
   ];
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   String _getScreenTitle(String langCode) {
     switch (langCode) {
       case 'ar':
-        return 'أحاديث النبي محمد';
+        return 'أحاديث النبي ﷺ';
       case 'fr':
-        return 'Hadiths du Prophète Muhammad';
+        return 'Hadiths du Prophète ﷺ';
       default:
-        return 'Hadiths of Prophet Muhammad';
+        return 'Prophet ﷺ Quotes';
     }
+  }
+
+  // 4. Added Filter Logic
+  List<Hadith> get _filteredHadiths {
+    return hadiths.where((hadith) {
+      // Check Category
+      final matchesCategory = _selectedCategoryId == 'all' || hadith.categories.contains(_selectedCategoryId);
+      if (!matchesCategory) return false;
+
+      // Check Search Query
+      if (_searchQuery.isEmpty) return true;
+      final query = _searchQuery.toLowerCase();
+      
+      return hadith.titleAr.toLowerCase().contains(query) ||
+             hadith.titleEn.toLowerCase().contains(query) ||
+             hadith.titleFr.toLowerCase().contains(query) ||
+             hadith.textAr.toLowerCase().contains(query) ||
+             hadith.textEn.toLowerCase().contains(query) ||
+             hadith.textFr.toLowerCase().contains(query);
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final langCode = Localizations.localeOf(context).languageCode;
     final isArabic = langCode == 'ar';
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Consumer<ThemeService>(
       builder: (context, themeService, _) {
+        final filteredList = _filteredHadiths;
+
         return Scaffold(
           body: IslamicPatternBackground(
             child: SafeArea(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Header
                   Container(
                     padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
                     child: Row(
@@ -334,26 +414,127 @@ class _HadithsScreenState extends State<HadithsScreen> {
                       ],
                     ),
                   ),
+
+                  // Search Bar
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Divider(
-                      color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
-                      thickness: 1,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? Colors.black.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (val) => setState(() => _searchQuery = val),
+                        style: themeService.getTextStyle(
+                          fontSize: 16,
+                          color: isDarkMode ? Colors.white : Colors.black87,
+                        ),
+                        textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+                        decoration: InputDecoration(
+                          hintText: isArabic ? 'ابحث في الأحاديث...' : (langCode == 'fr' ? 'Rechercher des hadiths...' : 'Search hadiths...'),
+                          hintStyle: TextStyle(color: isDarkMode ? Colors.grey[600] : Colors.black54),
+                          prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFD4AF37)),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: Icon(Icons.clear_rounded, color: isDarkMode ? Colors.white54 : Colors.black54),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() => _searchQuery = '');
+                                  },
+                                )
+                              : null,
+                        ),
+                      ),
                     ),
                   ),
-                  Expanded(
+
+                  // Horizontal Category Chips
+                  SizedBox(
+                    height: 60,
                     child: ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                      itemCount: hadiths.length,
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: hadithCategories.length,
                       itemBuilder: (context, index) {
-                        final hadith = hadiths[index];
-                        return HadithCard(
-                          hadith: hadith,
-                          isArabic: isArabic,
-                          themeService: themeService,
+                        final category = hadithCategories[index];
+                        final isSelected = category.id == _selectedCategoryId;
+                        
+                        String catName;
+                        if (isArabic) {
+                          catName = category.nameAr;
+                        } else if (langCode == 'fr') catName = category.nameFr;
+                        else catName = category.nameEn;
+
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                          child: ChoiceChip(
+                            label: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (category.id != 'all') ...[
+                                  Icon(
+                                    category.icon,
+                                    size: 16,
+                                    color: isSelected ? (isDarkMode ? const Color(0xFF0B3D2E) : Colors.white) : const Color(0xFFD4AF37),
+                                  ),
+                                  const SizedBox(width: 6),
+                                ],
+                                Text(
+                                  catName,
+                                  style: themeService.getTextStyle(
+                                    fontSize: 14,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                    color: isSelected ? (isDarkMode ? const Color(0xFF0B3D2E) : Colors.white) : (isDarkMode ? Colors.grey[300] : Colors.black87),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            selected: isSelected,
+                            selectedColor: const Color(0xFFD4AF37),
+                            backgroundColor: isDarkMode ? Colors.black.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.5),
+                            side: BorderSide(
+                              color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                            ),
+                            onSelected: (bool selected) {
+                              setState(() {
+                                _selectedCategoryId = category.id;
+                              });
+                            },
+                          ),
                         );
                       },
                     ),
+                  ),
+                  
+                  const SizedBox(height: 8),
+
+                  // Hadith List
+                  Expanded(
+                    child: filteredList.isEmpty
+                        ? Center(
+                            child: Text(
+                              isArabic ? 'لم يتم العثور على أحاديث' : (langCode == 'fr' ? 'Aucun hadith trouvé' : 'No hadiths found'),
+                              style: themeService.getTextStyle(
+                                fontSize: 16,
+                                color: isDarkMode ? Colors.grey[500] : Colors.grey[600],
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                            itemCount: filteredList.length,
+                            itemBuilder: (context, index) {
+                              return HadithCard(
+                                hadith: filteredList[index],
+                                isArabic: isArabic,
+                                themeService: themeService,
+                              );
+                            },
+                          ),
                   ),
                 ],
               ),
@@ -366,6 +547,7 @@ class _HadithsScreenState extends State<HadithsScreen> {
 }
 
 class Hadith {
+  final List<String> categories;
   final String titleAr;
   final String titleEn;
   final String titleFr;
@@ -383,6 +565,7 @@ class Hadith {
   final String meaningFr;
 
   const Hadith({
+    required this.categories,
     required this.titleAr,
     required this.titleEn,
     required this.titleFr,
@@ -446,8 +629,6 @@ class HadithCard extends StatelessWidget {
 
   void _shareHadith(BuildContext context, String title, String text, String narrator) {
     final shareText = '$title\n\n$text\n\n$narrator';
-    
-    // Triggers the native OS share dialog
     Share.share(shareText);
   }
 
@@ -456,18 +637,17 @@ class HadithCard extends StatelessWidget {
     final lang = _getLanguage(context);
     final isAr = lang == 'ar';
     final isFr = lang == 'fr';
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     final hadithText = _getText(hadith.textAr, hadith.textEn, hadith.textFr, lang);
     final narratorText = _getText(hadith.narratorAr, hadith.narratorEn, hadith.narratorFr, lang);
     final titleText = _getText(hadith.titleAr, hadith.titleEn, hadith.titleFr, lang);
 
-    // Adaptive text color for high contrast in both light/dark themes
-    final bodyTextColor = AppTheme.getOnBackgroundColor(context); 
+    final bodyTextColor = isDarkMode ? Colors.white : Colors.black87; 
 
-    // Brightened accent colors for borders, backgrounds, and headers
-    const eventAccent = Color(0xFFCBB28A); // Lighter brown/tan
-    const narratorAccent = Color(0xFFD4AF37); // Kept original gold
-    const meaningAccent = Color(0xFF81C784); // Lighter green
+    const eventAccent = Color(0xFFCBB28A); 
+    const narratorAccent = Color(0xFFD4AF37); 
+    const meaningAccent = Color(0xFF81C784); 
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
