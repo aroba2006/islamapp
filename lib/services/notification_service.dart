@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'; // FIX: Added foundation for web-safe platform checks
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -55,7 +55,7 @@ class NotificationService {
   // Currently selected reciter
   static AdhanReciter? selectedReciter;
 
-  // Track if app is in foreground (default to true since app is running)
+  // Track if app is in foreground
   static bool _isAppInForeground = true;
 
   // Callback for in-app notifications
@@ -78,7 +78,6 @@ class NotificationService {
 
     await _notifications.initialize(initSettings);
 
-    // FIX: Web-safe check for iOS
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       await _notifications
           .resolvePlatformSpecificImplementation<
@@ -90,10 +89,7 @@ class NotificationService {
           );
     }
 
-    // Setup audio session
     await _setupAudioSession();
-
-    // Load notification enabled state from SharedPreferences
     await _loadNotificationState();
   }
 
@@ -102,7 +98,6 @@ class NotificationService {
     await session.configure(const AudioSessionConfiguration.music());
   }
 
-  /// Load notification enabled state from SharedPreferences
   static Future<void> _loadNotificationState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -113,19 +108,16 @@ class NotificationService {
     }
   }
 
-  /// Check if notifications are enabled
   static bool areNotificationsEnabled() {
     return _notificationsEnabled;
   }
 
-  /// Set notification enabled/disabled state and persist to SharedPreferences
   static Future<void> setNotificationsEnabled(bool enabled) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('notificationsEnabled', enabled);
       _notificationsEnabled = enabled;
 
-      // If disabling, cancel all pending notifications
       if (!enabled) {
         await cancelAll();
       }
@@ -144,7 +136,6 @@ class NotificationService {
     selectedReciter = reciter;
   }
 
-  /// Play adhan audio for a specific duration
   static Future<void> _playAdhan(
     String prayerName, {
     Duration duration = const Duration(seconds: 30),
@@ -208,17 +199,14 @@ class NotificationService {
     }
   }
 
-  /// Schedule prayer notification with adhan playback
   static Future<void> schedulePrayerNotification(
     String prayerName,
     DateTime prayerTime, {
     bool playAdhan = true,
-    Duration adhanDuration = const Duration(seconds: 30),
   }) async {
     if (!_notificationsEnabled) return;
     if (prayerTime.isBefore(DateTime.now())) return;
 
-    // FIX: Web-safe check for Android
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('nextPrayerName', prayerName);
@@ -233,7 +221,6 @@ class NotificationService {
         rescheduleOnReboot: true,
       );
     } 
-    // FIX: Web-safe check for iOS
     else if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       final scheduledTime = tz.TZDateTime.from(prayerTime, tz.local);
       
@@ -257,6 +244,22 @@ class NotificationService {
             UILocalNotificationDateInterpretation.absoluteTime,
       );
     }
+  }
+
+  /// ──── NEW: TEST ADHAN METHOD ────
+  /// Instantly triggers the background alarm callback logic so you can test it 
+  /// without waiting for an actual prayer time.
+  static Future<void> showTestAdhan({required String reciter, required bool isWholeAdhan}) async {
+    if (!_notificationsEnabled) return;
+
+    // Save test state to SharedPreferences so the background callback reads it
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('adhanReciter', reciter);
+    await prefs.setBool('isWholeAdhan', isWholeAdhan);
+    await prefs.setString('nextPrayerName', 'تجربة (Test)');
+    
+    // Call the exact same logic that Android Alarm Manager uses when the app is in the background
+    await playBackgroundAdhanCallback();
   }
 
   static Future<void> cancelAll() async {
@@ -292,10 +295,12 @@ Future<void> playBackgroundAdhanCallback() async {
   final prefs = await SharedPreferences.getInstance();
   
   final reciterId = prefs.getString('adhanReciter') ?? 'mishary';
-  final duration = prefs.getInt('notificationAdhanDuration') ?? 30;
+  
+  // NEW: Read the boolean toggle instead of the integer duration
+  final isWholeAdhan = prefs.getBool('isWholeAdhan') ?? true;
+  
   final prayerName = prefs.getString('nextPrayerName') ?? 'Prayer';
   
-  // Initialize notifications for background isolate
   final notifications = FlutterLocalNotificationsPlugin();
   const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
   await notifications.initialize(const InitializationSettings(android: androidInit));
@@ -305,39 +310,40 @@ Future<void> playBackgroundAdhanCallback() async {
     'Prayer Times',
     importance: Importance.max,
     priority: Priority.high,
-    playSound: false, // Keep silent, we play audio manually below!
+    playSound: false, // Keep silent, just_audio handles the mp3
     enableVibration: true,
   );
   
   await notifications.show(
     prayerName.hashCode, 
-    'Time for $prayerName', 
-    'It is time to pray $prayerName', 
+    'حان وقت الصلاة', 
+    prayerName, 
     const NotificationDetails(android: androidDetails)
   );
 
   final player = AudioPlayer();
   
+  // Base paths without the extension
   final paths = {
-    'mishary': 'assets/adhan/afasiadhan.mp3',
-    'nasser':  'assets/adhan/qatamiadhan.mp3',
-    'qassas':  'assets/adhan/moqassas.mp3',
-    'refaat':  'assets/adhan/refaatadhan.mp3',
-    'tobar':   'assets/adhan/adhantobar.mp3',
+    'mishary': 'assets/adhan/afasiadhan',
+    'nasser':  'assets/adhan/qatamiadhan',
+    'qassas':  'assets/adhan/moqassas',
+    'refaat':  'assets/adhan/refaatadhan',
+    'tobar':   'assets/adhan/adhantobar',
   };
   
+  String basePath = paths[reciterId] ?? 'assets/adhan/afasiadhan';
+  
+  // Dynamically select the correct audio file based on the toggle setting
+  String finalAssetPath = isWholeAdhan ? '$basePath.mp3' : '${basePath}_takbeer.mp3';
+  
   try {
-    await player.setAsset(paths[reciterId] ?? 'assets/adhan/afasiadhan.mp3');
-    
+    await player.setAsset(finalAssetPath);
     player.play(); 
     
-    // Start cutoff timer
-    if (duration < 300) { 
-      Timer(Duration(seconds: duration), () async {
-        await player.stop();
-        await player.dispose();
-      });
-    }
+    // We no longer need the duration kill-switch timer, because the _takbeer.mp3 
+    // file naturally stops on its own when it's finished!
+    
   } catch (e) {
     debugPrint("Background audio error: $e");
   }

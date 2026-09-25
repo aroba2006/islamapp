@@ -45,8 +45,8 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
     final String paddedPage = pageNumber.toString().padLeft(3, '0');
 
     final List<String> possiblePaths = [
-      'assets/json/page_$pageNumber.json',
       'assets/json/$paddedPage.json',
+      'assets/json/page_$pageNumber.json',
       'assets/json/$pageNumber.json',
       'assets/quran_pages_data_json/page_$pageNumber.json',
     ];
@@ -59,8 +59,12 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
         if (decodedData is List) {
           ayahs = decodedData;
           break;
-        } else if (decodedData is Map && decodedData.containsKey('ayahs')) {
-          ayahs = decodedData['ayahs'];
+        } else if (decodedData is Map) {
+          if (decodedData.containsKey('ayahs')) {
+            ayahs = decodedData['ayahs'];
+          } else if (decodedData.containsKey('verses')) {
+            ayahs = decodedData['verses'];
+          }
           break;
         }
       } catch (_) {
@@ -144,51 +148,33 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
   void _nextPage() => _goToPage(QuranPageMetadata.getNextPage(_currentPage));
   void _previousPage() => _goToPage(QuranPageMetadata.getPreviousPage(_currentPage));
 
+  // Bulletproof integer parser to handle mixed JSON types (strings vs ints)
+  int _getSafeInt(dynamic val) {
+    if (val == null) return 0;
+    if (val is int) return val;
+    if (val is double) return val.toInt();
+    if (val is String) return int.tryParse(val.trim()) ?? 0;
+    return 0;
+  }
+
   // ==========================================================
-  // TAP TO SELECT VERSE
+  // TAP TO SELECT VERSE (Changed to TapDown to prevent Gesture stealing)
   // ==========================================================
-  void _handleTap(TapUpDetails details, BoxConstraints constraints) {
+  void _handleTap(TapDownDetails details, double actualW, double actualH) {
     if (_pageCoordinates.isEmpty) return;
 
-    final double cw = constraints.maxWidth;
-    final double ch = constraints.maxHeight;
-    const double imW = 1000.0;
-    const double imH = 1500.0;
+    final double tapY = details.localPosition.dy;
+    if (tapY < 0 || tapY > actualH) return;
 
-    // Fully initialized to avoid analyzer errors
-    double actualW = 0.0, actualH = 0.0;
+    // Simple: Use Y position percentage to find which verse was tapped
+    final double percentageY = tapY / actualH;
+    final int index = (percentageY * _pageCoordinates.length).floor().clamp(0, _pageCoordinates.length - 1);
     
-    if (cw / ch > imW / imH) {
-      actualH = ch;
-      actualW = ch * (imW / imH);
-    } else {
-      actualW = cw;
-      actualH = cw * (imH / imW);
-    }
-
-    final double imgX = (details.localPosition.dx - (cw - actualW) / 2) / actualW * 100.0;
-    final double imgY = (details.localPosition.dy - (ch - actualH) / 2) / actualH * 100.0;
-
-    // Ignore taps outside the page image
-    if (imgX < 0 || imgX > 100 || imgY < 0 || imgY > 100) return;
-
-    Map<String, dynamic>? selectedVerse = _getVerseFromCoordinates(imgX, imgY);
-
-    // Fallback: If no polygon coordinates exist, estimate verse from vertical tap position
-    if (selectedVerse == null && _pageCoordinates.isNotEmpty) {
-      double effectiveY = imgY;
-      if (_currentPage <= 2) {
-        // Banner header occupies roughly the top 15% on pages 1 and 2
-        effectiveY = ((imgY - 15) / 85.0).clamp(0.0, 1.0) * 100.0;
-      }
-      final int index = ((effectiveY / 100.0) * _pageCoordinates.length)
-          .floor()
-          .clamp(0, _pageCoordinates.length - 1);
-      final ayahData = _pageCoordinates[index];
-      final surahId = ayahData['sura'] ?? 0;
-      final ayahNum = ayahData['ayah'] ?? 0;
-      selectedVerse = buildVerseObject(surahId, ayahNum, _currentPage);
-    }
+    final ayahData = _pageCoordinates[index];
+    final surahId = _getSafeInt(ayahData['sura'] ?? ayahData['surah'] ?? ayahData['surahNumber']);
+    final ayahNum = _getSafeInt(ayahData['ayah'] ?? ayahData['aya'] ?? ayahData['ayahNumber']);
+    
+    final Map<String, dynamic>? selectedVerse = buildVerseObject(surahId, ayahNum, _currentPage);
 
     if (selectedVerse != null) {
       setState(() {
@@ -217,18 +203,18 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
 
   Map<String, dynamic>? _getVerseFromCoordinates(double x, double y) {
     for (var ayah in _pageCoordinates) {
-      final String? polyStr = ayah['polygon'];
+      final String? polyStr = ayah['polygon'] ?? ayah['bounds'];
       if (polyStr == null) continue;
 
       final List<Offset> points = polyStr
           .toString()
           .trim()
-          .split(" ")
+          .split(RegExp(r'\s+')) // Safely handle multiple spaces
           .map((e) => e.split(","))
           .where((e) => e.length == 2)
           .map((e) => Offset(
-                double.parse(e[0]),
-                double.parse(e[1]),
+                double.tryParse(e[0]) ?? 0,
+                double.tryParse(e[1]) ?? 0,
               ))
           .toList();
 
@@ -247,8 +233,8 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
       }
 
       if (inside) {
-        final surahId = ayah['sura'] ?? 0;
-        final ayahNum = ayah['ayah'] ?? 0;
+        final surahId = _getSafeInt(ayah['sura'] ?? ayah['surah'] ?? ayah['chapter']);
+        final ayahNum = _getSafeInt(ayah['ayah'] ?? ayah['aya'] ?? ayah['verse']);
 
         final verseObject = buildVerseObject(surahId, ayahNum, _currentPage);
         if (verseObject != null) {
@@ -312,22 +298,26 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
         children: [
           _buildPageHeader(context, isArabic),
           Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentPage = index + 1;
-                  _pageCoordinates = [];
-                  _highlightedVerse = null;
-                });
-                _loadPageCoordinates(index + 1);
-              },
-              itemCount: QuranPageMetadata.totalPages,
-              itemBuilder: (context, index) {
-                return Center(
-                  child: _buildQuranPage(context, index + 1, isArabic),
-                );
-              },
+            child: Directionality(
+              // Forces Right-to-Left in all languages, giving the physical book feel
+              textDirection: TextDirection.rtl, 
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentPage = index + 1;
+                    _pageCoordinates = [];
+                    _highlightedVerse = null;
+                  });
+                  _loadPageCoordinates(index + 1);
+                },
+                itemCount: QuranPageMetadata.totalPages,
+                itemBuilder: (context, index) {
+                  return Center(
+                    child: _buildQuranPage(context, index + 1, isArabic),
+                  );
+                },
+              ),
             ),
           ),
           _buildNavigationControls(context, isArabic),
@@ -352,7 +342,6 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
               const double imW = 1000.0;
               const double imH = 1500.0;
 
-              // Fully initialized actualW and actualH
               double actualW = 0.0, actualH = 0.0;
               
               if (cw / ch > imW / imH) {
@@ -363,95 +352,92 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
                 actualH = cw * (imH / imW);
               }
 
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  Center(
-                    child: SizedBox(
-                      width: actualW,
-                      height: actualH,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTapUp: (details) {
-                          _handleTap(details, constraints);
-                        },
-                        child: InteractiveViewer(
-                          minScale: 0.8,
-                          maxScale: 3.0,
-                          constrained: false,
-                          child: Builder(
-                            builder: (context) {
-                              final String paddedPage = pageNumber.toString().padLeft(3, '0');
-                              Widget quranImage = Image.asset(
-                                'assets/quran_pages/$paddedPage.png',
-                                width: actualW,
-                                height: actualH,
-                                fit: BoxFit.fill,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    width: actualW,
-                                    height: actualH,
-                                    color: Theme.of(context).scaffoldBackgroundColor,
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.image_not_supported,
-                                          size: 64,
-                                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          'Page $pageNumber not found',
-                                          style: GoogleFonts.elMessiri(
-                                            fontSize: 16,
+              return Center(
+                child: InteractiveViewer(
+                  minScale: 0.8,
+                  maxScale: 3.0,
+                  // REMOVED 'constrained: false' so it perfectly centers
+                  child: Center(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      // SWITCHED to onTapDown for bulletproof gesture detection
+                      onTapDown: (details) {
+                        _handleTap(details, actualW, actualH);
+                      },
+                      child: SizedBox(
+                        width: actualW,
+                        height: actualH,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Builder(
+                              builder: (context) {
+                                final String paddedPage = pageNumber.toString().padLeft(3, '0');
+                                Widget quranImage = Image.asset(
+                                  'assets/quran_pages/$paddedPage.png',
+                                  width: actualW,
+                                  height: actualH,
+                                  fit: BoxFit.fill,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: actualW,
+                                      height: actualH,
+                                      color: Theme.of(context).scaffoldBackgroundColor,
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.image_not_supported,
+                                            size: 64,
                                             color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              );
-                              if (isDarkMode) {
-                                return ColorFiltered(
-                                  colorFilter: const ColorFilter.matrix([
-                                    -1, 0, 0, 0, 255,
-                                    0, -1, 0, 0, 255,
-                                    0, 0, -1, 0, 255,
-                                    0, 0, 0, 1, 0,
-                                  ]),
-                                  child: quranImage,
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            'Page $pageNumber not found',
+                                            style: GoogleFonts.elMessiri(
+                                              fontSize: 16,
+                                              color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
                                 );
-                              }
-                              return quranImage;
-                            },
-                          ),
+                                
+                                if (isDarkMode) {
+                                  return ColorFiltered(
+                                    colorFilter: const ColorFilter.matrix(<double>[
+                                      -244 / 255, 0, 0, 0, 255, // R
+                                      -194 / 255, 0, 0, 0, 255, // G
+                                      -209 / 255, 0, 0, 0, 255, // B
+                                      0,          0, 0, 1, 0,   // Alpha
+                                    ]),
+                                    child: quranImage,
+                                  );
+                                }
+                                return quranImage;
+                              },
+                            ),
+                            if (_highlightedVerse != null &&
+                                _highlightedVerse!['page'] == pageNumber &&
+                                _highlightedVerse!['polygon'] != null)
+                              IgnorePointer(
+                                child: CustomPaint(
+                                  size: Size(actualW, actualH),
+                                  painter: VerseHighlightPainter(
+                                    selectedVerse: _highlightedVerse,
+                                    imageWidth: actualW,
+                                    imageHeight: actualH,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-
-                  // Highlight Overlay (active when coordinates include polygons)
-                  if (_highlightedVerse != null &&
-                      _highlightedVerse!['page'] == pageNumber &&
-                      _highlightedVerse!['polygon'] != null)
-                    Center(
-                      child: SizedBox(
-                        width: actualW,
-                        height: actualH,
-                        child: IgnorePointer(
-                          child: CustomPaint(
-                            painter: VerseHighlightPainter(
-                              selectedVerse: _highlightedVerse,
-                              imageWidth: actualW,
-                              imageHeight: actualH,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+                ),
               );
             },
           ),
@@ -601,54 +587,58 @@ class _MushafViewerScreenState extends State<MushafViewerScreen> {
           ),
         ),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            ElevatedButton.icon(
-              onPressed: canPrevious ? _previousPage : null,
-              icon: const Icon(Icons.arrow_back, size: 16),
-              label: Text(prevText, style: const TextStyle(fontSize: 12)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: canPrevious
-                    ? Theme.of(context).colorScheme.secondary
-                    : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                foregroundColor: Theme.of(context).scaffoldBackgroundColor,
-                disabledBackgroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                disabledForegroundColor: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              ),
-            ),
-            if (_bookmarkedPage != null)
+      child: Directionality(
+        // Forces the row to layout right-to-left universally
+        textDirection: TextDirection.rtl, 
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
               ElevatedButton.icon(
-                onPressed: () => _goToPage(_bookmarkedPage!),
-                icon: const Icon(Icons.bookmark, size: 16),
-                label: Text(goMarkText, style: const TextStyle(fontSize: 12)),
+                onPressed: canPrevious ? _previousPage : null,
+                icon: const Icon(Icons.arrow_back, size: 16),
+                label: Text(prevText, style: const TextStyle(fontSize: 12)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  backgroundColor: canPrevious
+                      ? Theme.of(context).colorScheme.secondary
+                      : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
                   foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                  disabledBackgroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                  disabledForegroundColor: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 ),
               ),
-            ElevatedButton.icon(
-              onPressed: canNext ? _nextPage : null,
-              icon: const Icon(Icons.arrow_forward, size: 16),
-              label: Text(nextText, style: const TextStyle(fontSize: 12)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: canNext
-                    ? Theme.of(context).colorScheme.secondary
-                    : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                foregroundColor: Theme.of(context).scaffoldBackgroundColor,
-                disabledBackgroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
-                disabledForegroundColor: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              if (_bookmarkedPage != null)
+                ElevatedButton.icon(
+                  onPressed: () => _goToPage(_bookmarkedPage!),
+                  icon: const Icon(Icons.bookmark, size: 16),
+                  label: Text(goMarkText, style: const TextStyle(fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                    foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  ),
+                ),
+              ElevatedButton.icon(
+                onPressed: canNext ? _nextPage : null,
+                icon: const Icon(Icons.arrow_forward, size: 16),
+                label: Text(nextText, style: const TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: canNext
+                      ? Theme.of(context).colorScheme.secondary
+                      : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                  foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                  disabledBackgroundColor: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.3),
+                  disabledForegroundColor: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -738,7 +728,6 @@ class _VerseTafseerSheetState extends State<_VerseTafseerSheet> {
             ),
           ),
 
-          // Horizontal Ayah Selector for all verses on the current page
           if (widget.pageAyahs.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(bottom: 12.0),
@@ -746,7 +735,11 @@ class _VerseTafseerSheetState extends State<_VerseTafseerSheet> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: widget.pageAyahs.map((ayahData) {
-                    final aNum = ayahData['ayah'] as int;
+                    // Safe parsing for the horizontal selector chip
+                    final aNum = ayahData['ayah'] is int 
+                        ? ayahData['ayah'] 
+                        : int.tryParse(ayahData['ayah']?.toString() ?? '0') ?? 0;
+                        
                     final isSelected = aNum == _currentVerse['verseNumber'];
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -765,7 +758,9 @@ class _VerseTafseerSheetState extends State<_VerseTafseerSheet> {
                         selectedColor: const Color(0xFFD4AF37),
                         onSelected: (selected) {
                           if (selected) {
-                            final surahId = ayahData['sura'] as int;
+                            final surahId = ayahData['sura'] is int 
+                                ? ayahData['sura'] 
+                                : int.tryParse(ayahData['sura']?.toString() ?? '0') ?? 0;
                             final newObj = buildVerseObject(surahId, aNum, widget.currentPage);
                             if (newObj != null) {
                               setState(() {
@@ -989,16 +984,19 @@ class VerseHighlightPainter extends CustomPainter {
     final polygon = selectedVerse!["polygon"];
     if (polygon == null) return;
 
+    const double imW = 1000.0; 
+    const double imH = 1500.0;
+
     final Path path = Path();
     final points = polygon
         .toString()
         .trim()
-        .split(" ")
+        .split(RegExp(r'\s+')) // Safely handle multiple spaces
         .map((e) => e.split(","))
         .where((e) => e.length == 2)
         .map((e) => Offset(
-              double.parse(e[0]) * imageWidth / 100.0,
-              double.parse(e[1]) * imageHeight / 100.0,
+              ((double.tryParse(e[0]) ?? 0) / imW) * imageWidth,
+              ((double.tryParse(e[1]) ?? 0) / imH) * imageHeight,
             ))
         .toList();
 
@@ -1021,7 +1019,7 @@ class VerseHighlightPainter extends CustomPainter {
     canvas.drawPath(
       path,
       Paint()
-        ..color = const Color(0x66FFD54F)
+        ..color = const Color(0x66FFD54F) 
         ..style = PaintingStyle.fill,
     );
 

@@ -103,10 +103,33 @@ class _QuranScreenState extends State<QuranScreen> {
   // 0: Whole Quran (Continuous), 1: Whole Surah, 2: Verse by Verse
   int _viewMode = 0;
 
-  String _removeDiacritics(String text) {
-    String cleaned = text.replaceAll(RegExp(r'[أإآٱ]'), 'ا');
-    cleaned = cleaned.replaceAll(RegExp(r'[\u064B-\u065F\u0670]'), '');
+  // Smarter Search Normalizer to handle Uthmani vs Standard spellings
+  String _normalizeArabic(String text) {
+    String cleaned = text.toLowerCase().trim();
+    // Remove all diacritics and small characters
+    cleaned = cleaned.replaceAll(RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]'), '');
+    // Normalize Alifs and Hamzas
+    cleaned = cleaned.replaceAll(RegExp(r'[أإآٱء]'), 'ا');
+    // Normalize Yaas (Maksura and regular)
+    cleaned = cleaned.replaceAll(RegExp(r'[ىئي]'), 'ي');
+    // Normalize Waw
+    cleaned = cleaned.replaceAll('ؤ', 'و');
+    // Normalize Taa
     cleaned = cleaned.replaceAll('ة', 'ه');
+    // Remove Tatweel
+    cleaned = cleaned.replaceAll('ـ', '');
+
+    // Standardize common Imla'ei spellings to Uthmani for better matching
+    cleaned = cleaned.replaceAll('ابراهيم', 'ابرهيم');
+    cleaned = cleaned.replaceAll('اسماعيل', 'اسمعيل');
+    cleaned = cleaned.replaceAll('اسحاق', 'اسحق');
+    cleaned = cleaned.replaceAll('سليمان', 'سليمن');
+    cleaned = cleaned.replaceAll('هارون', 'هرون');
+    cleaned = cleaned.replaceAll('داوود', 'داود');
+    cleaned = cleaned.replaceAll('ياسين', 'يس');
+    cleaned = cleaned.replaceAll('سماوات', 'سموت');
+    cleaned = cleaned.replaceAll('سموات', 'سموت');
+
     return cleaned;
   }
 
@@ -133,14 +156,14 @@ class _QuranScreenState extends State<QuranScreen> {
   }
 
   List<Map<String, dynamic>> _executeSearch(String query) {
-    final cleanQuery = _removeDiacritics(query.toLowerCase().trim());
+    final cleanQuery = _normalizeArabic(query);
     final results = <Map<String, dynamic>>[];
 
     for (var juz in QuranData.parts) {
       for (var surah in juz.surahs) {
         int startNumber = surah.startingVerseNumber;
 
-        final cleanSurahNameAr = _removeDiacritics(surah.nameAr);
+        final cleanSurahNameAr = _normalizeArabic(surah.nameAr);
         final surahNameEn = surah.nameEn.toLowerCase();
         final surahNameFr = (surahNamesFr[surah.id] ?? '').toLowerCase();
         final surahNameEnTrans = (surahNamesEnTrans[surah.id] ?? '').toLowerCase();
@@ -153,7 +176,7 @@ class _QuranScreenState extends State<QuranScreen> {
         List<Map<String, dynamic>> matchedVersesForSurah = [];
 
         for (int i = 0; i < surah.versesAr.length; i++) {
-          final cleanVerseAr = _removeDiacritics(surah.versesAr[i]);
+          final cleanVerseAr = _normalizeArabic(surah.versesAr[i]);
           final verseEn = i < surah.versesEn.length ? surah.versesEn[i].toLowerCase() : '';
 
           if (surahNameMatches || cleanVerseAr.contains(cleanQuery) || verseEn.contains(cleanQuery)) {
@@ -535,7 +558,7 @@ class _QuranScreenState extends State<QuranScreen> {
                 },
                 lang: lang,
                 isDarkMode: isDarkMode,
-                onTapSurah: () {
+                onTapVerseByVerse: () {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -544,11 +567,24 @@ class _QuranScreenState extends State<QuranScreen> {
                                 lang: lang,
                                 highlightedVerseIndex: verseIndex,
                                 startVerseNumber: startVerseNumber,
-                                viewMode: 2,
+                                viewMode: 2, // Mode 2 is Verse by Verse
                                 themeService: themeService,
                               )));
                 },
-                onTapMushaf: () {
+                onTapWholeSurah: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => SurahReaderScreen(
+                                surah: surah,
+                                lang: lang,
+                                highlightedVerseIndex: verseIndex,
+                                startVerseNumber: startVerseNumber,
+                                viewMode: 1, // Mode 1 is Whole Surah
+                                themeService: themeService,
+                              )));
+                },
+                onTapFullQuran: () {
                   if (pageNumber != null) {
                     Navigator.push(
                         context,
@@ -1057,11 +1093,31 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
     return null;
   }
 
+  String _normalizeArabic(String text) {
+    String cleaned = text.toLowerCase().trim();
+    cleaned = cleaned.replaceAll(RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]'), '');
+    cleaned = cleaned.replaceAll(RegExp(r'[أإآٱء]'), 'ا');
+    cleaned = cleaned.replaceAll(RegExp(r'[ىئي]'), 'ي');
+    cleaned = cleaned.replaceAll('ؤ', 'و');
+    cleaned = cleaned.replaceAll('ة', 'ه');
+    cleaned = cleaned.replaceAll('ـ', '');
+    cleaned = cleaned.replaceAll('ابراهيم', 'ابرهيم');
+    cleaned = cleaned.replaceAll('اسماعيل', 'اسمعيل');
+    cleaned = cleaned.replaceAll('اسحاق', 'اسحق');
+    cleaned = cleaned.replaceAll('سليمان', 'سليمن');
+    cleaned = cleaned.replaceAll('هارون', 'هرون');
+    cleaned = cleaned.replaceAll('داوود', 'داود');
+    cleaned = cleaned.replaceAll('ياسين', 'يس');
+    cleaned = cleaned.replaceAll('سماوات', 'سموت');
+    cleaned = cleaned.replaceAll('سموات', 'سموت');
+    return cleaned;
+  }
+
   bool _matchesSearch(int index) {
     if (_surahSearchQuery.trim().isEmpty) return true;
 
-    final query = _removeDiacritics(_surahSearchQuery.trim().toLowerCase());
-    final cleanAr = _removeDiacritics(widget.surah.versesAr[index]).toLowerCase();
+    final query = _normalizeArabic(_surahSearchQuery.trim());
+    final cleanAr = _normalizeArabic(widget.surah.versesAr[index]);
 
     if (cleanAr.contains(query)) return true;
 
@@ -1073,17 +1129,10 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
     return false;
   }
 
-  String _removeDiacritics(String text) {
-    String cleaned = text.replaceAll(RegExp(r'[أإآٱ]'), 'ا');
-    cleaned = cleaned.replaceAll(RegExp(r'[\u064B-\u065F\u0670]'), '');
-    cleaned = cleaned.replaceAll('ة', 'ه');
-    return cleaned;
-  }
-
   Widget _buildPageView(bool isDarkMode, ThemeService themeService, {String searchQuery = ''}) {
     List<InlineSpan> spans = [];
     final isSearching = searchQuery.trim().isNotEmpty;
-    final cleanQuery = _removeDiacritics(searchQuery.trim().toLowerCase());
+    final cleanQuery = _normalizeArabic(searchQuery.trim());
 
     // SCALED FONT SIZES
     final double arabicFontSize = themeService.getScaledSize(28);
@@ -1094,7 +1143,7 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
       final isSearchedHighlight = _isVerseHighlighted(i);
       final isTappedHighlight = _tappedVerseIndex == i;
 
-      final cleanVerse = _removeDiacritics(widget.surah.versesAr[i]).toLowerCase();
+      final cleanVerse = _normalizeArabic(widget.surah.versesAr[i]);
       final verseMatches = isSearching && cleanVerse.contains(cleanQuery);
 
       Color verseColor;
@@ -1834,16 +1883,18 @@ class _SearchResultGlassCard extends StatefulWidget {
   final Map<String, dynamic> searchResult;
   final String lang;
   final bool isDarkMode;
-  final VoidCallback onTapSurah;
-  final VoidCallback onTapMushaf;
+  final VoidCallback onTapVerseByVerse;
+  final VoidCallback onTapWholeSurah;
+  final VoidCallback onTapFullQuran;
   final ThemeService themeService;
 
   const _SearchResultGlassCard({
     required this.searchResult,
     required this.lang,
     required this.isDarkMode,
-    required this.onTapSurah,
-    required this.onTapMushaf,
+    required this.onTapVerseByVerse,
+    required this.onTapWholeSurah,
+    required this.onTapFullQuran,
     required this.themeService,
   });
 
@@ -1948,7 +1999,46 @@ class _SearchResultGlassCardState extends State<_SearchResultGlassCard> {
                             onTapDown: (_) => setState(() => _scale = 0.96),
                             onTapUp: (_) => setState(() => _scale = 1.0),
                             onTapCancel: () => setState(() => _scale = 1.0),
-                            onTap: widget.onTapSurah,
+                            onTap: widget.onTapVerseByVerse,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                    color: const Color(0xFFD4AF37).withValues(alpha: 0.5)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.format_list_numbered,
+                                      color: Color(0xFFD4AF37), size: 16),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        widget.lang == 'ar' ? 'آية بآية' : 'v by v',
+                                        style: widget.themeService.getTextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFFD4AF37),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: GestureDetector(
+                            onTapDown: (_) => setState(() => _scale = 0.96),
+                            onTapUp: (_) => setState(() => _scale = 1.0),
+                            onTapCancel: () => setState(() => _scale = 1.0),
+                            onTap: widget.onTapWholeSurah,
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               decoration: BoxDecoration(
@@ -1962,13 +2052,18 @@ class _SearchResultGlassCardState extends State<_SearchResultGlassCard> {
                                 children: [
                                   const Icon(Icons.auto_stories,
                                       color: Color(0xFFD4AF37), size: 16),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    widget.lang == 'ar' ? 'السورة' : 'Surah',
-                                    style: widget.themeService.getTextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFFD4AF37),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        widget.lang == 'ar' ? 'السورة' : 's by s',
+                                        style: widget.themeService.getTextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFFD4AF37),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1976,14 +2071,14 @@ class _SearchResultGlassCardState extends State<_SearchResultGlassCard> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 8),
                         if (pageNumber != null)
                           Expanded(
                             child: GestureDetector(
                               onTapDown: (_) => setState(() => _scale = 0.96),
                               onTapUp: (_) => setState(() => _scale = 1.0),
                               onTapCancel: () => setState(() => _scale = 1.0),
-                              onTap: widget.onTapMushaf,
+                              onTap: widget.onTapFullQuran,
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 10),
                                 decoration: BoxDecoration(
@@ -1997,13 +2092,18 @@ class _SearchResultGlassCardState extends State<_SearchResultGlassCard> {
                                   children: [
                                     const Icon(Icons.menu_book,
                                         color: Color(0xFFD4AF37), size: 16),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      widget.lang == 'ar' ? 'المصحف' : 'Mushaf',
-                                      style: widget.themeService.getTextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFFD4AF37),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          widget.lang == 'ar' ? 'المصحف' : 'Mushaf',
+                                          style: widget.themeService.getTextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            color: const Color(0xFFD4AF37),
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ],

@@ -77,6 +77,47 @@ class _AIQuestionAnswerScreenState extends State<AIQuestionAnswerScreen> with Ti
     }
   }
 
+  Future<void> _redoResponse(String prompt) async {
+    if (_isLoading) return;
+
+    setState(() {
+      _cancelCurrentRequest = false;
+      _isLoading = true;
+    });
+    
+    _scrollToBottom();
+
+    try {
+      final aiService = AIService();
+      final response = await aiService.getIslamicAnswer(
+        question: prompt,
+        context: context,
+      );
+
+      if (_cancelCurrentRequest) return; 
+
+      if (mounted) {
+        setState(() {
+          _messages.add(ChatMessage(
+            text: response,
+            isUser: false,
+            timestamp: DateTime.now(),
+          ));
+          _isLoading = false;
+        });
+        
+        _saveChatHistory();
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (_cancelCurrentRequest) return;
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showErrorDialog(e.toString());
+      }
+    }
+  }
+
   Future<void> _saveChatHistory() async {
     final prefs = await SharedPreferences.getInstance();
     final List<Map<String, dynamic>> encoded = _messages.map((m) => {
@@ -676,7 +717,42 @@ class _AIQuestionAnswerScreenState extends State<AIQuestionAnswerScreen> with Ti
                         fontSize: 11,
                       ),
                     ),
+                    
+                    // --- USER MESSAGE ACTIONS (Edit & Copy) ---
+                    if (message.isUser) ...[
+                      const SizedBox(width: 12),
+                      InkWell(
+                        onTap: () {
+                          // Populates the text field with the previous prompt
+                          _questionController.text = message.text;
+                        },
+                        child: const Icon(Icons.edit_rounded, size: 14, color: Colors.black54),
+                      ),
+                      const SizedBox(width: 12),
+                      InkWell(
+                        onTap: () {
+                          Clipboard.setData(ClipboardData(text: message.text));
+                          final copiedText = isArabic ? 'تم النسخ إلى الحافظة' : (isFrench ? 'Copié dans le presse-papiers' : 'Copied to clipboard');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(copiedText), duration: const Duration(seconds: 2), backgroundColor: const Color(0xFF0B3D2E)),
+                          );
+                        },
+                        child: const Icon(Icons.copy_rounded, size: 14, color: Colors.black54),
+                      ),
+                    ],
+
+                    // --- AI MESSAGE ACTIONS (Redo & Copy) ---
                     if (!message.isUser && !isSystemMessage) ...[
+                      const SizedBox(width: 12),
+                      InkWell(
+                        onTap: () {
+                          // Finds the immediately preceding user message to resubmit
+                          if (index > 0 && _messages[index - 1].isUser) {
+                            _redoResponse(_messages[index - 1].text);
+                          }
+                        },
+                        child: Icon(Icons.refresh_rounded, size: 14, color: isDarkMode ? Colors.grey[400] : Colors.black54),
+                      ),
                       const SizedBox(width: 12),
                       InkWell(
                         onTap: () {

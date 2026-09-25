@@ -179,9 +179,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              event.getDescription(eventLang),
-              style: TextStyle(color: Colors.grey[300], height: 1.5),
-            ),
+                event.getDescription(eventLang),
+                style: TextStyle(
+                  color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.8), 
+                  height: 1.5
+                ),
+              ),
             const SizedBox(height: 16),
             
             // Hijri Date Row
@@ -195,7 +198,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       : (isFrench 
                           ? 'Hégirien : ${event.hijriDay}/${event.hijriMonth} AH' 
                           : 'Hijri: ${event.hijriDay}/${event.hijriMonth} AH'),
-                  style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.7), 
+                    fontSize: 13, 
+                    fontWeight: FontWeight.w500
+                  ),
                 ),
               ],
             ),
@@ -212,7 +219,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       : (isFrench 
                           ? 'Grégorien : $formattedGregorian' 
                           : 'Gregorian: $formattedGregorian'),
-                  style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.7), 
+                    fontSize: 13, 
+                    fontWeight: FontWeight.w500
+                  ),
                 ),
               ],
             ),
