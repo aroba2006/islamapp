@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:islamy_app/services/notification_service.dart';
 
-/// In-app notification popup that shows when prayer time arrives
 class PrayerNotificationPopup extends StatefulWidget {
   final String prayerName;
   final VoidCallback onDismiss;
+  final VoidCallback onStopAdhan; // <-- NEW: Dedicated audio stop
 
   const PrayerNotificationPopup({
     super.key,
     required this.prayerName,
     required this.onDismiss,
+    required this.onStopAdhan, // <-- NEW
   });
 
   @override
@@ -43,7 +43,7 @@ class _PrayerNotificationPopupState extends State<PrayerNotificationPopup>
 
     _animationController.forward();
 
-    // Auto-dismiss after 5 seconds
+    // Auto-dismiss after 5 seconds (Will NO LONGER stop the audio)
     Future.delayed(const Duration(seconds: 5), () {
       if (mounted) {
         _dismiss();
@@ -60,12 +60,10 @@ class _PrayerNotificationPopupState extends State<PrayerNotificationPopup>
   void _dismiss() {
     _animationController.reverse().then((_) {
       if (mounted) {
-        widget.onDismiss();
+        widget.onDismiss(); // Only closes UI
       }
     });
   }
-
-  // --- Translation Helpers ---
   
   String _getLocalizedPrayerName(String prayer, String lang) {
     final p = prayer.toLowerCase();
@@ -85,8 +83,6 @@ class _PrayerNotificationPopupState extends State<PrayerNotificationPopup>
       if (p.contains('maghrib')) return 'Maghrib';
       if (p.contains('isha')) return 'Icha';
     }
-    
-    // Default fallback
     return prayer;
   }
 
@@ -146,11 +142,7 @@ class _PrayerNotificationPopupState extends State<PrayerNotificationPopup>
                 children: [
                   Row(
                     children: [
-                      const Icon(
-                        Icons.notifications_active,
-                        color: Colors.white,
-                        size: 28,
-                      ),
+                      const Icon(Icons.notifications_active, color: Colors.white, size: 28),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
@@ -174,23 +166,20 @@ class _PrayerNotificationPopupState extends State<PrayerNotificationPopup>
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                        ),
-                        onPressed: _dismiss,
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: _dismiss, // Only closes UI
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
+                      // --- RED STOP BUTTON ---
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            // Stop adhan playback
-                            NotificationService.stopAdhan();
-                            _dismiss();
+                            widget.onStopAdhan(); // <-- Stops audio
+                            _dismiss();           // <-- Closes UI
                           },
                           icon: const Icon(Icons.stop),
                           label: Text(_getStopText(lang)),
@@ -201,9 +190,10 @@ class _PrayerNotificationPopupState extends State<PrayerNotificationPopup>
                         ),
                       ),
                       const SizedBox(width: 8),
+                      // --- WHITE GOT IT BUTTON ---
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: _dismiss,
+                          onPressed: _dismiss, // Only closes UI
                           icon: const Icon(Icons.check),
                           label: Text(_getGotItText(lang)),
                           style: ElevatedButton.styleFrom(

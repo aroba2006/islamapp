@@ -14,7 +14,10 @@ import '../utils/adhan_reciter_translations.dart';
 import '../services/auth_service.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final int initialTab;
+  
+  // Set default index to 1 to default to the "System" tab
+  const SettingsScreen({super.key, this.initialTab = 1});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -26,12 +29,46 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
   late TabController _tabController;
   late AnimationController _animationController;
 
+  void _showAboutApp(BuildContext context) {
+    final langCode = Localizations.localeOf(context).languageCode;
+    final isArabic = langCode == 'ar';
+    final isFrench = langCode == 'fr';
+
+    showAboutDialog(
+      context: context,
+      applicationName: isArabic ? 'تطبيق إسلامي' : (isFrench ? 'Application Islamique' : 'Islamy App'),
+      applicationVersion: '1.0.0',
+      applicationIcon: const Icon(Icons.mosque_rounded, size: 48, color: Color(0xFFD4AF37)),
+      applicationLegalese: '© 2026 Abdullah Hesham. All rights reserved.',
+      children: [
+        const SizedBox(height: 16),
+        Text(
+          isArabic 
+              ? 'رفيقك الإسلامي في حياتك اليومية.' 
+              : 'Your Islamic companion in daily life.',
+          style: TextStyle(color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.8)),
+        ),
+      ],
+    );
+  }
+
   final Map<String, String> _fontOptions = const {
     'amiri': 'Amiri (أميري)',
     'elMessiri': 'El Messiri (المسيري)',
     'arefRuqaa': 'Aref Ruqaa (عارف رقعة)',
     'cairo': 'Cairo (القاهرة)',
     'tajawal': 'Tajawal (تجول)',
+
+    // --- NEW FONTS ADDED BELOW ---
+    'almarai': 'Almarai (المراعي)',
+    'reemKufi': 'Reem Kufi (ريم كوفي)',
+    'changa': 'Changa (تشانجا)',
+    'lateef': 'Lateef (لطيف)',
+
+    'ibmPlexSansArabic': 'IBM Plex (آي بي إم)',
+    'readexPro': 'Readex Pro (ريدكس برو)',
+    'rakkas': 'Rakkas (رقاص)',
+    'kufam': 'Kufam (كوفام)',
   };
 
   @override
@@ -40,7 +77,7 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
     _tabController = TabController(
       length: 2, 
       vsync: this,
-      initialIndex: 1,
+      initialIndex: widget.initialTab,
     );
     _animationController = AnimationController(
       vsync: this,
@@ -157,10 +194,14 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
             child: Text(
               l10n.settings,
               textAlign: TextAlign.center,
+              // FIX: Force the text style to inherit the newly selected 
+              // global font family from main.dart immediately.
               style: themeService.getTextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).colorScheme.secondary,
+              ).copyWith(
+                fontFamily: Theme.of(context).textTheme.bodyLarge?.fontFamily,
               ),
             ),
           ),
@@ -313,6 +354,39 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
                     index: 4,
                     controller: _animationController,
                     child: _buildLanguageSection(context, l10n, themeService, isDark),
+                  ),
+                  const SizedBox(height: 32),
+                  _AnimatedSection(
+                    index: 5,
+                    controller: _animationController,
+                    child: Container(
+                      decoration: _getSectionDecoration(context, isDark),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.secondary, size: 26),
+                        ),
+                        title: Text(
+                          isArabic ? 'عن التطبيق' : 'About App',
+                          style: themeService.getTextStyle(
+                            fontSize: 18, 
+                            fontWeight: FontWeight.bold, 
+                            color: AppTheme.getOnBackgroundColor(context)
+                          ),
+                        ),
+                        trailing: Icon(
+                          Icons.arrow_forward_ios_rounded, 
+                          color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5), 
+                          size: 16
+                        ),
+                        onTap: () => _showAboutApp(context),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -739,36 +813,39 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
         const SizedBox(height: 8),
         Text(fontStyleDesc, style: themeService.getTextStyle(fontSize: 14, color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.7))),
         const SizedBox(height: 16),
+        
+        // --- NEW DROPDOWN MENU ---
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: _getSectionDecoration(context, isDark),
-          child: Column(
-            children: _fontOptions.entries.map((entry) {
-              final isSelected = _selectedFont == entry.key;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: GestureDetector(
-                  onTap: () => _updateFont(entry.key),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeOut,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2) : Colors.transparent,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: isSelected ? Theme.of(context).colorScheme.secondary : Theme.of(context).colorScheme.secondary.withValues(alpha: 0.15), width: isSelected ? 2 : 1),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(entry.value, style: themeService.getTextStyle(fontSize: 16, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? Theme.of(context).colorScheme.secondary : AppTheme.getOnBackgroundColor(context))),
-                        if (isSelected) Icon(Icons.check_circle_rounded, color: Theme.of(context).colorScheme.secondary, size: 22),
-                      ],
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              dropdownColor: isDark ? const Color(0xFF144D32) : Colors.white,
+              // Fallback to amiri if a deleted font is somehow still saved in SharedPreferences
+              value: _fontOptions.containsKey(_selectedFont) ? _selectedFont : 'amiri',
+              isExpanded: true,
+              icon: Icon(Icons.arrow_drop_down_rounded, color: Theme.of(context).colorScheme.secondary, size: 30),
+              items: _fontOptions.entries.map((entry) {
+                return DropdownMenuItem<String>(
+                  value: entry.key,
+                  child: Text(
+                    entry.value,
+                    style: themeService.getTextStyle(
+                      fontSize: 16,
+                      color: _selectedFont == entry.key 
+                          ? Theme.of(context).colorScheme.secondary 
+                          : AppTheme.getOnBackgroundColor(context),
+                      fontWeight: _selectedFont == entry.key ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+              onChanged: (String? newFont) {
+                if (newFont != null) {
+                  _updateFont(newFont);
+                }
+              },
+            ),
           ),
         ),
       ],
@@ -847,11 +924,11 @@ class _SettingsScreenState extends State<SettingsScreen> with TickerProviderStat
           decoration: _getSectionDecoration(context, isDark),
           child: Column(
             children: [
-              _InteractiveOptionCard(label: 'العربية', isSelected: _selectedLanguage == 'ar', onTap: () { IslamicApp.of(context)?.setLocale('ar'); setState(() => _selectedLanguage = 'ar'); }, themeService: themeService),
+              _InteractiveOptionCard(label: '🇪🇬 العربية', isSelected: _selectedLanguage == 'ar', onTap: () { IslamicApp.of(context)?.setLocale('ar'); setState(() => _selectedLanguage = 'ar'); }, themeService: themeService),
               const SizedBox(height: 12),
-              _InteractiveOptionCard(label: 'English', isSelected: _selectedLanguage == 'en', onTap: () { IslamicApp.of(context)?.setLocale('en'); setState(() => _selectedLanguage = 'en'); }, themeService: themeService),
+              _InteractiveOptionCard(label: '🇺🇸 English', isSelected: _selectedLanguage == 'en', onTap: () { IslamicApp.of(context)?.setLocale('en'); setState(() => _selectedLanguage = 'en'); }, themeService: themeService),
               const SizedBox(height: 12),
-              _InteractiveOptionCard(label: 'Français', isSelected: _selectedLanguage == 'fr', onTap: () { IslamicApp.of(context)?.setLocale('fr'); setState(() => _selectedLanguage = 'fr'); }, themeService: themeService),
+              _InteractiveOptionCard(label: '🇫🇷 Français', isSelected: _selectedLanguage == 'fr', onTap: () { IslamicApp.of(context)?.setLocale('fr'); setState(() => _selectedLanguage = 'fr'); }, themeService: themeService),
             ],
           ),
         ),
@@ -1097,7 +1174,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> with SingleTi
           ],
         ),
         const SizedBox(height: 12),
-        Text(lang == 'ar' ? 'إعداد منبهات متعددة، غفوة، وأصوات هادئة للاستيقاظ' : 'Set multiple alarms, snoozes, and chilling wake-up sounds', style: themeService.getTextStyle(fontSize: 14, color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.7))),
+        Text(lang == 'ar' ? 'إعداد منبهات متعددة، غفوة، وأصوات هادئة للاستيقاظ' : (lang == 'fr' ? 'Configurez plusieurs alarmes, des rappels et des sons de réveil apaisants' : 'Set multiple alarms, snoozes, and chilling wake-up sounds'), style: themeService.getTextStyle(fontSize: 14, color: AppTheme.getOnBackgroundColor(context).withValues(alpha: 0.7))),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(16),
@@ -1105,11 +1182,11 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> with SingleTi
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(lang == 'ar' ? 'صوت الاستيقاظ' : 'Wake-up Sound', style: themeService.getTextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(lang == 'ar' ? 'صوت الاستيقاظ' : (lang == 'fr' ? 'Son de réveil' : 'Wake-up Sound'), style: themeService.getTextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
-              _InteractiveOptionCard(label: lang == 'ar' ? 'نسيم هادئ (موصى به)' : 'Chilling Breeze (Recommended)', isSelected: _selectedWakeSound == 'chilling_breeze', onTap: () => setState(() => _selectedWakeSound = 'chilling_breeze'), themeService: themeService),
+              _InteractiveOptionCard(label: lang == 'ar' ? 'نسيم هادئ (موصى به)' : (lang == 'fr' ? 'Brise apaisante (recommandé)' : 'Chilling Breeze (Recommended)'), isSelected: _selectedWakeSound == 'chilling_breeze', onTap: () => setState(() => _selectedWakeSound = 'chilling_breeze'), themeService: themeService),
               const SizedBox(height: 8),
-              _InteractiveOptionCard(label: lang == 'ar' ? 'أذان تقليدي' : 'Traditional Adhan', isSelected: _selectedWakeSound == 'traditional', onTap: () => setState(() => _selectedWakeSound = 'traditional'), themeService: themeService),
+              _InteractiveOptionCard(label: lang == 'ar' ? 'أذان تقليدي' : (lang == 'fr' ? 'Adhan traditionnel' : 'Traditional Adhan'), isSelected: _selectedWakeSound == 'traditional', onTap: () => setState(() => _selectedWakeSound = 'traditional'), themeService: themeService),
             ],
           ),
         ),
@@ -1120,7 +1197,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> with SingleTi
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(lang == 'ar' ? 'تفعيل الغفوة (٥ دقائق)' : 'Enable Snooze (5 mins)', style: themeService.getTextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(lang == 'ar' ? 'تفعيل الغفوة (٥ دقائق)' : (lang == 'fr' ? 'Activer le rappel (5 min)' : 'Enable Snooze (5 mins)'), style: themeService.getTextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               Switch(value: _snoozeEnabled, onChanged: (val) => setState(() => _snoozeEnabled = val), activeThumbColor: Theme.of(context).colorScheme.secondary),
             ],
           ),
@@ -1135,11 +1212,11 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> with SingleTi
     return ExpansionTile(
       leading: Icon(icon, color: Theme.of(context).colorScheme.secondary),
       title: Text(prayerName, style: themeService.getTextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-      subtitle: Text('2 alarms set', style: themeService.getTextStyle(fontSize: 12, color: Colors.grey)),
+      subtitle: Text(lang == 'ar' ? 'منبهان مضبوطان' : (lang == 'fr' ? '2 alarmes définies' : '2 alarms set'), style: themeService.getTextStyle(fontSize: 12, color: Colors.grey)),
       children: [
-        ListTile(title: Text(lang == 'ar' ? 'في وقت الصلاة تماماً' : 'At exact Salah time', style: themeService.getTextStyle(fontSize: 14)), trailing: const Icon(Icons.remove_circle_outline, color: Colors.redAccent)),
-        ListTile(title: Text(lang == 'ar' ? 'بعد ١٥ دقيقة (احتياطي)' : '15 mins after (Backup)', style: themeService.getTextStyle(fontSize: 14)), trailing: const Icon(Icons.remove_circle_outline, color: Colors.redAccent)),
-        TextButton.icon(onPressed: () {}, icon: Icon(Icons.add, color: Theme.of(context).colorScheme.secondary), label: Text(lang == 'ar' ? 'إضافة منبه آخر' : 'Add another alarm', style: TextStyle(color: Theme.of(context).colorScheme.secondary)))
+        ListTile(title: Text(lang == 'ar' ? 'في وقت الصلاة تماماً' : (lang == 'fr' ? "À l'heure exacte de la prière" : 'At exact Salah time'), style: themeService.getTextStyle(fontSize: 14)), trailing: const Icon(Icons.remove_circle_outline, color: Colors.redAccent)),
+        ListTile(title: Text(lang == 'ar' ? 'بعد ١٥ دقيقة (احتياطي)' : (lang == 'fr' ? '15 min après (secours)' : '15 mins after (Backup)'), style: themeService.getTextStyle(fontSize: 14)), trailing: const Icon(Icons.remove_circle_outline, color: Colors.redAccent)),
+        TextButton.icon(onPressed: () {}, icon: Icon(Icons.add, color: Theme.of(context).colorScheme.secondary), label: Text(lang == 'ar' ? 'إضافة منبه آخر' : (lang == 'fr' ? 'Ajouter une autre alarme' : 'Add another alarm'), style: TextStyle(color: Theme.of(context).colorScheme.secondary)))
       ],
     );
   }
@@ -1204,7 +1281,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> with SingleTi
                                               setState(() => _notificationsEnabled = value);
                                               await NotificationService.setNotificationsEnabled(value);
                                               if (mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(value ? 'الإشعارات مفعلة' : 'الإشعارات معطلة'), duration: const Duration(seconds: 2), backgroundColor: value ? Colors.green : Colors.orange));
+                                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang == 'ar' ? (value ? 'الإشعارات مفعلة' : 'الإشعارات معطلة') : (lang == 'fr' ? (value ? 'Notifications activées' : 'Notifications désactivées') : (value ? 'Notifications enabled' : 'Notifications disabled'))), duration: const Duration(seconds: 2), backgroundColor: value ? Colors.green : Colors.orange));
                                               }
                                             },
                                             activeThumbColor: Theme.of(context).colorScheme.secondary,
@@ -1302,7 +1379,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> with SingleTi
                                         onPressed: () async {
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
-                                              content: Text(lang == 'ar' ? 'سيصلك إشعار تجريبي بعد 5 ثوانٍ...' : 'Test notification arriving in 5 seconds...'),
+                                              content: Text(lang == 'ar' ? 'سيصلك إشعار تجريبي بعد 5 ثوانٍ...' : (lang == 'fr' ? 'Vous recevrez une notification de test dans 5 secondes...' : 'Test notification arriving in 5 seconds...')),
                                               backgroundColor: Theme.of(context).colorScheme.secondary,
                                               duration: const Duration(seconds: 3),
                                             ),
@@ -1310,9 +1387,6 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> with SingleTi
                                           
                                           await Future.delayed(const Duration(seconds: 5));
                                           
-                                          // TODO: Ensure you trigger your actual notification method here
-                                          // Example: await NotificationService.showTestAdhan(_selectedReciter, _isWholeAdhan);
-
                                           await NotificationService.showTestAdhan(
                                             reciter: _selectedReciter,
                                             isWholeAdhan: _isWholeAdhan,
@@ -1320,7 +1394,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> with SingleTi
                                         },
                                         icon: const Icon(Icons.send_to_mobile_rounded, size: 24),
                                         label: Text(
-                                          lang == 'ar' ? 'تجربة إشعار الأذان' : 'Test Adhan Notification', 
+                                          lang == 'ar' ? 'تجربة إشعار الأذان' : (lang == 'fr' ? "Tester la notification d'adhan" : 'Test Adhan Notification'),
                                           style: themeService.getTextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                         ),
                                         style: ElevatedButton.styleFrom(

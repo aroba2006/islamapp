@@ -39,9 +39,17 @@ class _MosqueFinderScreenState extends State<MosqueFinderScreen> {
   }
 
   Future<void> _initializeMosqueFinder() async {
+    // Reset state so Retry actually clears the previous error
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
+
     try {
       if (!await Geolocator.isLocationServiceEnabled()) {
-        throw Exception("Location services are disabled");
+        throw Exception('Location services are disabled');
       }
 
       LocationPermission permission = await Geolocator.checkPermission();
@@ -52,48 +60,48 @@ class _MosqueFinderScreenState extends State<MosqueFinderScreen> {
 
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        throw Exception("Location permission denied");
+        throw Exception('Location permission denied');
       }
 
       final position = await Geolocator.getCurrentPosition();
-
-      _currentLatitude = position.latitude;
-      _currentLongitude = position.longitude;
 
       final mosques = await OverpassService.getNearbyMosques(
         position.latitude,
         position.longitude,
       );
 
+      final result = mosques.map((m) {
+        return Mosque(
+          name: m.name,
+          latitude: m.latitude,
+          longitude: m.longitude,
+          distance: Geolocator.distanceBetween(
+                position.latitude,
+                position.longitude,
+                m.latitude,
+                m.longitude,
+              ) /
+              1000,
+          direction: '',
+          prayerTime: '--:--',
+        );
+      }).toList()
+        ..sort((a, b) => a.distance.compareTo(b.distance));
+
       if (!mounted) return;
 
       setState(() {
+        _currentLatitude = position.latitude;
+        _currentLongitude = position.longitude;
+        _nearbyMosques = result;
         _isLoading = false;
-        _nearbyMosques = mosques.map((m) {
-          return Mosque(
-            name: m.name,
-            latitude: m.latitude,
-            longitude: m.longitude,
-            distance: Geolocator.distanceBetween(
-                  position.latitude,
-                  position.longitude,
-                  m.latitude,
-                  m.longitude,
-                ) /
-                1000,
-            direction: "",
-            prayerTime: "--:--",
-          );
-        }).toList();
       });
-
-      _nearbyMosques.sort((a, b) => a.distance.compareTo(b.distance));
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
         _isLoading = false;
-        _errorMessage = e.toString();
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
       });
     }
   }
@@ -160,36 +168,36 @@ class _MosqueFinderScreenState extends State<MosqueFinderScreen> {
 
     if (_errorMessage != null) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              color: _MosqueFinderConstants.primaryGold,
-              size: 48,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _errorMessage!,
-              style: themeService.getTextStyle(
-                fontSize: 16,
-                color: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: _MosqueFinderConstants.primaryGold,
+                size: 48,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () {
-                setState(() => _isLoading = true);
-                _initializeMosqueFinder();
-              },
-              icon: const Icon(Icons.refresh),
-              label: Text(
-                isArabic ? 'حاول مجددًا' : 'Retry',
-                style: themeService.getTextStyle(fontSize: 14),
+              const SizedBox(height: 16),
+              Text(
+                _errorMessage!,
+                style: themeService.getTextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _initializeMosqueFinder,
+                icon: const Icon(Icons.refresh),
+                label: Text(
+                  isArabic ? 'حاول مجددًا' : 'Retry',
+                  style: themeService.getTextStyle(fontSize: 14),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -247,6 +255,10 @@ class _MosqueCardState extends State<_MosqueCard> {
 
   @override
   Widget build(BuildContext context) {
+    final distanceText = widget.isArabic
+        ? '${widget.mosque.distance.toStringAsFixed(2)} كم'
+        : '${widget.mosque.distance.toStringAsFixed(2)} km away';
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: MouseRegion(
@@ -316,8 +328,7 @@ class _MosqueCardState extends State<_MosqueCard> {
                               ? Theme.of(context).scaffoldBackgroundColor
                               : _MosqueFinderConstants.primaryGold,
                           size: _MosqueFinderConstants.iconSize,
-                          semanticLabel:
-                              widget.isArabic ? 'مسجد' : 'Mosque',
+                          semanticLabel: widget.isArabic ? 'مسجد' : 'Mosque',
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -337,12 +348,11 @@ class _MosqueCardState extends State<_MosqueCard> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${widget.mosque.distance.toStringAsFixed(2)} km away',
+                              distanceText,
                               style: widget.themeService.getTextStyle(
                                 fontSize: 12,
                                 color: AppTheme.getOnBackgroundColor(context)
-                                    .withValues(
-                                        alpha: _isHovered ? 0.8 : 0.6),
+                                    .withValues(alpha: _isHovered ? 0.8 : 0.6),
                               ),
                             ),
                           ],

@@ -13,8 +13,10 @@ import '../l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/geo_translations.dart';
 import '../app_theme.dart';
-import '../utils/adhan_reciter_translations.dart';
 import '../services/theme_service.dart';
+import '../widgets/prayer_notification_popup.dart';
+import 'package:flutter/foundation.dart';
+import 'settings_screen.dart' show AdhanSettingsScreen;
 
 class PrayerTimesScreen extends StatefulWidget {
   final CountryData country;
@@ -38,7 +40,12 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   Duration? _timeUntilNext;
   String? _nextPrayerName;
   String _selectedReciter = 'mishary';
+  bool _isWholeAdhan = true;
   bool _adhanPlaying = false;
+  
+  String? _activePrayerPopup;
+  String? _lastNotifiedPrayer;
+  AudioPlayer? _webTestPlayer;
 
   @override
   void initState() {
@@ -52,11 +59,13 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     if (!mounted) return;
     setState(() {
       _selectedReciter = prefs.getString('adhanReciter') ?? 'mishary';
+      _isWholeAdhan = prefs.getBool('isWholeAdhan') ?? true;
     });
   }
 
   @override
   void dispose() {
+    _webTestPlayer?.dispose();
     _clockTimer?.cancel();
     AdhanService.stopAdhan();
     super.dispose();
@@ -96,14 +105,30 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     if (_times == null) return;
     final now = DateTime.now();
     final entries = _times!.asOrderedList();
-
+    
     DateTime? parseToday(String hhmm) {
-      final parts = hhmm.split(':');
+      // FIX: Strip timezone tags like "(EEST)" before parsing
+      final cleanTime = hhmm.split(' ')[0];
+      final parts = cleanTime.split(':');
       if (parts.length != 2) return null;
       final h = int.tryParse(parts[0]);
       final m = int.tryParse(parts[1]);
       if (h == null || m == null) return null;
       return DateTime(now.year, now.month, now.day, h, m);
+    }
+
+    for (final entry in entries) {
+      final dt = parseToday(entry.value);
+      if (dt != null) {
+        final diff = dt.difference(now);
+        if (diff.inSeconds <= 0 && diff.inSeconds > -2 && _lastNotifiedPrayer != entry.key) {
+          _lastNotifiedPrayer = entry.key;
+          if (mounted) {
+            setState(() => _activePrayerPopup = entry.key);
+            _playAdhan(); 
+          }
+        }
+      }
     }
 
     DateTime? nextTime;
@@ -172,8 +197,12 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
   Future<void> _playAdhan() async {
     try {
+      await AdhanService.stopAdhan();
+      await Future.delayed(const Duration(milliseconds: 200));
+
       setState(() => _adhanPlaying = true);
       await AdhanService.playAdhan(_selectedReciter);
+      
       AdhanService.onPlayerStateChanged.listen((state) {
         if (!mounted) return;
         if (state == PlayerState.completed || state == PlayerState.stopped) {
@@ -181,7 +210,17 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
         }
       });
     } catch (e) {
-      if (mounted) setState(() => _adhanPlaying = false);
+      debugPrint('Web Audio Error: $e');
+      if (mounted) {
+        setState(() => _adhanPlaying = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Audio failed to play: $e'),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     }
   }
 
@@ -198,29 +237,59 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     return Consumer<ThemeService>(
       builder: (context, themeService, _) {
         return Scaffold(
-          body: IslamicPatternBackground(
-            child: SafeArea(
-              child: Column(
-                children: [
-                  _buildCustomHeader(context, l10n!, isArabic, themeService),
-                  Expanded(
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 800),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 350),
-                          child: _loading
-                              ? _buildLoading(l10n, themeService)
-                              : _error != null
-                                  ? _buildError(l10n, themeService)
-                                  : _buildContent(l10n, isArabic, themeService),
+          body: Stack(
+            children: [
+              IslamicPatternBackground(
+                child: SafeArea(
+                  child: Column(
+                    children: [
+                      _buildCustomHeader(context, l10n!, isArabic, themeService),
+                      Expanded(
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 800),
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 350),
+                              child: _loading
+                                  ? _buildLoading(l10n, themeService)
+                                  : _error != null
+                                      ? _buildError(l10n, themeService)
+                                      : _buildContent(l10n, isArabic, themeService),
+                            ),
+                          ),
                         ),
                       ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // --- IN-APP NOTIFICATION POPUP ---
+              if (_activePrayerPopup != null)
+                Positioned(
+                  top: 16,
+                  left: 0,
+                  right: 0,
+                  child: SafeArea(
+                    child: PrayerNotificationPopup(
+                      prayerName: _activePrayerPopup!,
+                      onDismiss: () {
+                        // ONLY closes the UI popup. 
+                        // The audio will keep playing undisturbed.
+                        if (mounted) {
+                          setState(() => _activePrayerPopup = null);
+                        }
+                      },
+                      onStopAdhan: () {
+                        // THIS explicitly stops all audio when RED button is clicked
+                        _webTestPlayer?.stop();
+                        NotificationService.stopAdhan();
+                        _stopAdhan();
+                      },
                     ),
                   ),
-                ],
-              ),
-            ),
+                ),
+            ],
           ),
         );
       },
@@ -232,10 +301,38 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       child: Row(
         children: [
+          // 1. SMART TEST BELL
           IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: Icon(Icons.arrow_back_ios_new_rounded, color: Theme.of(context).colorScheme.secondary, size: 24),
+            icon: Icon(Icons.notifications_active_outlined, color: Theme.of(context).colorScheme.secondary),
+            tooltip: isArabic ? 'تجربة الإشعار' : 'Test Notification',
+            onPressed: () async {
+              setState(() => _activePrayerPopup = 'Fajr');
+              
+              if (kIsWeb) {
+                const paths = {
+                  'mishary': 'adhan/afasiadhan',
+                  'nasser': 'adhan/qatamiadhan',
+                  'qassas': 'adhan/moqassas',
+                  'refaat': 'adhan/refaatadhan',
+                  'tobar': 'adhan/adhantobar',
+                };
+                
+                final basePath = paths[_selectedReciter] ?? 'adhan/afasiadhan';
+                final fileName = _isWholeAdhan ? '$basePath.mp3' : '${basePath}_takbeer.mp3';
+
+                _webTestPlayer?.stop();
+                _webTestPlayer = AudioPlayer();
+                await _webTestPlayer!.play(AssetSource(fileName));
+              } else {
+                await NotificationService.showTestAdhan(
+                  reciter: _selectedReciter,
+                  isWholeAdhan: _isWholeAdhan, 
+                );
+              }
+            },
           ),
+          
+          // 2. TITLE
           Expanded(
             child: Text(
               l10n.prayerTimes,
@@ -247,7 +344,13 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 48),
+          
+          // 3. BACK ARROW
+          IconButton(
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: Theme.of(context).colorScheme.secondary),
+            tooltip: isArabic ? 'رجوع' : 'Back',
+            onPressed: () => Navigator.pop(context),
+          ),
         ],
       ),
     );
@@ -301,25 +404,25 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   Widget _buildContent(AppLocalizations l10n, bool isArabic, ThemeService themeService) {
     if (_times == null) return const SizedBox.shrink();
 
-    // NEW: Helper function to convert 24h to 12h format just for the UI display
     String format12Hour(String time24) {
-      final parts = time24.split(':');
-      if (parts.length != 2) return time24;
+      // FIX: Strip timezone tags here as well so the UI looks clean
+      final cleanTime = time24.split(' ')[0];
+      final parts = cleanTime.split(':');
+      if (parts.length != 2) return cleanTime;
       final h = int.tryParse(parts[0]);
-      if (h == null) return time24;
+      if (h == null) return cleanTime;
       
       final isPm = h >= 12;
       int displayH = h % 12;
-      if (displayH == 0) displayH = 12; // Handle midnight and noon
+      if (displayH == 0) displayH = 12; 
       
-      // Add AM/PM or Arabic equivalents (ص / م)
       final amPm = isArabic ? (isPm ? 'م' : 'ص') : (isPm ? 'PM' : 'AM');
-      
-      // Keep the leading zero for hours (e.g., 04:20)
       final displayHStr = displayH.toString().padLeft(2, '0');
       
       return '$displayHStr:${parts[1]} $amPm';
     }
+    
+    // ... rest of the method stays the same
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
@@ -337,8 +440,8 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
           const SizedBox(height: 24),
           _buildCountdownCard(l10n, isArabic, themeService),
           const SizedBox(height: 24),
-          _buildAdhanControlPanel(l10n, isArabic, themeService),
-          const SizedBox(height: 24),
+          
+          // 1. PRAYER TIMES LIST NOW COMES FIRST
           ..._times!.asOrderedList().asMap().entries.map((e) {
             final index = e.key;
             final entry = e.value;
@@ -355,7 +458,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
               },
               child: _PrayerRow(
                 name: _getLocalizedPrayerName(entry.key, l10n),
-                time: format12Hour(entry.value), // FIX APPLIED HERE: Formatted time string
+                time: format12Hour(entry.value),
                 icon: _iconFor(entry.key),
                 isNext: isNext,
                 l10n: l10n,
@@ -364,6 +467,10 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
               ),
             );
           }),
+
+          // 2. ADHAN SETTINGS MOVED TO THE BOTTOM
+          const SizedBox(height: 24),
+          _buildAdhanControlPanel(l10n, isArabic, themeService),
         ],
       ),
     );
@@ -425,7 +532,6 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
 
   Widget _buildAdhanControlPanel(AppLocalizations l10n, bool isArabic, ThemeService themeService) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final currentLang = Localizations.localeOf(context).languageCode;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
@@ -440,84 +546,36 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.2)),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.volume_up_rounded, color: Theme.of(context).colorScheme.secondary, size: 24),
-                  const SizedBox(width: 12),
-                  Text(
-                    l10n.selectAdhanReciter,
-                    style: themeService.getTextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.getOnBackgroundColor(context),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: isDark 
-                      ? const Color(0xFF0B3D2E).withValues(alpha: 0.8)
-                      : const Color(0xFFE8F3EE).withValues(alpha: 0.8),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.5)),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedReciter,
-                    isExpanded: true,
-                    dropdownColor: isDark ? const Color(0xFF0B3D2E) : const Color(0xFFE8F3EE),
-                    icon: Icon(Icons.arrow_drop_down, color: Theme.of(context).colorScheme.secondary),
-                    items: AdhanService.reciterNames.entries.map((entry) {
-                      return DropdownMenuItem<String>(
-                        value: entry.key,
-                        child: Text(
-                          AdhanReciterTranslations.getReciterName(entry.key, currentLang), 
-                          style: themeService.getTextStyle(
-                            fontSize: 16,
-                            color: AppTheme.getOnBackgroundColor(context),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) async {
-                      if (newValue != null) {
-                        setState(() => _selectedReciter = newValue);
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.setString('adhanReciter', newValue);
-                        if (_adhanPlaying) {
-                          await _stopAdhan();
-                          _playAdhan();
-                        }
-                      }
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) => const AdhanSettingsScreen(),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      var tween = Tween(begin: const Offset(1.0, 0.0), end: Offset.zero).chain(CurveTween(curve: Curves.easeOutCubic));
+                      return SlideTransition(position: animation.drive(tween), child: child);
                     },
                   ),
+                ).then((_) => _loadPreferences());
+              },
+              icon: const Icon(Icons.settings_rounded, size: 24),
+              label: Text(
+                isArabic ? 'إعدادات الأذان' : 'Adhan Settings',
+                style: themeService.getTextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _adhanPlaying ? _stopAdhan : _playAdhan,
-                      icon: Icon(_adhanPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded),
-                      label: Text(_adhanPlaying ? l10n.stop : l10n.playAdhan),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _adhanPlaying ? Colors.redAccent.withValues(alpha: 0.8) : Theme.of(context).colorScheme.secondary,
-                        foregroundColor: _adhanPlaying ? Colors.white : const Color(0xFF0B3D2E),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ),
-                ],
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.secondary,
+                foregroundColor: const Color(0xFF0B3D2E),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-            ],
+            ),
           ),
         ),
       ),

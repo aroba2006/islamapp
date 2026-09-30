@@ -154,86 +154,53 @@ class ThemeService extends ChangeNotifier {
   /// ────────────────────────────────────────────────────────────────
 
   /// Get Google Font TextStyle based on current font selection
+  /// ────────────────────────────────────────────────────────────────
+  /// FONT HELPER METHODS - USE THESE IN YOUR SCREENS!
+  /// ────────────────────────────────────────────────────────────────
+
+  /// Get Google Font TextStyle based on current font selection
   /// Use this instead of hardcoding GoogleFonts.xyz()
   TextStyle getTextStyle({
-    required double fontSize,
-    FontWeight fontWeight = FontWeight.normal,
+    double? fontSize,
+    FontWeight? fontWeight,
     Color? color,
     double? height,
-    FontStyle fontStyle = FontStyle.normal,
+    FontStyle? fontStyle,
+    TextDecoration? decoration,
+    Color? decorationColor, // <-- Added this to fix the goals screen
     double? letterSpacing,
-    TextDecoration? decoration,      // ✅ NEW: Add decoration parameter
-    Color? decorationColor,         // ✅ NEW: Add decorationColor parameter
+    Color? backgroundColor,
   }) {
-    final scaledSize = getScaledSize(fontSize);
+    double finalFontSize = fontSize != null ? getScaledSize(fontSize) : getScaledSize(14.0);
 
-    switch (_fontFamily) {
+    TextStyle baseStyle = TextStyle(
+      fontSize: finalFontSize,
+      fontWeight: fontWeight,
+      color: color,
+      height: height,
+      fontStyle: fontStyle,
+      decoration: decoration,
+      decorationColor: decorationColor, // <-- Applied it here
+      letterSpacing: letterSpacing,
+      backgroundColor: backgroundColor,
+    );
+
+    switch (fontFamily) {
+      case 'elMessiri': return GoogleFonts.elMessiri(textStyle: baseStyle);
+      case 'arefRuqaa': return GoogleFonts.arefRuqaa(textStyle: baseStyle);
+      case 'cairo': return GoogleFonts.cairo(textStyle: baseStyle);
+      case 'tajawal': return GoogleFonts.tajawal(textStyle: baseStyle);
+      case 'almarai': return GoogleFonts.almarai(textStyle: baseStyle);
+      case 'reemKufi': return GoogleFonts.reemKufi(textStyle: baseStyle);
+      case 'changa': return GoogleFonts.changa(textStyle: baseStyle);
+      case 'lateef': return GoogleFonts.lateef(textStyle: baseStyle);
+      case 'ibmPlexSansArabic': return GoogleFonts.ibmPlexSansArabic(textStyle: baseStyle);
+      case 'readexPro': return GoogleFonts.readexPro(textStyle: baseStyle);
+      case 'rakkas': return GoogleFonts.rakkas(textStyle: baseStyle);
+      case 'kufam': return GoogleFonts.kufam(textStyle: baseStyle);
       case 'amiri':
-        return GoogleFonts.amiri(
-          fontWeight: fontWeight,
-          color: color,
-          fontSize: scaledSize,
-          height: height,
-          fontStyle: fontStyle,
-          letterSpacing: letterSpacing,
-          decoration: decoration,          // ✅ Pass through to GoogleFonts
-          decorationColor: decorationColor, // ✅ Pass through to GoogleFonts
-        );
-      case 'elMessiri':
-        return GoogleFonts.elMessiri(
-          fontWeight: fontWeight,
-          color: color,
-          fontSize: scaledSize,
-          height: height,
-          fontStyle: fontStyle,
-          letterSpacing: letterSpacing,
-          decoration: decoration,          // ✅ Pass through to GoogleFonts
-          decorationColor: decorationColor, // ✅ Pass through to GoogleFonts
-        );
-      case 'arefRuqaa':
-        return GoogleFonts.arefRuqaa(
-          fontWeight: fontWeight,
-          color: color,
-          fontSize: scaledSize,
-          height: height,
-          fontStyle: fontStyle,
-          letterSpacing: letterSpacing,
-          decoration: decoration,          // ✅ Pass through to GoogleFonts
-          decorationColor: decorationColor, // ✅ Pass through to GoogleFonts
-        );
-      case 'cairo':
-        return GoogleFonts.cairo(
-          fontWeight: fontWeight,
-          color: color,
-          fontSize: scaledSize,
-          height: height,
-          fontStyle: fontStyle,
-          letterSpacing: letterSpacing,
-          decoration: decoration,          // ✅ Pass through to GoogleFonts
-          decorationColor: decorationColor, // ✅ Pass through to GoogleFonts
-        );
-      case 'tajawal':
-        return GoogleFonts.tajawal(
-          fontWeight: fontWeight,
-          color: color,
-          fontSize: scaledSize,
-          height: height,
-          fontStyle: fontStyle,
-          letterSpacing: letterSpacing,
-          decoration: decoration,          // ✅ Pass through to GoogleFonts
-          decorationColor: decorationColor, // ✅ Pass through to GoogleFonts
-        );
       default:
-        return GoogleFonts.amiri(
-          fontWeight: fontWeight,
-          color: color,
-          fontSize: scaledSize,
-          height: height,
-          fontStyle: fontStyle,
-          letterSpacing: letterSpacing,
-          decoration: decoration,          // ✅ Pass through to GoogleFonts
-          decorationColor: decorationColor, // ✅ Pass through to GoogleFonts
-        );
+        return GoogleFonts.amiri(textStyle: baseStyle);
     }
   }
 }

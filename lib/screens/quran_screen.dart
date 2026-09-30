@@ -157,6 +157,8 @@ class _QuranScreenState extends State<QuranScreen> {
 
   List<Map<String, dynamic>> _executeSearch(String query) {
     final cleanQuery = _normalizeArabic(query);
+    // NEW: A super-loose query that ignores letters often omitted in Uthmani script
+    final looseQuery = cleanQuery.replaceAll(RegExp(r'[اىيوة]'), '');
     final results = <Map<String, dynamic>>[];
 
     for (var juz in QuranData.parts) {
@@ -177,9 +179,12 @@ class _QuranScreenState extends State<QuranScreen> {
 
         for (int i = 0; i < surah.versesAr.length; i++) {
           final cleanVerseAr = _normalizeArabic(surah.versesAr[i]);
+          // NEW: Create a loose version of the verse for fallback matching
+          final looseVerse = cleanVerseAr.replaceAll(RegExp(r'[اىيوة]'), '');
           final verseEn = i < surah.versesEn.length ? surah.versesEn[i].toLowerCase() : '';
 
-          if (surahNameMatches || cleanVerseAr.contains(cleanQuery) || verseEn.contains(cleanQuery)) {
+          // NEW: Check if either the exact clean verse OR the loose verse matches
+          if (surahNameMatches || cleanVerseAr.contains(cleanQuery) || looseVerse.contains(looseQuery) || verseEn.contains(cleanQuery)) {
             final trueVerseNumber = i + startNumber;
             final pageNumber = QuranPageMetadata.getPageForVerse(surah.id, trueVerseNumber);
 
@@ -917,8 +922,32 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
   }
 
   void _scrollToVerse(int index) {
-    if (widget.viewMode != 2) return;
+    if (widget.viewMode != 2) {
+      // FIX: Proportional scrolling for "Whole Surah" (Mode 1)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          // A slight delay ensures the RichText paragraph is fully laid out on the screen
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (_scrollController.hasClients) {
+              final maxScroll = _scrollController.position.maxScrollExtent;
+              final proportion = index / widget.surah.versesAr.length;
+              
+              // Calculate target height and subtract an offset so the text isn't stuck at the very top edge
+              final target = (maxScroll * proportion) - 50.0;
+              
+              _scrollController.animateTo(
+                target.clamp(0.0, maxScroll),
+                duration: const Duration(milliseconds: 800),
+                curve: Curves.easeInOutCubic,
+              );
+            }
+          });
+        }
+      });
+      return;
+    }
 
+    // Existing Mode 2 (Verse by Verse) exact key scrolling
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final targetContext = _verseKeys[index]?.currentContext;
       if (targetContext != null) {
@@ -952,7 +981,12 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
       _errorMessage = null;
     });
     try {
-      await QuranReciterService.playSurah(reciter: _selectedReciter!, surahNumber: widget.surah.id);
+      await QuranReciterService.playSurah(
+        reciter: _selectedReciter!,
+        surahNumber: widget.surah.id,
+        surahNameAr: widget.lang == 'ar' ? 'سورة ${widget.surah.nameAr}' : widget.surah.nameEn,
+        reciterName: widget.lang == 'ar' ? _selectedReciter!.nameAr : _selectedReciter!.nameEn,
+      );
     } catch (e) {
       setState(() => _errorMessage = 'Failed to load audio. Please check your connection.');
     } finally {
@@ -990,7 +1024,6 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
       recognizer.dispose();
     }
     _scrollController.dispose();
-    QuranReciterService.stopAudio();
     super.dispose();
   }
 
@@ -1134,9 +1167,9 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
     final isSearching = searchQuery.trim().isNotEmpty;
     final cleanQuery = _normalizeArabic(searchQuery.trim());
 
-    // SCALED FONT SIZES
-    final double arabicFontSize = themeService.getScaledSize(28);
-    final double verseNumberFontSize = themeService.getScaledSize(22);
+    // REDUCED FONT SIZES FOR MOBILE
+    final double arabicFontSize = themeService.getScaledSize(24); // Was 28
+    final double verseNumberFontSize = themeService.getScaledSize(18); // Was 22
 
     for (int i = 0; i < widget.surah.versesAr.length; i++) {
       final verseNum = i + widget.startVerseNumber;
@@ -1408,7 +1441,8 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                   },
                                   child: Container(
                                     key: verseKey,
-                                    margin: const EdgeInsets.only(bottom: 16),
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    // RESTORED: The gold-bordered glass cards
                                     decoration: BoxDecoration(
                                       color: isHighlighted || isTapped
                                           ? (isDarkMode
@@ -1432,17 +1466,18 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                             ]
                                           : [],
                                     ),
-                                    padding: const EdgeInsets.all(20),
+                                    padding: const EdgeInsets.all(16),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.stretch,
                                       children: [
+                                        // Verse Number (Left) and Text (Right)
                                         Row(
-                                          textDirection: TextDirection.rtl,
+                                          textDirection: TextDirection.ltr,
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Container(
-                                              width: 40,
-                                              height: 40,
+                                              width: 36,
+                                              height: 36,
                                               alignment: Alignment.center,
                                               decoration: BoxDecoration(
                                                   color: const Color(0xFFD4AF37).withValues(alpha: 0.1),
@@ -1453,19 +1488,21 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                                   style: TextStyle(
                                                       color: const Color(0xFFD4AF37),
                                                       fontWeight: FontWeight.bold,
-                                                      fontSize: verseNumCircleSize)),
+                                                      fontSize: themeService.getScaledSize(14))),
                                             ),
-                                            const SizedBox(width: 20),
+                                            const SizedBox(width: 16),
                                             Expanded(
                                               child: Text(
                                                 widget.surah.versesAr[index],
+                                                textAlign: TextAlign.right,
                                                 textDirection: TextDirection.rtl,
+                                                // RESTORED: Uthmani Script explicitly forced
                                                 style: GoogleFonts.amiri(
-                                                    fontSize: arabicFontSize,
+                                                    fontSize: themeService.getScaledSize(24),
                                                     color: isHighlighted || isTapped
                                                         ? const Color(0xFFD4AF37)
                                                         : (isDarkMode ? Colors.white : Colors.black87),
-                                                    height: 2.0,
+                                                    height: 1.8,
                                                     fontWeight: isHighlighted || isTapped
                                                         ? FontWeight.bold
                                                         : FontWeight.normal),
@@ -1480,11 +1517,14 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                             textDirection: TextDirection.ltr,
                                             style: themeService.getTextStyle(
                                               fontSize: translationFontSize,
+                                              // FIX: Lowered opacity to make it semi-transparent and less distracting
                                               color: isHighlighted || isTapped
-                                                  ? (isDarkMode ? Colors.white : Colors.black87)
+                                                  ? (isDarkMode 
+                                                      ? Colors.white.withValues(alpha: 0.8) 
+                                                      : Colors.black87)
                                                   : (isDarkMode
-                                                      ? Colors.white.withValues(alpha: 0.75)
-                                                      : Colors.black54),
+                                                      ? Colors.white.withValues(alpha: 0.35) 
+                                                      : Colors.black.withValues(alpha: 0.35)),
                                               height: 1.6,
                                               fontStyle: FontStyle.italic,
                                             ),
@@ -1568,7 +1608,7 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
                           color: isDarkMode
                               ? const Color(0xFF0B3D2E).withValues(alpha: 0.8)
@@ -1578,12 +1618,12 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                       child: Column(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
                             decoration: BoxDecoration(
                                 color: isDarkMode
                                     ? Colors.black.withValues(alpha: 0.2)
                                     : const Color(0xFFD4AF37).withValues(alpha: 0.05),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                     color: const Color(0xFFD4AF37).withValues(alpha: 0.5))),
                             child: DropdownButtonHideUnderline(
@@ -1596,12 +1636,42 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                 items: QuranReciterService.reciters.map((reciter) {
                                   return DropdownMenuItem(
                                     value: reciter,
-                                    child: Text(
-                                      widget.lang == 'ar' ? reciter.nameAr : reciter.nameEn,
-                                      style: themeService.getTextStyle(
-                                        fontSize: 16,
-                                        color: isDarkMode ? const Color(0xFFD4AF37) : Colors.black87,
-                                      ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 32,
+                                          height: 32,
+                                          decoration: BoxDecoration(
+                                            // FIX 1: Rounded curved squares instead of circles
+                                            borderRadius: BorderRadius.circular(8), 
+                                            color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: Image.asset(
+                                              // FIX 2: Added '/images/' to exactly match your pubspec.yaml
+                                              'assets/images/reciters/${reciter.imageFileName}',
+                                              fit: BoxFit.cover,
+                                              cacheWidth: 100, 
+                                              cacheHeight: 100,
+                                              errorBuilder: (context, error, stackTrace) {
+                                                return const Icon(Icons.person, size: 18, color: Color(0xFFD4AF37));
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            widget.lang == 'ar' ? reciter.nameAr : reciter.nameEn,
+                                            style: themeService.getTextStyle(
+                                              fontSize: 15,
+                                              color: isDarkMode ? const Color(0xFFD4AF37) : Colors.black87,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   );
                                 }).toList(),
@@ -1614,7 +1684,7 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           if (_errorMessage != null)
                             Container(
                               padding: const EdgeInsets.all(8),
@@ -1638,8 +1708,8 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                             ? () => QuranReciterService.resumeAudio()
                                             : _playAudio)),
                                 child: Container(
-                                  width: 60,
-                                  height: 60,
+                                  width: 50,
+                                  height: 50,
                                   decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: _playerState == PlayerState.playing
@@ -1648,7 +1718,7 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                       border: Border.all(color: const Color(0xFFD4AF37), width: 2)),
                                   child: _isLoading
                                       ? const Padding(
-                                          padding: EdgeInsets.all(16.0),
+                                          padding: EdgeInsets.all(12.0),
                                           child: CircularProgressIndicator(
                                               valueColor:
                                                   AlwaysStoppedAnimation<Color>(Color(0xFF0B3D2E)),
@@ -1660,59 +1730,62 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                                           color: _playerState == PlayerState.playing
                                               ? const Color(0xFFD4AF37)
                                               : const Color(0xFF0B3D2E),
-                                          size: 32),
+                                          size: 28),
                                 ),
                               ),
-                              const SizedBox(width: 20),
+                              const SizedBox(width: 16),
                               GestureDetector(
                                 onTap: () => QuranReciterService.stopAudio(),
                                 child: Container(
-                                    width: 50,
-                                    height: 50,
+                                    width: 42,
+                                    height: 42,
                                     decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         border: Border.all(color: const Color(0xFFD4AF37), width: 2)),
                                     child: const Icon(Icons.stop_rounded,
-                                        color: Color(0xFFD4AF37), size: 26)),
+                                        color: Color(0xFFD4AF37), size: 22)),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 8),
                           if (_duration != Duration.zero)
-                            Column(
-                              children: [
-                                SliderTheme(
-                                  data: SliderThemeData(
-                                      activeTrackColor: const Color(0xFFD4AF37),
-                                      inactiveTrackColor: isDarkMode
-                                          ? Colors.white.withValues(alpha: 0.2)
-                                          : Colors.black12,
-                                      thumbColor: const Color(0xFFD4AF37),
-                                      overlayColor: const Color(0xFFD4AF37).withValues(alpha: 0.3),
-                                      trackHeight: 4),
-                                  child: Slider(
-                                      value: _position.inSeconds.toDouble(),
-                                      max: _duration.inSeconds.toDouble(),
-                                      onChanged: (value) => QuranReciterService.seek(
-                                          Duration(seconds: value.toInt()))),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(_formatDuration(_position),
-                                          style: themeService.getTextStyle(
-                                              fontSize: 13,
-                                              color: isDarkMode ? Colors.white70 : Colors.black54)),
-                                      Text(_formatDuration(_duration),
-                                          style: themeService.getTextStyle(
-                                              fontSize: 13,
-                                              color: isDarkMode ? Colors.white70 : Colors.black54))
-                                    ],
+                            Directionality(
+                              textDirection: TextDirection.ltr,
+                              child: Column(
+                                children: [
+                                  SliderTheme(
+                                    data: SliderThemeData(
+                                        activeTrackColor: const Color(0xFFD4AF37),
+                                        inactiveTrackColor: isDarkMode
+                                            ? Colors.white.withValues(alpha: 0.2)
+                                            : Colors.black12,
+                                        thumbColor: const Color(0xFFD4AF37),
+                                        overlayColor: const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                                        trackHeight: 4),
+                                    child: Slider(
+                                        value: _position.inSeconds.toDouble(),
+                                        max: _duration.inSeconds.toDouble(),
+                                        onChanged: (value) => QuranReciterService.seek(
+                                            Duration(seconds: value.toInt()))),
                                   ),
-                                ),
-                              ],
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(_formatDuration(_position),
+                                            style: themeService.getTextStyle(
+                                                fontSize: 13,
+                                                color: isDarkMode ? Colors.white70 : Colors.black54)),
+                                        Text(_formatDuration(_duration),
+                                            style: themeService.getTextStyle(
+                                                fontSize: 13,
+                                                color: isDarkMode ? Colors.white70 : Colors.black54))
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                         ],
                       ),

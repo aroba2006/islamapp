@@ -8,6 +8,21 @@ import 'package:audio_session/audio_session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'dart:isolate';
+import 'dart:ui';
+
+const String _stopPortName = 'adhan_stop_port';
+
+@pragma('vm:entry-point')
+void onNotificationResponse(NotificationResponse response) async {
+  DartPluginRegistrant.ensureInitialized();
+  debugPrint('Adhan stop pressed, action: ${response.actionId}');
+
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool('stopAdhan', true);
+
+  IsolateNameServer.lookupPortByName(_stopPortName)?.send('stop');
+}
 
 /// Represents an available adhan reciter
 class AdhanReciter {
@@ -76,7 +91,19 @@ class NotificationService {
       iOS: iosSettings,
     );
 
-    await _notifications.initialize(initSettings);
+    await _notifications.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: onNotificationResponse,
+      onDidReceiveBackgroundNotificationResponse: onNotificationResponse,
+    );
+
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      final android = _notifications.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      await android?.requestNotificationsPermission();
+      await android?.requestExactAlarmsPermission();
+    }
+
 
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       await _notifications
@@ -208,12 +235,13 @@ class NotificationService {
     if (prayerTime.isBefore(DateTime.now())) return;
 
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      final id = prayerName.hashCode & 0x7FFFFFFF;
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('nextPrayerName', prayerName);
+      await prefs.setString('prayerName_$id', prayerName);
 
       await AndroidAlarmManager.oneShotAt(
         prayerTime,
-        prayerName.hashCode,
+        id,
         playBackgroundAdhanCallback,
         exact: true,
         wakeup: true,
@@ -234,10 +262,13 @@ class NotificationService {
         iOS: iosDetails,
       );
 
+      final iosPrefs = await SharedPreferences.getInstance();
+      final iosLang = iosPrefs.getString('locale') ?? 'ar';
+
       await _notifications.zonedSchedule(
         prayerName.hashCode,
-        'Time for $prayerName',
-        'It\'s time to pray $prayerName',
+        _AdhanL10n.title(iosLang),
+        _AdhanL10n.body(prayerName, iosLang),
         scheduledTime,
         details,
         uiLocalNotificationDateInterpretation:
@@ -256,10 +287,8 @@ class NotificationService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('adhanReciter', reciter);
     await prefs.setBool('isWholeAdhan', isWholeAdhan);
-    await prefs.setString('nextPrayerName', 'تجربة (Test)');
-    
-    // Call the exact same logic that Android Alarm Manager uses when the app is in the background
-    await playBackgroundAdhanCallback();
+    await prefs.setString('prayerName_0', 'Test');
+    await playBackgroundAdhanCallback(0);
   }
 
   static Future<void> cancelAll() async {
@@ -287,64 +316,146 @@ class NotificationService {
 }
 
 // -------------------------------------------------------------
+// TRANSLATIONS FOR THE ADHAN NOTIFICATION
+// -------------------------------------------------------------
+class _AdhanL10n {
+  static const Map<String, String> _title = {
+    'ar': 'حان وقت الصلاة',
+    'en': "It's time to pray",
+    'fr': "C'est l'heure de la prière",
+  };
+
+  static const Map<String, String> _stop = {
+    'ar': 'إيقاف الأذان',
+    'en': 'Stop Adhan',
+    'fr': "Arrêter l'adhan",
+  };
+
+  static const Map<String, Map<String, String>> _names = {
+    'fajr': {'ar': 'الفجر', 'en': 'Fajr', 'fr': 'Fajr'},
+    'sunrise': {'ar': 'الشروق', 'en': 'Sunrise', 'fr': 'Lever du soleil'},
+    'dhuhr': {'ar': 'الظهر', 'en': 'Dhuhr', 'fr': 'Dhuhr'},
+    'asr': {'ar': 'العصر', 'en': 'Asr', 'fr': 'Asr'},
+    'maghrib': {'ar': 'المغرب', 'en': 'Maghrib', 'fr': 'Maghrib'},
+    'isha': {'ar': 'العشاء', 'en': 'Isha', 'fr': 'Isha'},
+    'test': {'ar': 'تجربة', 'en': 'Test', 'fr': 'Test'},
+  };
+
+  /// Matches whatever key the prayer screen uses (English or Arabic).
+  static String? _canon(String raw) {
+    final s = raw.toLowerCase();
+    if (s.contains('test') || raw.contains('تجربة')) return 'test';
+    if (s.contains('fajr') || raw.contains('الفجر')) return 'fajr';
+    if (s.contains('sunrise') || s.contains('shuruq') || raw.contains('الشروق')) return 'sunrise';
+    if (s.contains('dhuhr') || s.contains('duhr') || s.contains('zuhr') || raw.contains('الظهر')) return 'dhuhr';
+    if (s.contains('asr') || raw.contains('العصر')) return 'asr';
+    if (s.contains('maghrib') || raw.contains('المغرب')) return 'maghrib';
+    if (s.contains('isha') || raw.contains('العشاء')) return 'isha';
+    return null;
+  }
+
+  static String _l(String lang) => (lang == 'en' || lang == 'fr') ? lang : 'ar';
+
+  static String title(String lang) => _title[_l(lang)]!;
+
+  static String stop(String lang) => _stop[_l(lang)]!;
+
+  /// ar -> "الفجر"   |   en/fr -> "Fajr • الفجر"
+  static String body(String raw, String lang) {
+    final key = _canon(raw);
+    if (key == null) return raw;
+    final l = _l(lang);
+    final name = _names[key]![l]!;
+    if (l == 'ar' || key == 'test') return name;
+    return '$name • ${_names[key]!['ar']}';
+  }
+}
+
+// -------------------------------------------------------------
 // STANDALONE BACKGROUND CALLBACK (ANDROID ONLY)
 // -------------------------------------------------------------
 @pragma('vm:entry-point')
-Future<void> playBackgroundAdhanCallback() async {
+Future<void> playBackgroundAdhanCallback(int id) async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
-  
-  final reciterId = prefs.getString('adhanReciter') ?? 'mishary';
-  
-  // NEW: Read the boolean toggle instead of the integer duration
-  final isWholeAdhan = prefs.getBool('isWholeAdhan') ?? true;
-  
-  final prayerName = prefs.getString('nextPrayerName') ?? 'Prayer';
-  
-  final notifications = FlutterLocalNotificationsPlugin();
-  const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-  await notifications.initialize(const InitializationSettings(android: androidInit));
+  await prefs.setBool('stopAdhan', false);
 
-  const androidDetails = AndroidNotificationDetails(
-    'prayer_channel', 
-    'Prayer Times',
+  final reciterId = prefs.getString('adhanReciter') ?? 'mishary';
+  final isWholeAdhan = prefs.getBool('isWholeAdhan') ?? true;
+  final prayerName = prefs.getString('prayerName_$id') ?? 'Prayer';
+  final lang = prefs.getString('locale') ?? 'ar';
+
+  final notifications = FlutterLocalNotificationsPlugin();
+  await notifications.initialize(
+    const InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    ),
+    onDidReceiveNotificationResponse: onNotificationResponse,
+    onDidReceiveBackgroundNotificationResponse: onNotificationResponse,
+  );
+
+  final androidDetails = AndroidNotificationDetails(
+    'adhan_channel',
+    'Adhan',
     importance: Importance.max,
     priority: Priority.high,
-    playSound: false, // Keep silent, just_audio handles the mp3
+    category: AndroidNotificationCategory.alarm,
+    playSound: false, // just_audio plays the mp3
     enableVibration: true,
-  );
-  
-  await notifications.show(
-    prayerName.hashCode, 
-    'حان وقت الصلاة', 
-    prayerName, 
-    const NotificationDetails(android: androidDetails)
+    ongoing: true, // can't be swiped away while playing
+    autoCancel: true, // tapping it closes it (and stops the adhan)
+    actions: <AndroidNotificationAction>[
+      AndroidNotificationAction(
+        'stop_adhan',
+        _AdhanL10n.stop(lang),
+        cancelNotification: true,
+        showsUserInterface: false,
+      ),
+    ],
   );
 
-  final player = AudioPlayer();
-  
-  // Base paths without the extension
-  final paths = {
+  await notifications.show(
+    id,
+    _AdhanL10n.title(lang),
+    _AdhanL10n.body(prayerName, lang),
+    NotificationDetails(android: androidDetails),
+  );
+
+  const paths = {
     'mishary': 'assets/adhan/afasiadhan',
-    'nasser':  'assets/adhan/qatamiadhan',
-    'qassas':  'assets/adhan/moqassas',
-    'refaat':  'assets/adhan/refaatadhan',
-    'tobar':   'assets/adhan/adhantobar',
+    'nasser': 'assets/adhan/qatamiadhan',
+    'qassas': 'assets/adhan/moqassas',
+    'refaat': 'assets/adhan/refaatadhan',
+    'tobar': 'assets/adhan/adhantobar',
   };
-  
-  String basePath = paths[reciterId] ?? 'assets/adhan/afasiadhan';
-  
-  // Dynamically select the correct audio file based on the toggle setting
-  String finalAssetPath = isWholeAdhan ? '$basePath.mp3' : '${basePath}_takbeer.mp3';
-  
+  final basePath = paths[reciterId] ?? 'assets/adhan/afasiadhan';
+  final assetPath = isWholeAdhan ? '$basePath.mp3' : '${basePath}_takbeer.mp3';
+
+  final player = AudioPlayer();
+  final stopPort = ReceivePort();
+  IsolateNameServer.removePortNameMapping(_stopPortName);
+  IsolateNameServer.registerPortWithName(stopPort.sendPort, _stopPortName);
+  stopPort.listen((msg) async {
+    if (msg == 'stop') await player.stop(); // makes play() below return
+  });
+
+  final poller = Timer.periodic(const Duration(milliseconds: 500), (_) async {
+    await prefs.reload();
+    if (prefs.getBool('stopAdhan') ?? false) {
+      await player.stop();
+    }
+  });
+
   try {
-    await player.setAsset(finalAssetPath);
-    player.play(); 
-    
-    // We no longer need the duration kill-switch timer, because the _takbeer.mp3 
-    // file naturally stops on its own when it's finished!
-    
+    await player.setAsset(assetPath);
+    await player.play(); // AWAIT: completes when finished or stopped
   } catch (e) {
-    debugPrint("Background audio error: $e");
+    debugPrint('Background audio error: $e');
+  } finally {
+    poller.cancel();
+    await notifications.cancel(id);
+    IsolateNameServer.removePortNameMapping(_stopPortName);
+    stopPort.close();
+    await player.dispose();
   }
 }

@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/theme_service.dart';
 
 class MosqueMapScreen extends StatelessWidget {
   final double userLat;
   final double userLng;
-
   final double mosqueLat;
   final double mosqueLng;
-
   final String mosqueName;
 
   const MosqueMapScreen({
@@ -22,8 +21,38 @@ class MosqueMapScreen extends StatelessWidget {
     required this.mosqueName,
   });
 
+  Future<void> _openInMaps(BuildContext context, bool isArabic) async {
+    final uri = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1'
+      '&origin=$userLat,$userLng'
+      '&destination=$mosqueLat,$mosqueLng'
+      '&travelmode=walking',
+    );
+
+    bool ok = false;
+    try {
+      ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      ok = false;
+    }
+
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isArabic ? 'تعذر فتح الخرائط' : 'Could not open Maps',
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final userPoint = LatLng(userLat, userLng);
+    final mosquePoint = LatLng(mosqueLat, mosqueLng);
+
     return Consumer<ThemeService>(
       builder: (context, themeService, _) {
         return Scaffold(
@@ -46,21 +75,33 @@ class MosqueMapScreen extends StatelessWidget {
           ),
           body: FlutterMap(
             options: MapOptions(
-              initialCenter: LatLng(mosqueLat, mosqueLng),
-              initialZoom: 15,
+              // Fit both the user and the mosque on screen
+              initialCameraFit: CameraFit.bounds(
+                bounds: LatLngBounds.fromPoints([userPoint, mosquePoint]),
+                padding: const EdgeInsets.all(60),
+                maxZoom: 17,
+              ),
             ),
             children: [
-              // Use Esri WorldImagery (very reliable)
               TileLayer(
                 urlTemplate:
-                    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+                    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+                userAgentPackageName: 'com.example.islamy_app',
                 maxZoom: 18,
               ),
-              
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: [userPoint, mosquePoint],
+                    color: Colors.blue.withValues(alpha: 0.5),
+                    strokeWidth: 2,
+                  ),
+                ],
+              ),
               MarkerLayer(
                 markers: [
                   Marker(
-                    point: LatLng(userLat, userLng),
+                    point: userPoint,
                     width: 40,
                     height: 40,
                     child: const Icon(
@@ -70,7 +111,7 @@ class MosqueMapScreen extends StatelessWidget {
                     ),
                   ),
                   Marker(
-                    point: LatLng(mosqueLat, mosqueLng),
+                    point: mosquePoint,
                     width: 40,
                     height: 40,
                     child: const Icon(
@@ -81,21 +122,14 @@ class MosqueMapScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              
-              // Optional - Add simple routing line between user and mosque
-              PolylineLayer(
-                polylines: [
-                  Polyline(
-                    points: [
-                      LatLng(userLat, userLng),
-                      LatLng(mosqueLat, mosqueLng),
-                    ],
-                    color: Colors.blue.withValues(alpha: 0.5),
-                    strokeWidth: 2,
-                  ),
-                ],
-              ),
             ],
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _openInMaps(context, isArabic),
+            backgroundColor: const Color(0xFFD4AF37),
+            foregroundColor: Colors.black,
+            icon: const Icon(Icons.directions_rounded),
+            label: Text(isArabic ? 'الاتجاهات' : 'Directions'),
           ),
         );
       },
