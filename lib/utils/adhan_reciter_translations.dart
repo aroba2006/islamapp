@@ -12,7 +12,7 @@ class AdhanReciterTranslations {
       'fr': 'Nasser Al-Qatami',
     },
     'qassas': {
-      'ar': 'محمد قصاص',
+      'ar': 'محمد مروان قصاص',
       'en': 'Mohamed Marawan Qassas',
       'fr': 'Mohamed Al-Qassas',
     },
@@ -25,6 +25,16 @@ class AdhanReciterTranslations {
       'ar': 'نصر الدين طوبار',
       'en': 'Nasser Al-Tobar',
       'fr': 'Nasser Al-Tobar',
+    },
+    'basset': {
+      'ar': 'عبد الباسط عبد الصمد',
+      'en': 'Abdul Basit Abdul Samad',
+      'fr': 'Abdul Basit Abdul Samad',
+    },
+    'hosari': {
+      'ar': 'محمود خليل الحصري',
+      'en': 'Mahmoud Khalil Al-Hussary',
+      'fr': 'Mahmoud Khalil Al-Hussary',
     },
   };
 
@@ -50,6 +60,8 @@ class AdhanReciterTranslations {
       reciters['qassas']!,
       reciters['refaat']!,
       reciters['tobar']!,
+      reciters['basset']!,
+      reciters['hosari']!,
     ];
   }
 }

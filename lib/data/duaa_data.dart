@@ -258,5 +258,313 @@ class DuaaData {
         ),
       ],
     ),
+
+        // ─────────────────────────── NEW CATEGORIES ───────────────────────────
+
+    DuaaCategory(
+      categoryAr: 'الصباح والمساء',
+      categoryEn: 'Morning & Evening',
+      duaas: [
+        Duaa(
+          titleAr: 'دعاء الصباح',
+          titleEn: 'Morning Remembrance',
+          duaaAr:
+              'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ',
+          duaaEn:
+              'We have entered the morning and the dominion belongs to Allah. All praise is for Allah. There is no god but Allah alone, without any partner.',
+          benefitAr: 'يُقال عند الصباح من كل يوم',
+          benefitEn: 'Recited every morning',
+        ),
+        Duaa(
+          titleAr: 'دعاء المساء',
+          titleEn: 'Evening Remembrance',
+          duaaAr:
+              'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ',
+          duaaEn:
+              'We have entered the evening and the dominion belongs to Allah. All praise is for Allah. There is no god but Allah alone, without any partner.',
+          benefitAr: 'يُقال عند المساء من كل يوم',
+          benefitEn: 'Recited every evening',
+        ),
+        Duaa(
+          titleAr: 'تسبيح الصباح والمساء',
+          titleEn: 'Morning & Evening Tasbih',
+          duaaAr: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ',
+          duaaEn: 'Glory be to Allah and praise be to Him.',
+          benefitAr: 'من قالها مئة مرة حُطَّت خطاياه',
+          benefitEn:
+              'Whoever says it 100 times a day, his sins are wiped away',
+        ),
+      ],
+    ),
+
+    DuaaCategory(
+      categoryAr: 'الاستغفار والتوبة',
+      categoryEn: 'Forgiveness & Repentance',
+      duaas: [
+        Duaa(
+          titleAr: 'سيد الاستغفار',
+          titleEn: 'The Master of Seeking Forgiveness',
+          duaaAr:
+              'اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي',
+          duaaEn:
+              'O Allah, You are my Lord. There is no god but You. You created me and I am Your servant. I keep Your covenant and promise as much as I am able. I seek refuge in You from the evil I have done. I acknowledge Your favour upon me and I acknowledge my sin, so forgive me.',
+          benefitAr: 'من قالها موقناً بها حين يصبح أو يمسي فهو من أهل الجنة',
+          benefitEn:
+              'Whoever says it with certainty in the morning or evening is among the people of Paradise',
+        ),
+        Duaa(
+          titleAr: 'استغفار النبي ﷺ',
+          titleEn: 'Prophet\'s Daily Forgiveness',
+          duaaAr:
+              'رَبِّ اغْفِرْ لِي وَتُبْ عَلَيَّ إِنَّكَ أَنْتَ التَّوَّابُ الْغَفُورُ',
+          duaaEn:
+              'My Lord, forgive me and accept my repentance. You are the Ever-Relenting, the Most Forgiving.',
+          benefitAr: 'كان النبي ﷺ يقولها في المجلس مئة مرة',
+          benefitEn:
+              'The Prophet ﷺ would say it 100 times in a single gathering',
+        ),
+        Duaa(
+          titleAr: 'استغفار التوبة',
+          titleEn: 'Dua of Sincere Repentance',
+          duaaAr:
+              'أَسْتَغْفِرُ اللَّهَ الَّذِي لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ وَأَتُوبُ إِلَيْهِ',
+          duaaEn:
+              'I seek forgiveness from Allah, besides whom there is no god, the Ever-Living, the Sustainer, and I turn to Him in repentance.',
+          benefitAr: 'من قالها غُفرت ذنوبه وإن كان فرَّ من الزحف',
+          benefitEn:
+              'Whoever says it, his sins are forgiven even if he fled from battle',
+        ),
+      ],
+    ),
+
+    DuaaCategory(
+      categoryAr: 'رمضان والصيام',
+      categoryEn: 'Ramadan & Fasting',
+      duaas: [
+        Duaa(
+          titleAr: 'دعاء رؤية الهلال',
+          titleEn: 'Dua Upon Seeing the New Moon',
+          duaaAr:
+              'اللَّهُمَّ أَهِلَّهُ عَلَيْنَا بِالْيُمْنِ وَالْإِيمَانِ، وَالسَّلَامَةِ وَالْإِسْلَامِ، رَبِّي وَرَبُّكَ اللَّهُ',
+          duaaEn:
+              'O Allah, let this moon appear over us with prosperity, faith, safety, and Islam. My Lord and your Lord is Allah.',
+          benefitAr: 'يُقال عند رؤية الهلال',
+          benefitEn: 'Recited upon sighting the new crescent',
+        ),
+        Duaa(
+          titleAr: 'دعاء الإفطار',
+          titleEn: 'Dua When Breaking the Fast',
+          duaaAr:
+              'ذَهَبَ الظَّمَأُ، وَابْتَلَّتِ الْعُرُوقُ، وَثَبَتَ الْأَجْرُ إِنْ شَاءَ اللَّهُ',
+          duaaEn:
+              'The thirst has gone, the veins are moistened, and the reward is confirmed, Allah willing.',
+          benefitAr: 'يُقال بعد الإفطار',
+          benefitEn: 'Recited after breaking the fast',
+        ),
+        Duaa(
+          titleAr: 'دعاء ليلة القدر',
+          titleEn: 'Dua for Laylat al-Qadr',
+          duaaAr:
+              'اللَّهُمَّ إِنَّكَ عَفُوٌّ كَرِيمٌ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي',
+          duaaEn:
+              'O Allah, You are Most Forgiving, Most Generous. You love to forgive, so forgive me.',
+          benefitAr: 'علَّمها النبي ﷺ لعائشة رضي الله عنها',
+          benefitEn:
+              'The Prophet ﷺ taught this dua to Aisha (may Allah be pleased with her)',
+        ),
+      ],
+    ),
+
+    DuaaCategory(
+      categoryAr: 'الصلاة والعبادة',
+      categoryEn: 'Prayer & Worship',
+      duaas: [
+        Duaa(
+          titleAr: 'دعاء بعد الصلاة',
+          titleEn: 'Dua After Prayer',
+          duaaAr:
+              'اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ',
+          duaaEn:
+              'O Allah, help me to remember You, to thank You, and to worship You in the best manner.',
+          benefitAr: 'وصية النبي ﷺ لمعاذ بن جبل رضي الله عنه',
+          benefitEn:
+              'The Prophet\'s ﷺ advice to Muadh ibn Jabal (may Allah be pleased with him)',
+        ),
+        Duaa(
+          titleAr: 'دعاء إقامة الصلاة',
+          titleEn: 'Dua for Establishing Prayer',
+          duaaAr:
+              'رَبِّ اجْعَلْنِي مُقِيمَ الصَّلَاةِ وَمِنْ ذُرِّيَّتِي، رَبَّنَا وَتَقَبَّلْ دُعَاءِ',
+          duaaEn:
+              'My Lord, make me an establisher of prayer, and from my offspring. Our Lord, and accept my supplication.',
+          benefitAr: 'من دعاء إبراهيم عليه السلام',
+          benefitEn: 'From the dua of Prophet Ibrahim (peace be upon him)',
+        ),
+        Duaa(
+          titleAr: 'دعاء القنوت',
+          titleEn: 'Dua of Qunut',
+          duaaAr:
+              'اللَّهُمَّ اهْدِنِي فِيمَنْ هَدَيْتَ، وَعَافِنِي فِيمَنْ عَافَيْتَ، وَتَوَلَّنِي فِيمَنْ تَوَلَّيْتَ',
+          duaaEn:
+              'O Allah, guide me among those You have guided, grant me health among those You have granted health, and protect me among those You have protected.',
+          benefitAr: 'يُقال في قنوت الوتر',
+          benefitEn: 'Recited during the Qunut of Witr',
+        ),
+      ],
+    ),
+
+    DuaaCategory(
+      categoryAr: 'الدخول والخروج من المنزل',
+      categoryEn: 'Entering & Leaving Home',
+      duaas: [
+        Duaa(
+          titleAr: 'دعاء دخول المنزل',
+          titleEn: 'Dua When Entering Home',
+          duaaAr:
+              'بِسْمِ اللَّهِ وَلَجْنَا، وَبِسْمِ اللَّهِ خَرَجْنَا، وَعَلَى رَبِّنَا تَوَكَّلْنَا',
+          duaaEn:
+              'In the name of Allah we enter, in the name of Allah we leave, and upon our Lord we rely.',
+          benefitAr: 'يُقال عند دخول البيت',
+          benefitEn: 'Recited upon entering the house',
+        ),
+        Duaa(
+          titleAr: 'دعاء الخروج من المنزل',
+          titleEn: 'Dua When Leaving Home',
+          duaaAr:
+              'بِسْمِ اللَّهِ، تَوَكَّلْتُ عَلَى اللَّهِ، وَلَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ',
+          duaaEn:
+              'In the name of Allah, I place my trust in Allah. There is no might nor power except with Allah.',
+          benefitAr: 'يُقال عند الخروج من البيت',
+          benefitEn: 'Recited upon leaving the house',
+        ),
+      ],
+    ),
+
+    DuaaCategory(
+      categoryAr: 'الطعام والشراب',
+      categoryEn: 'Food & Drink',
+      duaas: [
+        Duaa(
+          titleAr: 'دعاء قبل الطعام',
+          titleEn: 'Dua Before Eating',
+          duaaAr: 'بِسْمِ اللَّهِ',
+          duaaEn: 'In the name of Allah.',
+          benefitAr: 'وإن نسي في أوله فليقل: بسم الله أوله وآخره',
+          benefitEn:
+              'If forgotten at the beginning, say: In the name of Allah at its beginning and end',
+        ),
+        Duaa(
+          titleAr: 'دعاء بعد الطعام',
+          titleEn: 'Dua After Eating',
+          duaaAr:
+              'الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنِي هَذَا وَرَزَقَنِيهِ مِنْ غَيْرِ حَوْلٍ مِنِّي وَلَا قُوَّةٍ',
+          duaaEn:
+              'All praise is for Allah who fed me this and provided it for me without any might or power from myself.',
+          benefitAr: 'من قالها غُفر له ما تقدم من ذنبه',
+          benefitEn:
+              'Whoever says it, his previous sins are forgiven',
+        ),
+      ],
+    ),
+
+    DuaaCategory(
+      categoryAr: 'الطقس والطبيعة',
+      categoryEn: 'Weather & Nature',
+      duaas: [
+        Duaa(
+          titleAr: 'دعاء نزول المطر',
+          titleEn: 'Dua When It Rains',
+          duaaAr: 'اللَّهُمَّ صَيِّبًا نَافِعًا',
+          duaaEn: 'O Allah, (make it) a beneficial downpour.',
+          benefitAr: 'يُقال عند نزول المطر',
+          benefitEn: 'Recited when rain falls',
+        ),
+        Duaa(
+          titleAr: 'دعاء الريح',
+          titleEn: 'Dua When Wind Blows',
+          duaaAr:
+              'اللَّهُمَّ إِنِّي أَسْأَلُكَ خَيْرَهَا، وَخَيْرَ مَا فِيهَا، وَخَيْرَ مَا أُرْسِلَتْ بِهِ، وَأَعُوذُ بِكَ مِنْ شَرِّهَا',
+          duaaEn:
+              'O Allah, I ask You for its good, the good within it, and the good with which it is sent. I seek refuge in You from its evil.',
+          benefitAr: 'يُقال عند هبوب الرياح',
+          benefitEn: 'Recited when strong winds blow',
+        ),
+        Duaa(
+          titleAr: 'دعاء الرعد',
+          titleEn: 'Dua Upon Hearing Thunder',
+          duaaAr:
+              'سُبْحَانَ الَّذِي يُسَبِّحُ الرَّعْدُ بِحَمْدِهِ وَالْمَلَائِكَةُ مِنْ خِيفَتِهِ',
+          duaaEn:
+              'Glory be to He whom the thunder glorifies with His praise, and the angels too, out of awe of Him.',
+          benefitAr: 'يُقال عند سماع الرعد',
+          benefitEn: 'Recited upon hearing thunder',
+        ),
+      ],
+    ),
+
+    DuaaCategory(
+      categoryAr: 'الشكر والبركة',
+      categoryEn: 'Gratitude & Barakah',
+      duaas: [
+        Duaa(
+          titleAr: 'دعاء الشكر',
+          titleEn: 'Dua of Gratitude',
+          duaaAr:
+              'الْحَمْدُ لِلَّهِ الَّذِي بِنِعْمَتِهِ تَتِمُّ الصَّالِحَاتُ',
+          duaaEn:
+              'All praise is for Allah by whose favour good deeds are perfected.',
+          benefitAr: 'يُقال عند رؤية ما يسرّ',
+          benefitEn: 'Recited upon seeing something pleasing',
+        ),
+        Duaa(
+          titleAr: 'دعاء البركة في الرزق',
+          titleEn: 'Dua for Barakah in Provision',
+          duaaAr:
+              'اللَّهُمَّ بَارِكْ لَنَا فِيمَا رَزَقْتَنَا، وَقِنَا عَذَابَ النَّارِ',
+          duaaEn:
+              'O Allah, bless us in what You have provided us, and protect us from the punishment of the Fire.',
+          benefitAr: 'دعاء جامع للبركة والوقاية',
+          benefitEn: 'A comprehensive dua for blessings and protection',
+        ),
+        Duaa(
+          titleAr: 'دعاء جامع للخير',
+          titleEn: 'Comprehensive Dua for Good',
+          duaaAr:
+              'اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْمًا نَافِعًا، وَرِزْقًا طَيِّبًا، وَعَمَلًا مُتَقَبَّلًا',
+          duaaEn:
+              'O Allah, I ask You for beneficial knowledge, good provision, and accepted deeds.',
+          benefitAr: 'دعاء جامع يجمع خيري الدنيا والآخرة',
+          benefitEn:
+              'A comprehensive dua gathering the good of this life and the Hereafter',
+        ),
+      ],
+    ),
+
+    DuaaCategory(
+      categoryAr: 'الحج والعمرة',
+      categoryEn: 'Hajj & Umrah',
+      duaas: [
+        Duaa(
+          titleAr: 'التلبية',
+          titleEn: 'The Talbiyah',
+          duaaAr:
+              'لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ، لَبَّيْكَ لَا شَرِيكَ لَكَ لَبَّيْكَ، إِنَّ الْحَمْدَ وَالنِّعْمَةَ لَكَ وَالْمُلْكَ، لَا شَرِيكَ لَكَ',
+          duaaEn:
+              'Here I am, O Allah, here I am. Here I am, You have no partner, here I am. Verily all praise, grace and sovereignty belong to You. You have no partner.',
+          benefitAr: 'شعار الحجاج والمعتمرين',
+          benefitEn: 'The chant of pilgrims during Hajj and Umrah',
+        ),
+        Duaa(
+          titleAr: 'دعاء عند الصفا والمروة',
+          titleEn: 'Dua at Safa and Marwa',
+          duaaAr:
+              'اللَّهُمَّ اجْعَلْهُ حَجًّا مَبْرُورًا، وَذَنْبًا مَغْفُورًا، وَسَعْيًا مَشْكُورًا',
+          duaaEn:
+              'O Allah, make it an accepted Hajj, a forgiven sin, and an appreciated effort.',
+          benefitAr: 'يُقال عند السعي بين الصفا والمروة',
+          benefitEn: 'Recited during the Sa\'i between Safa and Marwa',
+        ),
+      ],
+    ),
   ];
 }

@@ -27,7 +27,7 @@ class ArAR extends AppLocalizations {
   @override
   String get adhan => 'الأذان';
   @override
-  String get selectAdhanReciter => 'اختر القارئ';
+  String get selectAdhanReciter => 'اختر المؤذن';
   @override
   String get adhanNotifications => 'إشعارات الأذان';
   @override

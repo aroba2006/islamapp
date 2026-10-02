@@ -64,7 +64,7 @@ class _QuranPlayerWidgetState extends State<QuranPlayerWidget> {
       print('Error playing: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: Could not play audio')),
+          const SnackBar(content: Text('Error: Could not play audio')),
         );
       }
     }
@@ -126,10 +126,10 @@ class _QuranPlayerWidgetState extends State<QuranPlayerWidget> {
               Text(
                 widget.surahNameAr,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFFD4AF37),
+                  color: Color(0xFFD4AF37),
                 ),
               ),
               const SizedBox(height: 4),
@@ -200,7 +200,7 @@ class _QuranPlayerWidgetState extends State<QuranPlayerWidget> {
               // Stop Button
               IconButton(
                 onPressed: _stop,
-                icon: Icon(Icons.stop_circle, size: 32),
+                icon: const Icon(Icons.stop_circle, size: 32),
                 color: isDarkMode ? Colors.white70 : Colors.grey.shade700,
                 tooltip: 'Stop',
               ),
@@ -223,7 +223,7 @@ class _QuranPlayerWidgetState extends State<QuranPlayerWidget> {
                 onPressed: () {
                   _showVolumeDialog();
                 },
-                icon: Icon(Icons.volume_up, size: 32),
+                icon: const Icon(Icons.volume_up, size: 32),
                 color: isDarkMode ? Colors.white70 : Colors.grey.shade700,
                 tooltip: 'Volume',
               ),

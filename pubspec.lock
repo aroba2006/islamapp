@@ -957,6 +957,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.1"
+  qcf_quran_lite:
+    dependency: "direct main"
+    description:
+      name: qcf_quran_lite
+      sha256: "5eeae67b094b537d6bad09afc19e8a9c6dd356912459e8a5805c447f5ab0b567"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.5"
   record_use:
     dependency: transitive
     description:
@@ -973,6 +981,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
+  scrollable_positioned_list:
+    dependency: transitive
+    description:
+      name: scrollable_positioned_list
+      sha256: "1b54d5f1329a1e263269abc9e2543d90806131aa14fe7c6062a8054d57249287"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.8"
   share_plus:
     dependency: "direct main"
     description:
@@ -1058,6 +1074,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  sound_mode_advanced:
+    dependency: "direct main"
+    description:
+      name: sound_mode_advanced
+      sha256: "669e68e321a0d9626de74649352e7b2197e0b501d584bd65bbbf3933407943df"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.0"
   source_span:
     dependency: transitive
     description:
@@ -1274,6 +1298,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "15.3.0"
+  wakelock_plus:
+    dependency: "direct main"
+    description:
+      name: wakelock_plus
+      sha256: "22b3e7e937721de70e63c85e7139f4ac781dc22863b9262431a53ac030eb074b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.8.0"
+  wakelock_plus_platform_interface:
+    dependency: transitive
+    description:
+      name: wakelock_plus_platform_interface
+      sha256: "764c25504562abc8ac3406f5d175f126b276e6ba916c7c2675690b73368ca384"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.7.0"
   web:
     dependency: transitive
     description:

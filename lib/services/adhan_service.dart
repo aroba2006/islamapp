@@ -10,6 +10,9 @@ class AdhanService {
     'qassas':  'adhan/moqassas.mp3',
     'refaat': 'adhan/refaatadhan.mp3',
     'tobar': 'adhan/adhantobar.mp3',
+    // Added the two new reciters based on your audio file names
+    'basset': 'adhan/bassetadhan.mp3',
+    'hosari': 'adhan/hosariadhan.mp3',
   };
 
   static final Map<String, String> reciterNames = {
@@ -18,6 +21,9 @@ class AdhanService {
     'qassas':  'Mohamed Marawan Qassas',
     'refaat': 'Mohamed Refaat',
     'tobar': 'Nasraldin Tobar',
+    // Added the new reciter names
+    'basset': 'Abdul Basit Abdul Samad',
+    'hosari': 'Mahmoud Khalil Al-Hussary',
   };
 
   /// Initialize audio player - call this once at app startup
@@ -57,15 +63,20 @@ class AdhanService {
     }
   }
 
-  static Future<void> playAdhan(String reciterId) async {
+  static Future<void> playAdhan(String reciterId, {bool isWholeAdhan = true}) async {
     try {
       // Stop any currently playing audio
       await _audioPlayer.stop();
 
       // Verify reciter ID is valid
-      final path = adhanAssetPaths[reciterId];
+      String? path = adhanAssetPaths[reciterId];
       if (path == null) {
         throw Exception('Invalid reciter ID: $reciterId');
+      }
+
+      // Automatically switch to the takbeer file if user selected "First Takbeers Only"
+      if (!isWholeAdhan) {
+        path = path.replaceAll('.mp3', '_takbeer.mp3');
       }
 
       // Ensure audio context is set
@@ -108,10 +119,12 @@ class AdhanService {
   }
 
   /// Get current playback state
-  static Stream<Duration> get onDurationChanged => _audioPlayer.onDurationChanged;
+static Stream<Duration> get onDurationChanged => _audioPlayer.onDurationChanged;
   static Stream<Duration> get onPositionChanged => _audioPlayer.onPositionChanged;
-  static Stream<PlayerState> get onPlayerStateChanged =>
-      _audioPlayer.onPlayerStateChanged;
+  static Stream<PlayerState> get onPlayerStateChanged => _audioPlayer.onPlayerStateChanged;
+  
+  // ADD THIS LINE: Dedicated stream for when the audio naturally finishes
+  static Stream<void> get onPlayerComplete => _audioPlayer.onPlayerComplete;
 
   static Future<void> dispose() async {
     try {

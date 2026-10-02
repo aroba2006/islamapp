@@ -5,9 +5,10 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/foundation.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'dart:ui'; // Required for IsolateNameServer to kill background audio
 
+import 'screens/splash_screen.dart'; // Adjust the path if you placed it in a different folder
 import 'l10n/app_localizations.dart';
-import 'screens/home_screen.dart';
 import 'services/notification_service.dart';
 import 'services/adhan_service.dart';
 import 'services/theme_service.dart';
@@ -47,7 +48,6 @@ class IslamicApp extends StatefulWidget {
 class _IslamicAppState extends State<IslamicApp> with WidgetsBindingObserver {
   String _locale = 'ar';
   final ThemeService _themeService = ThemeService();
-  //final QuranReciterService _quranService = QuranReciterService();
   PrayerNotificationPopup? _currentNotification;
 
   @override
@@ -76,9 +76,32 @@ class _IslamicAppState extends State<IslamicApp> with WidgetsBindingObserver {
         onDismiss: () {
           setState(() => _currentNotification = null);
         },
-        onStopAdhan: () {
-          NotificationService.stopAdhan();
-          AdhanService.stopAdhan();
+        onStopAdhan: () async {
+          // BULLETPROOF KILL SWITCH: Wrapped in independent try-catches 
+          // so if one method fails, it still forces the audio to stop.
+
+          // 1. Wipe the Android system notification banner & stop foreground player
+          try {
+            await NotificationService.cancelAll();
+          } catch (e) {
+            debugPrint('Error canceling notifications: $e');
+          }
+
+          // 2. Stop any secondary Adhan service players
+          try {
+            await AdhanService.stopAdhan();
+          } catch (e) {
+            debugPrint('Error stopping AdhanService: $e');
+          }
+
+          // 3. Fire the kill signal to the background Alarm Manager isolate
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool('stopAdhan', true);
+            IsolateNameServer.lookupPortByName('adhan_stop_port')?.send('stop');
+          } catch (e) {
+            debugPrint('Error sending background kill signal: $e');
+          }
         },
       );
     });
@@ -106,7 +129,6 @@ class _IslamicAppState extends State<IslamicApp> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     NotificationService.dispose();
-   // _quranService.dispose();
     super.dispose();
   }
 
@@ -182,7 +204,7 @@ class _IslamicAppState extends State<IslamicApp> with WidgetsBindingObserver {
                 ),
               );
             },
-            home: const HomeScreen(),
+            home: const SplashScreen(), 
           );
         },
       ),

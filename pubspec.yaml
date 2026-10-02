@@ -39,7 +39,10 @@ dependencies:
   android_alarm_manager_plus: ^5.1.1
   just_audio_background: ^0.0.1-beta.17
   audio_service: ^0.18.14
-
+  qcf_quran_lite: ^0.0.4
+  wakelock_plus: ^1.1.4
+  sound_mode_advanced: ^4.0.0
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -55,3 +58,9 @@ flutter:
     - assets/json/
     - assets/data/hadiths.json
     - assets/images/reciters/
+    - assets/images/adhan_reciters/
+
+  fonts:
+    - family: UthmanicHafs
+      fonts:
+        - asset: assets/fonts/UthmanicHafs_V22.ttf

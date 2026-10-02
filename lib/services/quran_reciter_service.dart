@@ -5,6 +5,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Model for Quran Reciter
 class QuranReciter {
@@ -14,6 +15,7 @@ class QuranReciter {
   final String folderName;
   final String? customBaseUrl;
   final String imageFileName;
+  final int? timingId;
 
   const QuranReciter({
     required this.id,
@@ -22,6 +24,7 @@ class QuranReciter {
     required this.folderName,
     this.customBaseUrl,
     required this.imageFileName,
+    this.timingId,
   });
 }
 
@@ -32,13 +35,28 @@ class QuranReciterService {
   static final _audioPlayer = AudioPlayer();
   static bool _isInitialized = false;
 
+  // <-- NEW: Public variables to sync UI with background audio -->
+  static int? currentSurahNumber;
+  static PlayerState playerState = PlayerState.stopped;
+  static Duration currentPosition = Duration.zero;
+  static Duration currentDuration = Duration.zero;
+
   factory QuranReciterService() {
     return _instance;
+  }
+
+  static Future<void> setPlaybackRate(double rate) async {
+    try {
+      await _audioPlayer.setPlaybackRate(rate);
+    } catch (e) {
+      print('Error setting playback rate: $e');
+    }
   }
 
   QuranReciterService._internal();
 
   static const String _defaultBaseUrl = 'https://download.quranicaudio.com/quran';
+  static const String _defaultReciterKey = 'default_reciter_id';
 
   static const List<QuranReciter> reciters = [
     QuranReciter(
@@ -48,6 +66,7 @@ class QuranReciterService {
       folderName: 'minsh',
       customBaseUrl: 'https://server10.mp3quran.net',
       imageFileName: 'minshawi.jpg',
+      timingId: 112,
     ),
     QuranReciter(
       id: 'minshawy_mujawwad',
@@ -64,6 +83,7 @@ class QuranReciterService {
       folderName: 'basit',
       customBaseUrl: 'https://server7.mp3quran.net',
       imageFileName: 'basset.jpg',
+      timingId: 53, // Added
     ),
     QuranReciter(
       id: 'abdulbasit_mujawwad',
@@ -72,6 +92,7 @@ class QuranReciterService {
       folderName: 'basit/Almusshaf-Al-Mojawwad',
       customBaseUrl: 'https://server7.mp3quran.net',
       imageFileName: 'basset(taj).jpg',
+      timingId: 51, // Added
     ),
     QuranReciter(
       id: 'mahmoud_albanna',
@@ -88,6 +109,7 @@ class QuranReciterService {
       folderName: 'husr',
       customBaseUrl: 'https://server13.mp3quran.net',
       imageFileName: 'hosari.jpg',
+      timingId: 118, // Added
     ),
     QuranReciter(
       id: 'afasy',
@@ -96,6 +118,7 @@ class QuranReciterService {
       folderName: 'afs',
       customBaseUrl: 'https://server8.mp3quran.net',
       imageFileName: 'afasi.jpg',
+      timingId: 123, // Added
     ),
     QuranReciter(
       id: 'sudais',
@@ -104,6 +127,7 @@ class QuranReciterService {
       folderName: 'sds',
       customBaseUrl: 'https://server11.mp3quran.net',
       imageFileName: 'sudais.jpg',
+      timingId: 54, // Added
     ),
     QuranReciter(
       id: 'muaiqly',
@@ -120,6 +144,7 @@ class QuranReciterService {
       folderName: 'yasser',
       customBaseUrl: 'https://server11.mp3quran.net',
       imageFileName: 'dosari.jpg',
+      timingId: 92, // Added
     ),
     QuranReciter(
       id: 'nasser_qattami',
@@ -128,6 +153,7 @@ class QuranReciterService {
       folderName: 'qtm',
       customBaseUrl: 'https://server6.mp3quran.net',
       imageFileName: 'qatami.jpg',
+      timingId: 86, // Added
     ),
     QuranReciter(
       id: 'alijaber',
@@ -136,6 +162,7 @@ class QuranReciterService {
       folderName: 'a_jbr',
       customBaseUrl: 'https://server11.mp3quran.net',
       imageFileName: 'alijaber.jpg',
+      timingId: 76, // Added
     ),
     QuranReciter(
       id: 'ajmi',
@@ -144,6 +171,7 @@ class QuranReciterService {
       folderName: 'ajm',
       customBaseUrl: 'https://server10.mp3quran.net',
       imageFileName: 'ajami.jpg',
+      timingId: 5, // Added
     ),
     QuranReciter(
       id: 'shatri',
@@ -152,6 +180,7 @@ class QuranReciterService {
       folderName: 'shatri',
       customBaseUrl: 'https://server11.mp3quran.net',
       imageFileName: 'shatri.jpg',
+      timingId: 4, // Added
     ),
     QuranReciter(
       id: 'saad_al_ghamdi',
@@ -160,6 +189,7 @@ class QuranReciterService {
       folderName: 's_gmd',
       customBaseUrl: 'https://server7.mp3quran.net',
       imageFileName: 'ghamdi.jpg',
+      timingId: 30, // Added
     ),
   ];
 
@@ -217,6 +247,18 @@ class QuranReciterService {
           notificationColor: Color(0xFFD4AF37),
         ),
       );
+
+      // <-- FIX: Add listeners to sync global state with the UI -->
+      _audioPlayer.onPlayerStateChanged.listen((state) {
+        playerState = state;
+      });
+      _audioPlayer.onPositionChanged.listen((position) {
+        currentPosition = position;
+      });
+      _audioPlayer.onDurationChanged.listen((duration) {
+        currentDuration = duration;
+      });
+      // <---------------------------------------------------------->
       
       _isInitialized = true;
       print('QuranReciterService: notification init OK');
@@ -249,6 +291,32 @@ class QuranReciterService {
     }
   }
 
+  /// Get the default reciter from SharedPreferences
+  static Future<QuranReciter> getDefaultReciter() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final reciterId = prefs.getString(_defaultReciterKey);
+      if (reciterId != null) {
+        final reciter = getReciter(reciterId);
+        if (reciter != null) return reciter;
+      }
+    } catch (e) {
+      print('Error getting default reciter: $e');
+    }
+    // Fallback to first reciter if not set or invalid
+    return reciters.first;
+  }
+
+  /// Save the default reciter to SharedPreferences
+  static Future<void> setDefaultReciter(String reciterId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_defaultReciterKey, reciterId);
+    } catch (e) {
+      print('Error setting default reciter: $e');
+    }
+  }
+
   static String buildAudioUrl(QuranReciter reciter, int surahNumber) {
     if (surahNumber < 1 || surahNumber > 114) {
       throw Exception('Invalid surah number: $surahNumber');
@@ -266,8 +334,10 @@ class QuranReciterService {
     required int surahNumber,
     String surahNameAr = 'Quran',
     String reciterName = 'Reciter',
+    Duration? startPosition,
   }) async {
     try {
+      currentSurahNumber = surahNumber; // <-- FIX: Save current surah number
       if (!_isInitialized) await initialize();
       await _setupAudioContext();
       final audioUrl = buildAudioUrl(reciter, surahNumber);
@@ -275,7 +345,12 @@ class QuranReciterService {
       await _audioPlayer.stop();
       await _audioPlayer.setReleaseMode(ReleaseMode.stop);
       await _audioPlayer.setVolume(1.0);
-      await _audioPlayer.play(UrlSource(audioUrl));
+      
+      await _audioPlayer.setSource(UrlSource(audioUrl));
+      if (startPosition != null) {
+        await _audioPlayer.seek(startPosition);
+      }
+      await _audioPlayer.resume();
 
       // Update notification
       if (_audioHandler != null) {

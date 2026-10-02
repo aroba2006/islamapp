@@ -7183,6 +7183,11 @@ class TafseerData {
     ],
   ),
 };
+
+static final Map<int, TafseerSurah> ibnKatheerTafseer = {
+  // Ibn Kathir data goes here (will be auto-generated)
+};
+
 static TafseerVerse? getTafseerForVerse(int surahId, int verseNumber) {
     final surah = tafseerBysurahId[surahId];
     if (surah == null) return null;

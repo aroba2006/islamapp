@@ -15,11 +15,38 @@ class DuaaScreen extends StatefulWidget {
   State<DuaaScreen> createState() => _DuaaScreenState();
 }
 
-class _DuaaScreenState extends State<DuaaScreen> with SingleTickerProviderStateMixin {
+class _DuaaScreenState extends State<DuaaScreen>
+    with TickerProviderStateMixin {
   late TabController _tabController;
+  late AnimationController _entranceCtrl;
 
-  static const Map<String, String> _frenchTranslations = {
-    // ---- CATEGORIES ----
+  static const Color _gold = Color(0xFFD4AF37);
+
+  // Category → icon map (keyed by English category name for stability)
+  static const Map<String, IconData> _categoryIcons = {
+    'Worry & Grief': Icons.sentiment_dissatisfied_rounded,
+    'Knowledge & Education': Icons.school_rounded,
+    'Sickness & Healing': Icons.healing_rounded,
+    'Travel & Protection': Icons.flight_takeoff_rounded,
+    'Success & Guidance': Icons.emoji_events_rounded,
+    'Completing the Quran': Icons.menu_book_rounded,
+    'Life & Sustenance': Icons.spa_rounded,
+    'Family & Friends': Icons.family_restroom_rounded,
+    'Sleep & Rest': Icons.bedtime_rounded,
+    'Fear & Security': Icons.security_rounded,
+    'Morning & Evening': Icons.wb_twilight_rounded,
+    'Forgiveness & Repentance': Icons.volunteer_activism_rounded,
+    'Ramadan & Fasting': Icons.nightlight_round,
+    'Prayer & Worship': Icons.mosque_rounded,
+    'Entering & Leaving Home': Icons.home_rounded,
+    'Food & Drink': Icons.restaurant_rounded,
+    'Weather & Nature': Icons.thunderstorm_rounded,
+    'Gratitude & Barakah': Icons.favorite_rounded,
+    'Hajj & Umrah': Icons.mosque_outlined,
+  };
+
+  // French translations for category names + titles (extend as needed)
+  static const Map<String, String> _frenchCategories = {
     'Worry & Grief': 'Inquiétude et Chagrin',
     'Knowledge & Education': 'Savoir et Éducation',
     'Sickness & Healing': 'Maladie et Guérison',
@@ -30,137 +57,50 @@ class _DuaaScreenState extends State<DuaaScreen> with SingleTickerProviderStateM
     'Family & Friends': 'Famille et Amis',
     'Sleep & Rest': 'Sommeil et Repos',
     'Fear & Security': 'Peur et Sécurité',
-
-    // ---- DUAA TITLES ----
-    'Dua for Distress': 'Invocation pour la détresse',
-    'Dua for Anxiety & Sorrow': 'Invocation contre l\'anxiété et le chagrin',
-    'Dua for Knowledge': 'Invocation pour le savoir',
-    'Dua for Understanding': 'Invocation pour la compréhension',
-    'Dua for Memorization': 'Invocation pour la mémorisation',
-    'Dua for Healing': 'Invocation pour la guérison',
-    'Dua When Visiting the Sick': 'Invocation lors de la visite d\'un malade',
-    'Traveler\'s Dua': 'Invocation du voyageur',
-    'Travel Remembrances': 'Évocations du voyage',
-    'Dua for Divine Help': 'Invocation pour l\'aide divine',
-    'Istikhara Dua': 'Invocation de consultation (Istikhara)',
-    'Dua Upon Completing Quran': 'Invocation lors de l\'achèvement du Coran',
-    'Dua for Sustenance': 'Invocation pour la subsistance',
-    'Dua for Good Character': 'Invocation pour un bon caractère',
-    'Dua for Parents': 'Invocation pour les parents',
-    'Dua for a Righteous Spouse': 'Invocation pour un conjoint pieux',
-    'Dua for Children': 'Invocation pour les enfants',
-    'Sleep Dua': 'Invocation du sommeil',
-    'Waking Up Dua': 'Invocation du réveil',
-    'Dua Against Fear': 'Invocation contre la peur',
-    'Protection Dua': 'Invocation de protection',
-    'Dua for Anxiety & Worry': 'Invocation contre l\'anxiété et les soucis',
-
-    // ---- DUAA TEXTS ----
-    'There is no deity except You, exalted are You. Indeed, I have been of the wrongdoers.':
-        'Il n\'y a de divinité que Toi, gloire à Toi ! J\'ai été parmi les injustes.',
-    'O Allah, I seek refuge in You from anxiety and sorrow, weakness and laziness, miserliness and cowardice, the burden of debts and from being overpowered by men.':
-        'Ô Allah, je cherche refuge auprès de Toi contre l\'anxiété et le chagrin, la faiblesse et la paresse, l\'avarice et la lâcheté, le fardeau des dettes et le joug des hommes.',
-    'O Allah, I ask You for beneficial knowledge, good provision, and accepted deeds.':
-        'Ô Allah, je Te demande une science utile, une subsistance licite et une œuvre agréée.',
-    'O Allah, I ask You for understanding of the religion and memorization of knowledge.':
-        'Ô Allah, je Te demande la compréhension de la religion et la mémorisation du savoir.',
-    'O Allah, I ask You for beneficial knowledge.':
-        'Ô Allah, je Te demande une science utile.',
-    'O Allah, I ask You for healing and I seek refuge in You from all evil.':
-        'Ô Allah, je Te demande la guérison et je cherche refuge auprès de Toi contre tout mal.',
-    'O Allah, I ask You for healing from this sickness.':
-        'Ô Allah, je Te demande la guérison de cette maladie.',
-    'I seek refuge in the perfect words of Allah from the evil of what He has created.':
-        'Je cherche refuge dans les paroles parfaites d\'Allah contre le mal de ce qu\'Il a créé.',
-    'O Allah, I seek refuge in You from the difficulty of the journey and from changing after returning.':
-        'Ô Allah, je cherche refuge auprès de Toi contre les difficultés du voyage et contre le changement après le retour.',
-    'Allahu Akbar, Allahu Akbar, Allahu Akbar. Subhanalladhi sakhkhara lana hadha wa ma kunna lahu muqrinin.':
-        'Allah est le plus grand, Allah est le plus grand, Allah est le plus grand. Gloire à Celui qui a mis ceci à notre service alors que nous n\'étions pas capables.',
-    'O Allah, I ask You for divine help and guidance.':
-        'Ô Allah, je Te demande l\'aide et la guidance divines.',
-    'O Allah, I ask You to guide me and make my affairs easy for me.':
-        'Ô Allah, je Te demande de me guider et de rendre mes affaires faciles pour moi.',
-    'O Allah, I ask You for the best in this life and the Hereafter.':
-        'Ô Allah, je Te demande le bien dans ce monde et dans l\'au-delà.',
-    'O Allah, I ask You for good character and guidance to the best of deeds.':
-        'Ô Allah, je Te demande un bon caractère et la guidance vers les meilleures œuvres.',
-    'O Allah, have mercy on my parents as they raised me with mercy.':
-        'Ô Allah, fais miséricorde à mes parents comme ils m\'ont élevé avec miséricorde.',
-    'O Allah, I ask You for a righteous spouse and righteous children.':
-        'Ô Allah, je Te demande un conjoint pieux et des enfants pieux.',
-    'O Allah, I ask You for righteous children and offspring.':
-        'Ô Allah, je Te demande des enfants pieux et une descendance vertueuse.',
-    'In Your name, O Allah, I sleep and wake.':
-        'En Ton nom, ô Allah, je dors et je me réveille.',
-    'Praise be to Allah Who gave us life after death and to Him is the resurrection.':
-        'Louange à Allah qui nous a rendus à la vie après la mort et c\'est vers Lui que sera la résurrection.',
-    'O Allah, I seek refuge in You from fear and harm.':
-        'Ô Allah, je cherche refuge auprès de Toi contre la peur et le mal.',
-    'I seek refuge in the perfect words of Allah from all evil and harm.':
-        'Je cherche refuge dans les paroles parfaites d\'Allah contre tout mal et tout danger.',
-    'O Allah, grant me success and do not oppose me. Grant me success through Your mercy, O Most Merciful.':
-        'Ô Allah, accorde-moi le succès et ne Te oppose pas à moi. Accorde-moi le succès par Ta miséricorde, ô le plus Miséricordieux.',
-    'O Allah, I seek Your guidance and ask for Your blessing in this matter.':
-        'Ô Allah, je Te demande guidance et bénédiction dans cette affaire.',
-    'O Allah, I ask You for Your favor and mercy to complete the Quran.':
-        'Ô Allah, je Te demande Ta faveur et Ta miséricorde pour achever le Coran.',
-    'O Allah, bless us in what You have provided and protect us from the punishment of the Fire.':
-        'Ô Allah, bénis-nous dans ce que Tu nous as accordé et protège-nous du châtiment du Feu.',
-    'O Allah, improve my character and guide me to the best of manners.':
-        'Ô Allah, améliore mon caractère et guide-moi vers la meilleure éthique.',
-    'O Allah, forgive my parents and have mercy on them as they raised me with mercy.':
-        'Ô Allah, pardonne à mes parents et fais-leur miséricorde comme ils m\'ont élevé avec miséricorde.',
-    'O Allah, grant me a pious spouse and righteous children.':
-        'Ô Allah, accorde-moi un conjoint pieux et des enfants vertueux.',
-    'O Allah, protect me from fear and anxiety and grant me peace of mind.':
-        'Ô Allah, protège-moi de la peur et de l\'anxiété et accorde-moi la tranquillité d\'esprit.',
-    'I seek refuge in You, O Allah, from all evil and harm.':
-        'Je cherche refuge auprès de Toi, ô Allah, contre tout mal et tout danger.',
-
-    // ---- BENEFITS / CONTEXT ----
-    'For severe distress and sorrow': 'Pour les grandes détresses et les chagrins',
-    'For seeking beneficial knowledge and understanding': 'Pour demander une science utile et la compréhension',
-    'For improving memorization and learning': 'Pour améliorer la mémorisation et l\'apprentissage',
-    'For healing from sickness and diseases': 'Pour guérir des maladies et des souffrances',
-    'When visiting the sick': 'Lors de la visite d\'un malade',
-    'For safety during travel': 'Pour la sécurité en voyage',
-    'Remembrances to say during travel': 'Évocations à dire pendant le voyage',
-    'Dua for success and divine guidance': 'Dua pour le succès et la guidance divine',
-    'For seeking Allah\'s guidance in important decisions': 'Pour demander la guidance d\'Allah dans les décisions importantes',
-    'Upon completing the Quran recitation': 'Lors de l\'achèvement de la récitation du Coran',
-    'For provision and livelihood': 'Pour la subsistance et les moyens de vivre',
-    'For developing good character': 'Pour développer un bon caractère',
-    'For parents\' well-being and mercy': 'Pour le bien-être et la miséricorde des parents',
-    'For finding a righteous spouse': 'Pour trouver un conjoint pieux',
-    'For the well-being of children': 'Pour le bien-être des enfants',
-    'Before sleeping': 'Avant de dormir',
-    'Upon waking up': 'Au réveil',
-    'For protection against fear': 'Pour se protéger contre la peur',
-    'For general protection from harm': 'Pour une protection générale contre le mal',
-    "Traveler's dua before departure": "Dua du voyageur avant le départ",
-    "Prophet's dua for recovery from illness": "Dua du Prophète pour la guérison d'une maladie",
-    'O Lord of the people, remove the harm and cure it. You are the Healer. There is no cure except Your cure, a cure that leaves no illness.':
-        'Ô Seigneur des hommes, ôte le mal et guéris. Tu es le Guérisseur, il n\'y a de guérison que la Tienne, une guérison qui ne laisse aucune maladie.',
-    'O Allah, in this journey of mine, I ask You for goodness and piety, and deeds that please You. O Allah, make this journey easy for me and shorten its distance.':
-        'Ô Allah, dans mon voyage, je Te demande la bienfaisance et la piété, et des œuvres qui Te plaisent. Ô Allah, rends ce voyage facile pour moi et raccourcis sa distance.',
+    'Morning & Evening': 'Matin et Soir',
+    'Forgiveness & Repentance': 'Pardon et Repentir',
+    'Ramadan & Fasting': 'Ramadan et Jeûne',
+    'Prayer & Worship': 'Prière et Adoration',
+    'Entering & Leaving Home': 'Entrer et Sortir de la Maison',
+    'Food & Drink': 'Nourriture et Boisson',
+    'Weather & Nature': 'Météo et Nature',
+    'Gratitude & Barakah': 'Gratitude et Bénédiction',
+    'Hajj & Umrah': 'Hajj et Umrah',
   };
-
-  String _translateToFrench(String text) {
-    if (text.isEmpty) return text;
-    return _frenchTranslations[text] ?? text;
-  }
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: DuaaData.categories.length, vsync: this);
+    _tabController = TabController(
+      length: DuaaData.categories.length,
+      vsync: this,
+    );
+    _entranceCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    )..forward();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _entranceCtrl.dispose();
     super.dispose();
   }
+
+  String _categoryLabel(DuaaCategory c, String lang) {
+    if (lang == 'ar') return c.categoryAr;
+    if (lang == 'fr') {
+      return _frenchCategories[c.categoryEn] ?? c.categoryEn;
+    }
+    return c.categoryEn;
+  }
+
+  IconData _categoryIcon(DuaaCategory c) =>
+      _categoryIcons[c.categoryEn] ?? Icons.menu_book_rounded;
+
+  int get _totalDuaas => DuaaData.categories
+      .fold<int>(0, (sum, cat) => sum + cat.duaas.length);
 
   @override
   Widget build(BuildContext context) {
@@ -176,57 +116,29 @@ class _DuaaScreenState extends State<DuaaScreen> with SingleTickerProviderStateM
             child: SafeArea(
               child: Column(
                 children: [
-                  _buildHeader(context, l10n, isArabic, themeService),
-                  Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1000),
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: isDarkMode
-                              ? BackdropFilter(
-                                  filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF0B3D2E).withValues(alpha: 0.6),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
-                                    ),
-                                    child: _buildTabBar(isDarkMode, lang, themeService),
-                                  ),
-                                )
-                              : Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.5)),
-                                  ),
-                                  child: _buildTabBar(isDarkMode, lang, themeService),
-                                ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  _buildTopBar(context, l10n, isArabic),
+                  _buildHeroHeader(context, lang, isArabic, isDarkMode,
+                      themeService),
+                  const SizedBox(height: 6),
+                  _buildTabBarStrip(isDarkMode, lang, themeService),
+                  const SizedBox(height: 8),
                   Expanded(
                     child: Center(
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 800),
+                        constraints: const BoxConstraints(maxWidth: 820),
                         child: TabBarView(
                           controller: _tabController,
-                          children: DuaaData.categories.map((category) {
-                            return ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
-                              itemCount: category.duaas.length,
-                              itemBuilder: (context, index) => _DuaaCard(
-                                duaa: category.duaas[index],
-                                lang: lang,
-                                index: index,
-                                translator: _translateToFrench,
-                                themeService: themeService,
-                              ),
-                            );
-                          }).toList(),
+                          children: DuaaData.categories
+                              .map(
+                                (category) => _CategoryList(
+                                  category: category,
+                                  lang: lang,
+                                  themeService: themeService,
+                                  categoryLabel: _categoryLabel(category, lang),
+                                  categoryIcon: _categoryIcon(category),
+                                ),
+                              )
+                              .toList(),
                         ),
                       ),
                     ),
@@ -240,74 +152,430 @@ class _DuaaScreenState extends State<DuaaScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildTabBar(bool isDarkMode, String lang, ThemeService themeService) {
+  // ─────────────────── TOP BAR ───────────────────
+
+  Widget _buildTopBar(
+      BuildContext context, AppLocalizations? l10n, bool isArabic) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+      child: Row(
+        children: [
+          _GlassIconButton(
+            icon: Icons.arrow_back_ios_new_rounded,
+            tooltip: isArabic ? 'رجوع' : 'Back',
+            onTap: () => Navigator.pop(context),
+          ),
+          const Spacer(),
+          _GlassIconButton(
+            icon: Icons.share_outlined,
+            tooltip: isArabic ? 'مشاركة التطبيق' : 'Share app',
+            onTap: () {},
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────── HERO HEADER ───────────────────
+
+  Widget _buildHeroHeader(
+    BuildContext context,
+    String lang,
+    bool isArabic,
+    bool isDarkMode,
+    ThemeService themeService,
+  ) {
+    final title = isArabic
+        ? 'الأدعية والأذكار'
+        : (lang == 'fr' ? 'Invocations & Rappels' : 'Duas & Remembrances');
+    final subtitle = isArabic
+        ? 'مجموعة منتقاة من الأدعية المأثورة من الكتاب والسنة، مرتّبة بحسب المناسبات والحالات.'
+        : (lang == 'fr'
+            ? 'Une collection soigneusement sélectionnée d\'invocations du Coran et de la Sunna, organisée par thème.'
+            : 'A carefully curated collection of authentic supplications from the Quran and Sunnah, organized by theme.');
+
+    final categoriesLabel =
+        isArabic ? 'فئة' : (lang == 'fr' ? 'catégories' : 'categories');
+    final duasLabel = isArabic ? 'دعاء' : (lang == 'fr' ? 'invocations' : 'duas');
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDarkMode
+                ? [
+                    const Color(0xFF1A5F3E).withValues(alpha: 0.75),
+                    const Color(0xFF0E3824).withValues(alpha: 0.6),
+                  ]
+                : [
+                    const Color(0xFFF7EFD3).withValues(alpha: 0.9),
+                    const Color(0xFFEADAA0).withValues(alpha: 0.65),
+                  ],
+          ),
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(
+            color: _gold.withValues(alpha: 0.55),
+            width: 1.6,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: _gold.withValues(alpha: 0.18),
+              blurRadius: 22,
+              spreadRadius: 2,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Big hero logo ──
+                Container(
+                  width: 74,
+                  height: 74,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [_gold, Color(0xFFE6C200)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _gold.withValues(alpha: 0.5),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.menu_book_rounded,
+                    color: Colors.white,
+                    size: 38,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: isArabic
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        textAlign: isArabic ? TextAlign.right : TextAlign.left,
+                        style: themeService.getTextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode
+                              ? Colors.white
+                              : const Color(0xFF3A2E0E),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        textAlign: isArabic ? TextAlign.right : TextAlign.left,
+                        style: themeService.getTextStyle(
+                          fontSize: 12.5,
+                          height: 1.55,
+                          color: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.75)
+                              : Colors.black.withValues(alpha: 0.65),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            // ── Stat pills ──
+            Row(
+              children: [
+                Expanded(
+                  child: _StatPill(
+                    icon: Icons.category_rounded,
+                    value: '${DuaaData.categories.length}',
+                    label: categoriesLabel,
+                    themeService: themeService,
+                    isDarkMode: isDarkMode,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _StatPill(
+                    icon: Icons.format_quote_rounded,
+                    value: '$_totalDuaas',
+                    label: duasLabel,
+                    themeService: themeService,
+                    isDarkMode: isDarkMode,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _StatPill(
+                    icon: Icons.verified_rounded,
+                    value: isArabic
+                        ? 'موثّق'
+                        : (lang == 'fr' ? 'Authentique' : 'Authentic'),
+                    label: isArabic
+                        ? 'المصادر'
+                        : (lang == 'fr' ? 'Sources' : 'Sources'),
+                    themeService: themeService,
+                    isDarkMode: isDarkMode,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────── TAB BAR ───────────────────
+
+  Widget _buildTabBarStrip(
+      bool isDarkMode, String lang, ThemeService themeService) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1000),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: isDarkMode
+                ? const Color(0xFF0B3D2E).withValues(alpha: 0.6)
+                : Colors.white.withValues(alpha: 0.75),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: _gold.withValues(alpha: 0.35),
+              width: 1.4,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _gold.withValues(alpha: 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: isDarkMode
+                ? BackdropFilter(
+                    filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: _buildTabBar(isDarkMode, lang, themeService),
+                  )
+                : _buildTabBar(isDarkMode, lang, themeService),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabBar(
+      bool isDarkMode, String lang, ThemeService themeService) {
+    final labelColor = isDarkMode ? _gold : const Color(0xFF3A2E0E);
+    final unselectedColor =
+        isDarkMode ? Colors.white.withValues(alpha: 0.6) : Colors.black54;
+
     return TabBar(
       controller: _tabController,
       isScrollable: true,
-      labelColor: isDarkMode ? const Color(0xFFD4AF37) : Colors.black,
-      unselectedLabelColor: isDarkMode ? Colors.white.withValues(alpha: 0.6) : Colors.black54,
-      indicatorColor: const Color(0xFFD4AF37),
+      labelColor: labelColor,
+      unselectedLabelColor: unselectedColor,
+      indicatorColor: _gold,
       indicatorWeight: 3,
+      indicatorSize: TabBarIndicatorSize.label,
       dividerColor: Colors.transparent,
       labelStyle: themeService.getTextStyle(
-        fontSize: 16,
+        fontSize: 14.5,
         fontWeight: FontWeight.bold,
-        color: isDarkMode ? const Color(0xFFD4AF37) : Colors.black,
       ),
+      unselectedLabelStyle: themeService.getTextStyle(
+        fontSize: 13.5,
+        fontWeight: FontWeight.w500,
+      ),
+      tabAlignment: TabAlignment.start,
       tabs: DuaaData.categories.map((category) {
-        String tabText = category.categoryEn;
-        if (lang == 'ar') {
-          tabText = category.categoryAr;
-        } else if (lang == 'fr') {
-          tabText = _translateToFrench(category.categoryEn);
-        }
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4), 
-          child: Tab(text: tabText),
+        final icon = _categoryIcon(category);
+        final label = _categoryLabel(category, lang);
+        return Tab(
+          height: 52,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 18),
+                const SizedBox(width: 8),
+                Text(label, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
         );
       }).toList(),
     );
   }
+}
 
-  Widget _buildHeader(BuildContext context, AppLocalizations? l10n, bool isArabic, ThemeService themeService) {
+// ─────────────────── CATEGORY LIST ───────────────────
+
+class _CategoryList extends StatelessWidget {
+  final DuaaCategory category;
+  final String lang;
+  final ThemeService themeService;
+  final String categoryLabel;
+  final IconData categoryIcon;
+
+  const _CategoryList({
+    required this.category,
+    required this.lang,
+    required this.themeService,
+    required this.categoryLabel,
+    required this.categoryIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isArabic = lang == 'ar';
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final count = category.duaas.length;
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+      itemCount: category.duaas.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return _CategoryBanner(
+            icon: categoryIcon,
+            title: categoryLabel,
+            count: count,
+            isArabic: isArabic,
+            lang: lang,
+            isDarkMode: isDarkMode,
+            themeService: themeService,
+          );
+        }
+        final i = index - 1;
+        return _DuaaCard(
+          duaa: category.duaas[i],
+          lang: lang,
+          index: i,
+          themeService: themeService,
+        );
+      },
+    );
+  }
+}
+
+// ─────────────────── CATEGORY BANNER ───────────────────
+
+class _CategoryBanner extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final int count;
+  final bool isArabic;
+  final String lang;
+  final bool isDarkMode;
+  final ThemeService themeService;
+
+  const _CategoryBanner({
+    required this.icon,
+    required this.title,
+    required this.count,
+    required this.isArabic,
+    required this.lang,
+    required this.isDarkMode,
+    required this.themeService,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final countLabel = isArabic
+        ? '$count دعاء'
+        : (lang == 'fr'
+            ? '$count invocation${count > 1 ? 's' : ''}'
+            : '$count dua${count > 1 ? 's' : ''}');
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      padding: const EdgeInsets.only(bottom: 18),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFD4AF37), size: 24),
-          ),
-          Expanded(
-            child: Text(
-              l10n?.duaaTitle ?? 'الأدعية',
-              textAlign: TextAlign.center,
-              style: themeService.getTextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFFD4AF37),
+          Container(
+            padding: const EdgeInsets.all(11),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFFD4AF37).withValues(alpha: 0.9),
+                  const Color(0xFFE6C200).withValues(alpha: 0.7),
+                ],
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFD4AF37).withValues(alpha: 0.35),
+                  blurRadius: 12,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  textAlign: isArabic ? TextAlign.right : TextAlign.left,
+                  style: themeService.getTextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? Colors.white : const Color(0xFF3A2E0E),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  countLabel,
+                  textAlign: isArabic ? TextAlign.right : TextAlign.left,
+                  style: themeService.getTextStyle(
+                    fontSize: 12.5,
+                    letterSpacing: 0.4,
+                    color: const Color(0xFFD4AF37).withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 48),
         ],
       ),
     );
   }
 }
 
+// ─────────────────── DUAA CARD ───────────────────
+
 class _DuaaCard extends StatefulWidget {
   final Duaa duaa;
   final String lang;
   final int index;
-  final String Function(String) translator;
   final ThemeService themeService;
 
   const _DuaaCard({
     required this.duaa,
     required this.lang,
     required this.index,
-    required this.translator,
     required this.themeService,
   });
 
@@ -319,15 +587,36 @@ class _DuaaCardState extends State<_DuaaCard> {
   bool _isExpanded = false;
   double _scale = 1.0;
 
+  static const Color _gold = Color(0xFFD4AF37);
+
   void _toggleExpand() => setState(() => _isExpanded = !_isExpanded);
 
-  Future<void> _copyToClipboard(String arabic) async {
-    await Clipboard.setData(ClipboardData(text: arabic));
+  Future<void> _copyToClipboard(String text, {String? label}) async {
+    await Clipboard.setData(ClipboardData(text: text));
     if (!mounted) return;
+    final isArabic = widget.lang == 'ar';
+    final isFrench = widget.lang == 'fr';
+    final msg = label ??
+        (isArabic
+            ? 'تم النسخ إلى الحافظة'
+            : (isFrench ? 'Copié dans le presse-papiers' : 'Copied to clipboard'));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(widget.lang == 'ar' ? 'تم النسخ' : 'Copied to clipboard'),
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded,
+                color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(child: Text(msg)),
+          ],
+        ),
         duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        backgroundColor: const Color(0xFF0B3D2E),
       ),
     );
   }
@@ -335,66 +624,71 @@ class _DuaaCardState extends State<_DuaaCard> {
   @override
   Widget build(BuildContext context) {
     final isArabic = widget.lang == 'ar';
+    final isFrench = widget.lang == 'fr';
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    String cardTitle;
+    // Resolve title & translation text (mirrors original behaviour)
+    final String title;
     if (isArabic) {
-      cardTitle = widget.duaa.titleAr;
-    } else if (widget.lang == 'fr') {
-      cardTitle = widget.translator(widget.duaa.titleEn);
+      title = widget.duaa.titleAr;
+    } else if (isFrench) {
+      title = widget.duaa.titleEn;
     } else {
-      cardTitle = widget.duaa.titleEn;
+      title = widget.duaa.titleEn;
     }
 
-    String translatedText;
+    final String translation;
     if (isArabic) {
-      translatedText = widget.duaa.duaaEn;
-    } else if (widget.lang == 'fr') {
-      translatedText = widget.translator(widget.duaa.duaaEn);
+      translation = widget.duaa.duaaEn;
     } else {
-      translatedText = widget.duaa.duaaEn;
+      translation = widget.duaa.duaaEn;
     }
 
-    String benefitText;
+    final String benefit;
     if (isArabic) {
-      benefitText = widget.duaa.benefitAr ?? '';
-    } else if (widget.lang == 'fr') {
-      final englishBenefit = widget.duaa.benefitEn ?? '';
-      benefitText = englishBenefit.isNotEmpty ? 'Contexte: ${widget.translator(englishBenefit)}' : '';
+      benefit = widget.duaa.benefitAr ?? '';
     } else {
-      final englishBenefit = widget.duaa.benefitEn ?? '';
-      benefitText = englishBenefit.isNotEmpty ? 'Context: $englishBenefit' : '';
+      benefit = widget.duaa.benefitEn ?? '';
     }
 
     return TweenAnimationBuilder<double>(
-      duration: Duration(milliseconds: 300 + (widget.index * 50).clamp(0, 300)),
+      duration:
+          Duration(milliseconds: 300 + (widget.index * 55).clamp(0, 350)),
       tween: Tween(begin: 0, end: 1),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) => Opacity(
         opacity: value,
         child: Transform.translate(
-          offset: Offset(0, (1 - value) * 24),
+          offset: Offset(0, (1 - value) * 26),
           child: child,
         ),
       ),
       child: GestureDetector(
-        onTapDown: (_) => setState(() => _scale = 0.98),
+        onTapDown: (_) => setState(() => _scale = 0.985),
         onTapUp: (_) => setState(() => _scale = 1.0),
         onTapCancel: () => setState(() => _scale = 1.0),
         onTap: _toggleExpand,
         child: AnimatedScale(
           scale: _scale,
-          duration: const Duration(milliseconds: 150),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: isDarkMode
-                  ? BackdropFilter(
-                      filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                      child: _buildDarkCard(cardTitle, translatedText, benefitText),
-                    )
-                  : _buildLightCard(cardTitle, translatedText, benefitText),
+          duration: const Duration(milliseconds: 140),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 320),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: isDarkMode
+                    ? BackdropFilter(
+                        filter:
+                            ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: _buildCard(title, translation, benefit,
+                            isArabic, isFrench, isDarkMode, true),
+                      )
+                    : _buildCard(title, translation, benefit, isArabic,
+                        isFrench, isDarkMode, false),
+              ),
             ),
           ),
         ),
@@ -402,169 +696,514 @@ class _DuaaCardState extends State<_DuaaCard> {
     );
   }
 
-  Widget _buildDarkCard(String title, String text, String benefit) {
+  Widget _buildCard(
+    String title,
+    String translation,
+    String benefit,
+    bool isArabic,
+    bool isFrench,
+    bool isDarkMode,
+    bool useBlur,
+  ) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.all(20),
+      duration: const Duration(milliseconds: 280),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
       decoration: BoxDecoration(
-        color: _isExpanded ? const Color(0xFF144D32).withValues(alpha: 0.8) : const Color(0xFF0B3D2E).withValues(alpha: 0.65),
+        color: isDarkMode
+            ? (_isExpanded
+                ? const Color(0xFF144D32).withValues(alpha: 0.82)
+                : const Color(0xFF0B3D2E).withValues(alpha: 0.68))
+            : (_isExpanded ? const Color(0xFFFFFDF6) : Colors.white),
         border: Border.all(
-          color: _isExpanded ? const Color(0xFFD4AF37).withValues(alpha: 0.8) : const Color(0xFFD4AF37).withValues(alpha: 0.3),
-          width: _isExpanded ? 2 : 1,
+          color: _isExpanded
+              ? _gold.withValues(alpha: 0.95)
+              : _gold.withValues(alpha: 0.3),
+          width: _isExpanded ? 2 : 1.2,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: isDarkMode
+            ? []
+            : [
+                BoxShadow(
+                  color: _gold.withValues(alpha: _isExpanded ? 0.18 : 0.06),
+                  blurRadius: _isExpanded ? 18 : 8,
+                  spreadRadius: _isExpanded ? 1 : 0,
+                  offset: const Offset(0, 5),
+                ),
+              ],
       ),
-      child: _buildCardContent(title, text, benefit, true),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header row ──
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Number badge
+              Container(
+                width: 34,
+                height: 34,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [
+                      _gold.withValues(alpha: _isExpanded ? 1 : 0.75),
+                      const Color(0xFFE6C200)
+                          .withValues(alpha: _isExpanded ? 0.85 : 0.55),
+                    ],
+                  ),
+                  boxShadow: _isExpanded
+                      ? [
+                          BoxShadow(
+                            color: _gold.withValues(alpha: 0.4),
+                            blurRadius: 10,
+                            spreadRadius: 1,
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Text(
+                  '${widget.index + 1}',
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    title,
+                    style: widget.themeService.getTextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: _isExpanded
+                          ? (isDarkMode ? Colors.white : const Color(0xFF3A2E0E))
+                          : _gold,
+                    ),
+                  ),
+                ),
+              ),
+              AnimatedRotation(
+                turns: _isExpanded ? 0.5 : 0,
+                duration: const Duration(milliseconds: 300),
+                child: Icon(
+                  Icons.expand_more_rounded,
+                  color: _isExpanded
+                      ? (isDarkMode ? Colors.white : const Color(0xFF3A2E0E))
+                      : _gold,
+                  size: 28,
+                ),
+              ),
+            ],
+          ),
+
+          // ── Expanded content ──
+          if (_isExpanded) ...[
+            const SizedBox(height: 20),
+            _buildArabicBlock(isDarkMode),
+            const SizedBox(height: 20),
+            _buildSectionLabel(
+              icon: Icons.translate_rounded,
+              label: isArabic
+                  ? 'الترجمة'
+                  : (isFrench ? 'Traduction' : 'Translation'),
+              themeService: widget.themeService,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              translation,
+              textAlign: isArabic ? TextAlign.right : TextAlign.left,
+              style: widget.themeService.getTextStyle(
+                fontSize: 15.5,
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.9)
+                    : Colors.black87,
+                height: 1.65,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            if (benefit.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              _buildSectionLabel(
+                icon: Icons.info_outline_rounded,
+                label: isArabic
+                    ? 'السياق والفضل'
+                    : (isFrench ? 'Contexte & mérite' : 'Context & Virtue'),
+                themeService: widget.themeService,
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _gold.withValues(alpha: isDarkMode ? 0.12 : 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _gold.withValues(alpha: 0.28),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.lightbulb_outline_rounded,
+                        color: _gold, size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        benefit,
+                        textAlign:
+                            isArabic ? TextAlign.right : TextAlign.left,
+                        style: widget.themeService.getTextStyle(
+                          fontSize: 13,
+                          height: 1.55,
+                          color: isDarkMode
+                              ? Colors.white70
+                              : Colors.black.withValues(alpha: 0.75),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 20),
+            _buildActionRow(isArabic, isFrench, isDarkMode, translation),
+          ],
+        ],
+      ),
     );
   }
 
-  Widget _buildLightCard(String title, String text, String benefit) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.all(20),
+  Widget _buildArabicBlock(bool isDarkMode) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22),
       decoration: BoxDecoration(
-        color: _isExpanded ? const Color(0xFFF5F5F5) : Colors.white,
-        border: Border.all(
-          color: _isExpanded ? const Color(0xFFD4AF37).withValues(alpha: 1) : const Color(0xFFD4AF37).withValues(alpha: 0.5),
-          width: _isExpanded ? 2 : 1,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDarkMode
+              ? [
+                  const Color(0xFF0F2D22),
+                  const Color(0xFF08221A),
+                ]
+              : [
+                  const Color(0xFFFDFBF3),
+                  const Color(0xFFF5ECD0),
+                ],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: _gold.withValues(alpha: 0.55),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFD4AF37).withValues(alpha: _isExpanded ? 0.15 : 0.05),
-            blurRadius: _isExpanded ? 12 : 6,
+            color: _gold.withValues(alpha: 0.12),
+            blurRadius: 12,
+            spreadRadius: 0,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: _buildCardContent(title, text, benefit, false),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.auto_awesome_rounded,
+                  color: _gold.withValues(alpha: 0.8), size: 14),
+              const SizedBox(width: 6),
+              Text(
+                '﷽',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: _gold.withValues(alpha: 0.8),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(Icons.auto_awesome_rounded,
+                  color: _gold.withValues(alpha: 0.8), size: 14),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            widget.duaa.duaaAr,
+            textAlign: TextAlign.center,
+            textDirection: TextDirection.rtl,
+            style: widget.themeService.getTextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: _gold,
+              height: 2.1,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildCardContent(String title, String text, String benefit, bool isDarkMode) {
-    final isArabic = widget.lang == 'ar';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildSectionLabel({
+    required IconData icon,
+    required String label,
+    required ThemeService themeService,
+  }) {
+    return Row(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                style: widget.themeService.getTextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: _isExpanded ? (isDarkMode ? Colors.white : Colors.black) : const Color(0xFFD4AF37),
-                ),
-              ),
-            ),
-            AnimatedRotation(
-              turns: _isExpanded ? 0.5 : 0,
-              duration: const Duration(milliseconds: 300),
-              child: Icon(
-                Icons.expand_more_rounded,
-                color: _isExpanded ? (isDarkMode ? Colors.white : Colors.black) : const Color(0xFFD4AF37),
-                size: 28,
-              ),
-            ),
-          ],
+        Icon(icon, size: 15, color: _gold.withValues(alpha: 0.9)),
+        const SizedBox(width: 6),
+        Text(
+          label.toUpperCase(),
+          style: themeService.getTextStyle(
+            fontSize: 11,
+            letterSpacing: 1.2,
+            fontWeight: FontWeight.w700,
+            color: _gold.withValues(alpha: 0.9),
+          ),
         ),
-        if (_isExpanded) ...[
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: isDarkMode ? const Color(0xFF0F2D22) : const Color(0xFFFDFBF7),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: const Color(0xFFD4AF37).withValues(alpha: 0.4),
-                width: 1.5,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  widget.duaa.duaaAr,
-                  textAlign: TextAlign.center,
-                  textDirection: TextDirection.rtl,
-                  style: widget.themeService.getTextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFFD4AF37),
-                    height: 2.0,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Divider(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
-                const SizedBox(height: 16),
-                Text(
-                  text,
-                  textAlign: TextAlign.center,
-                  style: widget.themeService.getTextStyle(
-                    fontSize: 18,
-                    color: isDarkMode ? Colors.white.withValues(alpha: 0.9) : Colors.black87,
-                    height: 1.6,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-                if (benefit.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isDarkMode ? Colors.black.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.info_outline_rounded, color: Color(0xFFD4AF37), size: 20),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            benefit,
-                            style: widget.themeService.getTextStyle(
-                              fontSize: 14,
-                              color: isDarkMode ? Colors.white70 : Colors.black54,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
+      ],
+    );
+  }
+
+  Widget _buildActionRow(
+      bool isArabic, bool isFrench, bool isDarkMode, String translation) {
+    final copyArLabel = isArabic
+        ? 'نسخ العربية'
+        : (isFrench ? 'Copier (ar)' : 'Copy Arabic');
+    final copyTrLabel = isArabic
+        ? 'نسخ الترجمة'
+        : (isFrench ? 'Copier traduction' : 'Copy translation');
+    final shareLabel = isArabic
+        ? 'مشاركة'
+        : (isFrench ? 'Partager' : 'Share');
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      alignment: isArabic ? WrapAlignment.end : WrapAlignment.start,
+      children: [
+        _PillButton(
+          icon: Icons.copy_rounded,
+          label: copyArLabel,
+          onTap: () => _copyToClipboard(widget.duaa.duaaAr),
+          isDarkMode: isDarkMode,
+        ),
+        _PillButton(
+          icon: Icons.translate_rounded,
+          label: copyTrLabel,
+          onTap: () => _copyToClipboard(translation),
+          isDarkMode: isDarkMode,
+        ),
+        _PillButton(
+          icon: Icons.share_rounded,
+          label: shareLabel,
+          onTap: () {
+            ShareImageGenerator.generateAndShareImageWithWidget(
+              title: widget.duaa.duaaAr,
+              subtitle: translation,
+              isDarkMode: isDarkMode,
+              lang: widget.lang,
+              context: context,
+            );
+          },
+          isDarkMode: isDarkMode,
+          primary: true,
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────── SHARED WIDGETS ───────────────────
+
+class _GlassIconButton extends StatefulWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final String? tooltip;
+
+  const _GlassIconButton({
+    required this.icon,
+    required this.onTap,
+    this.tooltip,
+  });
+
+  @override
+  State<_GlassIconButton> createState() => _GlassIconButtonState();
+}
+
+class _GlassIconButtonState extends State<_GlassIconButton> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final button = MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: _hover
+                ? const Color(0xFFD4AF37).withValues(alpha: 0.2)
+                : (isDark
+                    ? const Color(0xFF144D32).withValues(alpha: 0.55)
+                    : Colors.white.withValues(alpha: 0.8)),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: const Color(0xFFD4AF37)
+                  .withValues(alpha: _hover ? 0.6 : 0.3),
             ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+          child: Icon(widget.icon,
+              color: const Color(0xFFD4AF37), size: 20),
+        ),
+      ),
+    );
+    if (widget.tooltip != null) {
+      return Tooltip(message: widget.tooltip!, child: button);
+    }
+    return button;
+  }
+}
+
+class _StatPill extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final ThemeService themeService;
+  final bool isDarkMode;
+
+  const _StatPill({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.themeService,
+    required this.isDarkMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFD4AF37).withValues(alpha: isDarkMode ? 0.15 : 0.12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFFD4AF37).withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: const Color(0xFFD4AF37), size: 18),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: themeService.getTextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: isDarkMode ? Colors.white : const Color(0xFF3A2E0E),
+            ),
+          ),
+          const SizedBox(height: 1),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: themeService.getTextStyle(
+              fontSize: 10,
+              letterSpacing: 0.3,
+              color: const Color(0xFFD4AF37).withValues(alpha: 0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PillButton extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isDarkMode;
+  final bool primary;
+
+  const _PillButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    required this.isDarkMode,
+    this.primary = false,
+  });
+
+  @override
+  State<_PillButton> createState() => _PillButtonState();
+}
+
+class _PillButtonState extends State<_PillButton> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    const gold = Color(0xFFD4AF37);
+    final bg = widget.primary
+        ? (_hover
+            ? const Color(0xFFE6C200)
+            : gold)
+        : (_hover
+            ? gold.withValues(alpha: 0.18)
+            : gold.withValues(alpha: 0.08));
+    final fg = widget.primary
+        ? Colors.white
+        : gold;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: gold.withValues(alpha: widget.primary ? 0 : 0.4),
+              width: 1.2,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              IconButton(
-                onPressed: () => _copyToClipboard(widget.duaa.duaaAr),
-                icon: const Icon(Icons.copy_rounded),
-                color: const Color(0xFFD4AF37),
-                tooltip: isArabic ? 'نسخ' : 'Copy',
-              ),
-              IconButton(
-                onPressed: () {
-                  ShareImageGenerator.generateAndShareImageWithWidget(
-                    title: widget.duaa.duaaAr,
-                    subtitle: text,
-                    isDarkMode: isDarkMode,
-                    lang: widget.lang,
-                    context: context,
-                  );
-                },
-                icon: const Icon(Icons.share_rounded),
-                color: const Color(0xFFD4AF37),
-                tooltip: isArabic ? 'مشاركة' : 'Share',
+              Icon(widget.icon, size: 14, color: fg),
+              const SizedBox(width: 6),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: fg,
+                ),
               ),
             ],
           ),
-        ],
-      ],
+        ),
+      ),
     );
   }
 }

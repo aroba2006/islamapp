@@ -17,14 +17,14 @@ class AuthService extends ChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  
+
   // ✅ Getters for HomeScreen
   String? get userName => _currentUser?.username;
   String? get userEmail => _currentUser?.email;
   String? get profilePicUrl => _currentUser?.profilePicUrl;
 
   // ✅ Placeholder for email verification (since we aren't using Firebase)
-  bool get isEmailVerified => true; 
+  bool get isEmailVerified => true;
 
   // Placeholder for email verification (since we aren't using Firebase)
   Future<void> sendVerificationEmail() async {
@@ -71,7 +71,9 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      if (email.isEmpty || username.isEmpty || password.isEmpty) throw 'All fields are required';
+      if (email.isEmpty || username.isEmpty || password.isEmpty) {
+        throw 'All fields are required';
+      }
       if (!_isValidEmail(email)) throw 'Invalid email format';
       if (password.length < 6) throw 'Password must be at least 6 characters';
       if (password != confirmPassword) throw 'Passwords do not match';
@@ -81,7 +83,8 @@ class AuthService extends ChangeNotifier {
       final userJson = prefs.getString(_userStorageKey);
       if (userJson != null) {
         final existingUser = User.fromJson(jsonDecode(userJson));
-        if (existingUser.email == email || existingUser.username == username) {
+        if (existingUser.email == email ||
+            existingUser.username == username) {
           throw 'Email or username already registered';
         }
       }
@@ -94,7 +97,8 @@ class AuthService extends ChangeNotifier {
         gender: gender,
       );
 
-      await prefs.setString(_userStorageKey, jsonEncode(_currentUser!.toJson()));
+      await prefs.setString(
+          _userStorageKey, jsonEncode(_currentUser!.toJson()));
       await prefs.setBool(_isLoggedInKey, true);
       _isLoggedIn = true;
 
@@ -119,14 +123,18 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      if (emailOrUsername.isEmpty || password.isEmpty) throw 'Email/Username and password are required';
+      if (emailOrUsername.isEmpty || password.isEmpty) {
+        throw 'Email/Username and password are required';
+      }
 
       final prefs = await SharedPreferences.getInstance();
       final userJson = prefs.getString(_userStorageKey);
       if (userJson == null) throw 'No account found. Please sign up first';
 
       final user = User.fromJson(jsonDecode(userJson));
-      if ((user.email != emailOrUsername && user.username != emailOrUsername) || user.password != password) {
+      if ((user.email != emailOrUsername &&
+              user.username != emailOrUsername) ||
+          user.password != password) {
         throw 'Invalid email/username or password';
       }
 
@@ -205,7 +213,8 @@ class AuthService extends ChangeNotifier {
         gender: gender,
       );
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_userStorageKey, jsonEncode(_currentUser!.toJson()));
+      await prefs.setString(
+          _userStorageKey, jsonEncode(_currentUser!.toJson()));
 
       _isLoading = false;
       notifyListeners();
@@ -219,7 +228,8 @@ class AuthService extends ChangeNotifier {
   }
 
   bool _isValidEmail(String email) {
-    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    final emailRegex =
+        RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
     return emailRegex.hasMatch(email);
   }
 
