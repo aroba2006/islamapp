@@ -14,7 +14,7 @@ class AdhanReciterTranslations {
     'qassas': {
       'ar': 'محمد مروان قصاص',
       'en': 'Mohamed Marawan Qassas',
-      'fr': 'Mohamed Al-Qassas',
+      'fr': 'Mohamed Marawan Qassas',
     },
     'refaat': {
       'ar': 'محمد رفعت',
@@ -23,8 +23,8 @@ class AdhanReciterTranslations {
     },
     'tobar': {
       'ar': 'نصر الدين طوبار',
-      'en': 'Nasser Al-Tobar',
-      'fr': 'Nasser Al-Tobar',
+      'en': 'Nasr Al-Din Tobar',
+      'fr': 'Nasr Al-Din Tobar',
     },
     'basset': {
       'ar': 'عبد الباسط عبد الصمد',
